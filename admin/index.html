@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DS-FM 운영진 페이지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --wine:#7c1f3d; --wine-deep:#4c1226; --wine-soft:#a8446a;
+    --blush:#f3d9e0; --cream:#fbf5f1; --paper:#ffffff;
+    --ink:#2a1e22; --ink-soft:#8a737a; --line:#ecdde1;
+    --gold:#b6893f; --good:#3f7a5c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--cream); color:var(--ink); font-family:"Noto Sans KR",system-ui,-apple-system,sans-serif; word-break:keep-all; -webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+
+  #login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    background:radial-gradient(1200px 700px at 50% -12%, #fdf1f3 0%, var(--blush) 62%);}
+  .login-card{width:100%; max-width:360px; background:var(--paper); border-radius:18px; padding:30px 26px; box-shadow:0 20px 50px rgba(42,30,34,.14);}
+  .login-card h1{font-size:19px; margin:0 0 4px; color:var(--wine-deep);}
+  .login-card .sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:20px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .field label{font-size:11.5px; color:var(--ink-soft); font-weight:700;}
+  .field input{border:1.5px solid var(--line); border-radius:10px; padding:12px 13px; font-size:16px; font-family:inherit; outline:0; background:var(--cream); color:var(--ink);}
+  .field input:focus{border-color:var(--wine-soft); background:var(--paper);}
+  .login-submit{all:unset; box-sizing:border-box; cursor:pointer; width:100%; text-align:center; margin-top:8px; background:var(--wine-deep); color:#fff; font-weight:700; font-size:15px; padding:13px; border-radius:11px;}
+  .login-submit:hover{background:var(--wine);}
+  .login-error{margin-top:12px; font-size:12.5px; color:#b23b3b; background:#fbe8e8; border-radius:9px; padding:9px 11px; display:none;}
+  .login-note{font-size:11.5px; color:var(--ink-soft); margin-top:16px; line-height:1.6;}
+  .login-note a{color:var(--wine-deep); font-weight:700;}
+  /* ================= 운영진(관리자) 화면 ================= */
+  #admin-root{min-height:100vh; background:var(--cream); color:var(--ink);}
+  .adm-top{
+    background:linear-gradient(120deg, var(--wine-deep), var(--wine)); color:#fff;
+    padding:16px 22px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .adm-brand{font-weight:700; font-size:16px;}
+  .adm-who{font-size:11.5px; color:rgba(255,255,255,.7); margin-top:2px;}
+  .adm-top-btn{
+    all:unset; box-sizing:border-box; cursor:pointer; border:1px solid rgba(255,255,255,.45); border-radius:999px;
+    padding:7px 15px; font-size:12.5px; font-weight:700; color:#fff;
+  }
+  .adm-top-btn:hover{background:rgba(255,255,255,.12);}
+  .adm-tabs{
+    display:flex; gap:6px; padding:12px 22px; background:var(--paper); border-bottom:1px solid var(--line);
+    overflow-x:auto; position:sticky; top:0; z-index:20;
+  }
+  .adm-tab{
+    all:unset; box-sizing:border-box; cursor:pointer; white-space:nowrap; padding:8px 14px; border-radius:999px;
+    font-size:13px; font-weight:700; color:var(--ink-soft); background:var(--cream); display:flex; align-items:center; gap:6px;
+  }
+  .adm-tab.active{background:var(--wine-deep); color:#fff;}
+  .adm-tab .adm-count{
+    font-size:10.5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; display:inline-flex;
+    align-items:center; justify-content:center; background:var(--wine); color:#fff;
+  }
+  .adm-tab.active .adm-count{background:#fff; color:var(--wine-deep);}
+  .adm-main{max-width:1040px; margin:0 auto; padding:24px 22px 70px;}
+  .adm-h{font-size:21px; font-weight:700; margin:0;}
+  .adm-desc{font-size:13px; color:var(--ink-soft); margin-top:5px; line-height:1.6;}
+  .adm-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-top:16px;}
+  .adm-card-title{font-size:14px; font-weight:700; margin-bottom:12px;}
+  .adm-stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-top:16px;}
+  .adm-stat{
+    all:unset; box-sizing:border-box; cursor:pointer; background:var(--paper); border:1px solid var(--line);
+    border-radius:14px; padding:14px 16px; display:block;
+  }
+  .adm-stat:hover{border-color:var(--wine-soft);}
+  .adm-stat.alert{border-color:var(--wine); background:#fdf4f6;}
+  .adm-stat-label{font-size:12px; color:var(--ink-soft);}
+  .adm-stat-value{font-size:24px; font-weight:700; color:var(--wine-deep); margin-top:4px;}
+  .adm-stat-sub{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .adm-form{display:grid; gap:10px;}
+  .adm-form-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .adm-form-row > *{flex:1 1 160px; min-width:0;}
+  .adm-input, .adm-select, .adm-textarea{
+    box-sizing:border-box; width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:14px; font-family:inherit; outline:0; background:var(--cream); color:var(--ink);
+  }
+  .adm-input:focus, .adm-select:focus, .adm-textarea:focus{border-color:var(--wine-soft); background:var(--paper);}
+  .adm-textarea{min-height:90px; resize:vertical; line-height:1.6;}
+  .adm-check{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink); cursor:pointer;}
+  .adm-check input{accent-color:var(--wine-deep); width:16px; height:16px;}
+  .adm-actions{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;}
+  .adm-btn{
+    all:unset; box-sizing:border-box; cursor:pointer; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:700;
+    background:var(--wine-deep); color:#fff; text-align:center;
+  }
+  .adm-btn:hover{background:var(--wine);}
+  .adm-btn.ghost{background:var(--paper); color:var(--wine-deep); border:1.5px solid var(--line);}
+  .adm-btn.ghost:hover{border-color:var(--wine-soft); background:var(--blush);}
+  .adm-btn.small{padding:6px 11px; font-size:12px; border-radius:8px;}
+  .adm-btn.good{background:var(--good);}
+  .adm-btn.bad{background:#b23b3b;}
+  .adm-list{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .adm-item{background:var(--paper); border:1px solid var(--line); border-radius:13px; padding:13px 15px;}
+  .adm-item.pinned{border-left:3px solid var(--wine);}
+  .adm-item-top{display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+  .adm-item-title{font-size:14px; font-weight:700;}
+  .adm-item-text{font-size:13px; line-height:1.65; margin-top:6px; white-space:pre-wrap; word-break:break-word;}
+  .adm-item-meta{font-size:11.5px; color:var(--ink-soft); margin-top:7px;}
+  .adm-item-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .adm-tag{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--blush); color:var(--wine-deep);}
+  .adm-tag.gold{background:#f7ecd9; color:#8a5a1f;}
+  .adm-tag.green{background:#e3efe8; color:var(--good);}
+  .adm-tag.red{background:#fbe8e8; color:#b23b3b;}
+  .adm-tag.gray{background:var(--cream); color:var(--ink-soft); border:1px solid var(--line);}
+  .adm-empty{font-size:13px; color:var(--ink-soft); text-align:center; padding:28px 0;}
+  .adm-filters{display:flex; gap:6px; flex-wrap:wrap; margin-top:14px;}
+  .adm-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:12px; margin-top:14px;}
+  .adm-grid .adm-item{padding:0; overflow:hidden;}
+  .adm-grid img{width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:var(--blush);}
+  .adm-grid .adm-item-body{padding:11px 13px;}
+  .adm-table-wrap{overflow-x:auto; margin-top:12px;}
+  .adm-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .adm-table th, .adm-table td{padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap;}
+  .adm-table th{font-size:11.5px; color:var(--ink-soft); font-weight:700; background:var(--cream);}
+  .adm-note{
+    margin-top:14px; padding:11px 14px; border-radius:11px; background:#faf1e8; color:#8a5a1f; font-size:12px;
+    line-height:1.6; border:1px solid #f0dcc4;
+  }
+  .adm-reply{margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;}
+  .adm-reply .adm-input{flex:1 1 200px; padding:8px 10px; font-size:13px;}
+  .adm-reply .adm-select{flex:0 0 120px; padding:8px 10px; font-size:13px;}
+  .login-admin-link{
+    all:unset; box-sizing:border-box; cursor:pointer; display:block; width:100%; text-align:center; margin-top:12px;
+    font-size:12px; font-weight:700; color:var(--wine-deep); padding:9px; border-radius:10px; border:1.5px dashed var(--line);
+  }
+  .login-admin-link:hover{background:var(--blush);}
+  @media (max-width:760px){
+    .adm-top{padding:14px 16px;}
+    .adm-tabs{padding:10px 16px;}
+    .adm-main{padding:18px 16px 60px;}
+    .adm-actions .adm-btn{flex:1 1 auto;}
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>DS-FM 운영진 페이지</h1>
+    <div class="sub">운영진 계정으로 로그인해주세요.</div>
+    <form id="login-form">
+      <div class="field"><label for="admin-email">이메일</label><input type="email" id="admin-email" autocomplete="username"></div>
+      <div class="field"><label for="admin-password">비밀번호</label><input type="password" id="admin-password" autocomplete="current-password"></div>
+      <button class="login-submit" id="login-submit" type="button">로그인</button>
+    </form>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-note">
+      운영진 계정은 Firebase 콘솔 &gt; Authentication &gt; 사용자에서 추가해요.<br>
+      <a href="../">← 학생용 사이트로</a>
+    </div>
+  </div>
+</div>
+
+<div id="admin-root" style="display:none"></div>
+
+<script>
+/* ================= DS-FM 운영진(관리자) 화면 =================
+   db: Firestore 형태의 객체 (collection().onSnapshot / add / doc(id).update / delete)
+   opts: { whoami, exitLabel, onExit, demoNote } */
+(function(){
+  "use strict";
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function fmtTime(ts){
+    if(!ts) return "";
+    var diff = Date.now() - ts, m = Math.floor(diff/60000);
+    if(m < 1) return "방금 전";
+    if(m < 60) return m + "분 전";
+    var h = Math.floor(m/60);
+    if(h < 24) return h + "시간 전";
+    var d = new Date(ts);
+    return (d.getMonth()+1) + "." + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+  function byNewest(a, b){ return (b.d.createdAt || 0) - (a.d.createdAt || 0); }
+  function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+  function downloadCsv(filename, rows){
+    var text = "﻿" + rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
+    try{
+      var blob = new Blob([text], {type:"text/csv;charset=utf-8"});
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }catch(e){ alert("이 화면에서는 파일 내려받기가 지원되지 않아요."); }
+  }
+
+  var TABS = [
+    {key:"dash",    label:"한눈에 보기"},
+    {key:"notice",  label:"공지 관리"},
+    {key:"sched",   label:"일정 관리"},
+    {key:"verify",  label:"인증 승인"},
+    {key:"suggest", label:"건의함"},
+    {key:"posts",   label:"게시물 관리"},
+    {key:"vote",    label:"출석 투표"},
+    {key:"roster",  label:"멘토·멘티 명단"}
+  ];
+  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","attendance_votes","team_roster"];
+  var SUGGEST_STATUS = ["접수","검토중","반영완료","보류"];
+  var NOTICE_TAGS = ["운영진 공지","전체 이벤트","공통 마감","안내"];
+
+  function mount(root, db, opts){
+    opts = opts || {};
+    var S = {}; COLLS.forEach(function(c){ S[c] = []; });
+    var errors = {};
+    var tab = "dash";
+    var verifyFilter = "확인중";
+    var postsBoard = "private_posts";
+    var editingNoticeId = null;
+    var unsubs = [];
+
+    function col(name){ return db.collection(name); }
+    function act(p){ if(p && p.catch) p.catch(function(e){ alert("저장하지 못했어요: " + (e && e.message ? e.message : e)); }); }
+
+    root.innerHTML =
+      '<div class="adm-top">' +
+        '<div><div class="adm-brand">DS-FM 공유공간 · 운영진</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
+        '<button class="adm-top-btn" type="button" data-adm="exit">' + esc(opts.exitLabel || "나가기") + '</button>' +
+      '</div>' +
+      '<nav class="adm-tabs" id="adm-tabs"></nav>' +
+      '<main class="adm-main" id="adm-main"></main>';
+    var tabsEl = root.querySelector("#adm-tabs");
+    var mainEl = root.querySelector("#adm-main");
+
+    function counts(){
+      return {
+        verify: S.verify_posts.filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
+        suggest: S.suggestion_posts.filter(function(x){ return !x.d.status || x.d.status === "접수"; }).length
+      };
+    }
+    function renderTabs(){
+      var c = counts();
+      tabsEl.innerHTML = TABS.map(function(t){
+        var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : 0;
+        return '<button type="button" class="adm-tab' + (t.key === tab ? " active" : "") + '" data-tab="' + t.key + '">' +
+          esc(t.label) + (n ? '<span class="adm-count">' + n + '</span>' : "") + '</button>';
+      }).join("");
+    }
+
+    /* ---------- 각 탭 ---------- */
+    function viewDash(){
+      var c = counts();
+      var attend = S.attendance_votes.filter(function(x){ return x.d.choice === "attend"; }).length;
+      var absent = S.attendance_votes.filter(function(x){ return x.d.choice === "absent"; }).length;
+      var teams = {};
+      function bump(t, k){ t = t || "(반 미지정)"; teams[t] = teams[t] || {posts:0, verify:0, approved:0, roster:0, votes:0}; teams[t][k]++; }
+      S.team_posts.forEach(function(x){ bump(x.d.team, "posts"); });
+      S.verify_posts.forEach(function(x){ bump(x.d.team, "verify"); if(x.d.status === "승인") bump(x.d.team, "approved"); });
+      S.team_roster.forEach(function(x){ bump(x.d.team, "roster"); });
+      S.attendance_votes.forEach(function(x){ bump(x.d.team, "votes"); });
+      var teamNames = Object.keys(teams).sort(function(a,b){ return a.localeCompare(b, "ko", {numeric:true}); });
+      var html = '<h2 class="adm-h">한눈에 보기</h2>' +
+        '<p class="adm-desc">처리할 일과 활동 현황을 모아봤어요. 카드를 누르면 해당 메뉴로 이동해요.</p>' +
+        '<div class="adm-stats">' +
+          stat("verify", "인증 승인 대기", c.verify, "건", c.verify > 0) +
+          stat("suggest", "새 건의", c.suggest, "건", c.suggest > 0) +
+          stat("vote", "성과보고회 참석", attend, "명", false, "불참 " + absent + "명") +
+          stat("posts", "자유게시판 글", S.private_posts.length, "개") +
+          stat("posts", "사진 게시판", S.photo_posts.length, "개") +
+          stat("notice", "등록된 공지", S.announcements.length, "개") +
+        '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">반(팀)별 활동 현황</div>' +
+        (teamNames.length ?
+          '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>반</th><th>명단 인원</th><th>팀 게시글</th><th>미션 인증</th><th>승인</th><th>출석 투표</th></tr></thead><tbody>' +
+          teamNames.map(function(t){ var r = teams[t];
+            return '<tr><td><b>' + esc(t) + '</b></td><td>' + r.roster + '</td><td>' + r.posts + '</td><td>' + r.verify + '</td><td>' + r.approved + '</td><td>' + r.votes + '</td></tr>';
+          }).join("") + '</tbody></table></div>' +
+          '<div class="adm-actions" style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="csv-teams">CSV로 내려받기 (성과보고서용)</button></div>'
+          : '<div class="adm-empty">아직 활동 기록이 없어요.</div>') +
+        '</div>';
+      if(opts.demoNote) html += '<div class="adm-note">' + opts.demoNote + '</div>';
+      mainEl.innerHTML = html;
+      mainEl._teams = teams; mainEl._teamNames = teamNames;
+    }
+    function stat(goto, label, n, unit, alert, sub){
+      return '<button type="button" class="adm-stat' + (alert ? " alert" : "") + '" data-tab="' + goto + '">' +
+        '<div class="adm-stat-label">' + esc(label) + '</div>' +
+        '<div class="adm-stat-value">' + n + '<span style="font-size:13px;margin-left:2px">' + unit + '</span></div>' +
+        (sub ? '<div class="adm-stat-sub">' + esc(sub) + '</div>' : "") + '</button>';
+    }
+
+    function viewNotice(){
+      var editing = editingNoticeId ? S.announcements.filter(function(x){ return x.id === editingNoticeId; })[0] : null;
+      var e = editing ? editing.d : {};
+      var list = S.announcements.slice().sort(function(a,b){
+        if(!!b.d.pinned !== !!a.d.pinned) return b.d.pinned ? 1 : -1;
+        return byNewest(a,b);
+      });
+      mainEl.innerHTML = '<h2 class="adm-h">공지 관리</h2>' +
+        '<p class="adm-desc">여기서 올린 공지가 학생 화면 "공지사항"에 바로 보여요. 상단 고정한 공지는 맨 위에 표시되고, 학생이 "확인했어요"를 누른 인원도 볼 수 있어요.</p>' +
+        '<div class="adm-card"><div class="adm-card-title">' + (editing ? "공지 수정" : "새 공지 쓰기") + '</div>' +
+          '<div class="adm-form">' +
+            '<div class="adm-form-row">' +
+              '<select class="adm-select" id="adm-n-tag">' + NOTICE_TAGS.map(function(t){ return '<option' + (e.tag === t ? " selected" : "") + '>' + t + '</option>'; }).join("") + '</select>' +
+              '<input class="adm-input" id="adm-n-label" placeholder="제목 (예: PICNIC DAY)" maxlength="80" value="' + esc(e.label || "") + '" style="flex:3 1 240px">' +
+            '</div>' +
+            '<textarea class="adm-textarea" id="adm-n-detail" placeholder="내용 (날짜, 장소, 준비물 등)" maxlength="2000">' + esc(e.detail || "") + '</textarea>' +
+            '<label class="adm-check"><input type="checkbox" id="adm-n-pin"' + (e.pinned ? " checked" : "") + '> 상단에 고정</label>' +
+            '<div class="adm-actions">' +
+              (editing ? '<button class="adm-btn ghost" type="button" data-adm="notice-cancel">취소</button>' : "") +
+              '<button class="adm-btn" type="button" data-adm="notice-save">' + (editing ? "수정 저장" : "공지 올리기") + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        (S.announcements.length ? "" :
+          '<div class="adm-note">아직 등록된 공지가 없어서, 학생 화면에는 처음에 넣어둔 기본 공지 3개가 보이고 있어요. ' +
+          '<button class="adm-btn ghost small" type="button" data-adm="notice-import" style="margin-left:6px">기본 공지 불러와서 편집하기</button></div>') +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var n = x.d, reads = (n.readBy || []).length;
+          return '<div class="adm-item' + (n.pinned ? " pinned" : "") + '" data-id="' + esc(x.id) + '">' +
+            '<div class="adm-item-top">' + (n.pinned ? '<span class="adm-tag">📌 고정</span>' : "") +
+              '<span class="adm-tag gold">' + esc(n.tag || "공지") + '</span><span class="adm-item-title">' + esc(n.label || "") + '</span></div>' +
+            '<div class="adm-item-text">' + esc(n.detail || "") + '</div>' +
+            '<div class="adm-item-meta">' + fmtTime(n.createdAt) + ' · 확인 ' + reads + '명</div>' +
+            '<div class="adm-item-actions">' +
+              '<button class="adm-btn ghost small" type="button" data-adm="notice-edit">수정</button>' +
+              '<button class="adm-btn ghost small" type="button" data-adm="notice-pin">' + (n.pinned ? "고정 해제" : "상단 고정") + '</button>' +
+              '<button class="adm-btn ghost small" type="button" data-adm="notice-reads">확인한 사람</button>' +
+              '<button class="adm-btn bad small" type="button" data-adm="notice-del">삭제</button>' +
+            '</div></div>';
+        }).join("") : '<div class="adm-empty">등록된 공지가 없어요.</div>') + '</div>';
+    }
+
+    function viewSched(){
+      var list = S.sched_events.slice().sort(function(a,b){ return String(a.d.date).localeCompare(String(b.d.date)); });
+      var today = new Date(); var tk = today.getFullYear() + "-" + ("0"+(today.getMonth()+1)).slice(-2) + "-" + ("0"+today.getDate()).slice(-2);
+      mainEl.innerHTML = '<h2 class="adm-h">일정 관리</h2>' +
+        '<p class="adm-desc">등록한 일정은 학생 화면 스케줄 보드 캘린더와 홈의 "다가오는 일정"에 표시돼요. 매주 목요일 정기 미팅은 자동으로 표시돼요.</p>' +
+        '<div class="adm-card"><div class="adm-card-title">일정 추가</div><div class="adm-form-row">' +
+          '<input class="adm-input" type="date" id="adm-e-date" style="flex:0 1 180px">' +
+          '<input class="adm-input" id="adm-e-title" placeholder="일정 제목 (예: 성과보고회)" maxlength="80">' +
+          '<button class="adm-btn" type="button" data-adm="event-add" style="flex:0 0 auto">추가</button>' +
+        '</div></div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var past = String(x.d.date) < tk;
+          return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;align-items:center;gap:10px;' + (past ? "opacity:.55" : "") + '">' +
+            '<span class="adm-tag' + (past ? " gray" : "") + '">' + esc(x.d.date || "") + '</span>' +
+            '<span class="adm-item-title" style="flex:1">' + esc(x.d.title || "") + '</span>' +
+            '<button class="adm-btn bad small" type="button" data-adm="event-del">삭제</button></div>';
+        }).join("") : '<div class="adm-empty">등록된 일정이 없어요.</div>') + '</div>';
+    }
+
+    function viewVerify(){
+      var list = S.verify_posts.slice().sort(byNewest);
+      if(verifyFilter !== "all") list = list.filter(function(x){ return (x.d.status || "확인중") === verifyFilter; });
+      mainEl.innerHTML = '<h2 class="adm-h">인증 승인</h2>' +
+        '<p class="adm-desc">학생들이 올린 미션 인증샷을 확인하고 승인·반려해요. 결과는 학생 화면 인증게시판과 마이페이지에 바로 반영돼요.</p>' +
+        '<div class="adm-filters">' + [["확인중","확인 대기"],["승인","승인"],["반려","반려"],["all","전체"]].map(function(f){
+          return '<button type="button" class="adm-tab' + (verifyFilter === f[0] ? " active" : "") + '" data-vfilter="' + f[0] + '">' + f[1] + '</button>';
+        }).join("") + '</div>' +
+        (list.length ? '<div class="adm-grid">' + list.map(function(x){
+          var p = x.d, st = p.status || "확인중";
+          var cls = st === "승인" ? "green" : st === "반려" ? "red" : "gold";
+          return '<div class="adm-item" data-id="' + esc(x.id) + '">' +
+            (p.image ? '<img src="' + esc(p.image) + '" alt="">' : "") +
+            '<div class="adm-item-body"><div class="adm-item-top"><span class="adm-tag">' + esc(p.category || "기타") + '</span><span class="adm-tag ' + cls + '">' + esc(st) + '</span></div>' +
+            (p.caption ? '<div class="adm-item-text">' + esc(p.caption) + '</div>' : "") +
+            '<div class="adm-item-meta">' + esc(p.author || "참여자") + (p.team ? " · " + esc(p.team) : "") + ' · ' + fmtTime(p.createdAt) + '</div>' +
+            '<div class="adm-item-actions">' +
+              '<button class="adm-btn good small" type="button" data-adm="v-approve">승인</button>' +
+              '<button class="adm-btn bad small" type="button" data-adm="v-reject">반려</button>' +
+              '<button class="adm-btn ghost small" type="button" data-adm="v-reset">되돌리기</button>' +
+            '</div></div></div>';
+        }).join("") + '</div>' : '<div class="adm-empty">해당하는 인증글이 없어요.</div>');
+    }
+
+    function viewSuggest(){
+      var list = S.suggestion_posts.slice().sort(byNewest);
+      mainEl.innerHTML = '<h2 class="adm-h">건의함</h2>' +
+        '<p class="adm-desc">처리 상태와 답변을 남기면 학생 화면 "운영진에게 건의"에 함께 표시돼요. 익명 건의는 작성자가 "익명"으로만 보여요.</p>' +
+        '<div class="adm-actions" style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="csv-suggest">CSV로 내려받기</button></div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var p = x.d, st = p.status || "접수";
+          return '<div class="adm-item" data-id="' + esc(x.id) + '">' +
+            '<div class="adm-item-top"><span class="adm-tag ' + (st === "반영완료" ? "green" : st === "보류" ? "gray" : "gold") + '">' + esc(st) + '</span>' +
+              '<span class="adm-item-meta" style="margin:0">' + esc(p.author || "참여자") + ' · ' + fmtTime(p.createdAt) + '</span></div>' +
+            '<div class="adm-item-text">' + esc(p.text || "") + '</div>' +
+            '<div class="adm-reply">' +
+              '<select class="adm-select" data-field="status">' + SUGGEST_STATUS.map(function(s){ return '<option' + (s === st ? " selected" : "") + '>' + s + '</option>'; }).join("") + '</select>' +
+              '<input class="adm-input" data-field="reply" placeholder="학생에게 보일 답변 (선택)" maxlength="500" value="' + esc(p.reply || "") + '">' +
+              '<button class="adm-btn small" type="button" data-adm="s-save">저장</button>' +
+              '<button class="adm-btn bad small" type="button" data-adm="s-del">삭제</button>' +
+            '</div></div>';
+        }).join("") : '<div class="adm-empty">아직 건의가 없어요.</div>') + '</div>';
+    }
+
+    function viewPosts(){
+      var boards = [["private_posts","자유게시판"],["photo_posts","사진 게시판"],["team_posts","팀별 게시판"]];
+      var list = (S[postsBoard] || []).slice().sort(byNewest);
+      mainEl.innerHTML = '<h2 class="adm-h">게시물 관리</h2>' +
+        '<p class="adm-desc">부적절한 글이나 잘못 올라간 글을 삭제할 수 있어요. 삭제하면 되돌릴 수 없어요.</p>' +
+        '<div class="adm-filters">' + boards.map(function(b){
+          return '<button type="button" class="adm-tab' + (postsBoard === b[0] ? " active" : "") + '" data-board="' + b[0] + '">' + b[1] + ' <span class="adm-count">' + (S[b[0]] || []).length + '</span></button>';
+        }).join("") + '</div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var p = x.d;
+          var body = p.title ? '<b>' + esc(p.title) + '</b>\n' + esc(p.caption || "") : esc(p.text || p.caption || (p.url ? "링크: " + p.url : p.fileName ? "파일: " + p.fileName : "(사진)"));
+          return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;gap:12px;align-items:flex-start">' +
+            (p.image ? '<img src="' + esc(p.image) + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px;flex:none">' : "") +
+            '<div style="flex:1;min-width:0"><div class="adm-item-meta" style="margin:0">' + esc(p.author || "참여자") + (p.team ? " · " + esc(p.team) : "") + ' · ' + fmtTime(p.createdAt) + (p.demo ? ' · <span class="adm-tag gray">예시</span>' : "") + '</div>' +
+            '<div class="adm-item-text">' + body + '</div></div>' +
+            '<button class="adm-btn bad small" type="button" data-adm="post-del" style="flex:none">삭제</button></div>';
+        }).join("") : '<div class="adm-empty">글이 없어요.</div>') + '</div>';
+    }
+
+    function viewVote(){
+      var list = S.attendance_votes.slice().sort(function(a,b){ return String(a.d.team || "").localeCompare(String(b.d.team || ""), "ko", {numeric:true}); });
+      var attend = list.filter(function(x){ return x.d.choice === "attend"; }).length;
+      mainEl.innerHTML = '<h2 class="adm-h">성과보고회 출석 투표</h2>' +
+        '<p class="adm-desc">11/26(목) 성과보고회 참석 여부를 투표한 사람 명단이에요.</p>' +
+        '<div class="adm-stats">' +
+          stat("vote", "참석", attend, "명") + stat("vote", "불참", list.length - attend, "명") + stat("vote", "투표 인원", list.length, "명") +
+        '</div>' +
+        '<div class="adm-card"><div class="adm-actions"><button class="adm-btn ghost small" type="button" data-adm="csv-vote">CSV로 내려받기</button></div>' +
+        (list.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>반</th><th>이름</th><th>응답</th><th>시각</th></tr></thead><tbody>' +
+          list.map(function(x){ var v = x.d;
+            return '<tr><td>' + esc(v.team || "") + '</td><td>' + esc(v.name || "") + '</td><td>' +
+              (v.choice === "attend" ? '<span class="adm-tag green">참석</span>' : '<span class="adm-tag gray">불참</span>') + '</td><td>' + fmtTime(v.createdAt) + '</td></tr>';
+          }).join("") + '</tbody></table></div>' : '<div class="adm-empty">아직 투표한 사람이 없어요.</div>') + '</div>';
+    }
+
+    function viewRoster(){
+      var groups = {};
+      S.team_roster.forEach(function(x){ var t = x.d.team || "(반 미지정)"; (groups[t] = groups[t] || []).push(x); });
+      var names = Object.keys(groups).sort(function(a,b){ return a.localeCompare(b, "ko", {numeric:true}); });
+      mainEl.innerHTML = '<h2 class="adm-h">멘토·멘티 명단</h2>' +
+        '<p class="adm-desc">여기서 등록한 명단이 각 반의 팀별 게시판 오른쪽에 표시돼요. 반 이름은 학생들이 로그인할 때 쓰는 반명과 똑같이 적어주세요 (예: 1반).</p>' +
+        '<div class="adm-card"><div class="adm-card-title">명단 추가</div><div class="adm-form-row">' +
+          '<input class="adm-input" id="adm-r-team" placeholder="반 (예: 1반)" maxlength="20" style="flex:0 1 120px">' +
+          '<input class="adm-input" id="adm-r-name" placeholder="이름" maxlength="20">' +
+          '<select class="adm-select" id="adm-r-role" style="flex:0 1 110px"><option>멘토</option><option>멘티</option></select>' +
+          '<input class="adm-input" id="adm-r-major" placeholder="전공 (선택)" maxlength="30">' +
+          '<button class="adm-btn" type="button" data-adm="roster-add" style="flex:0 0 auto">추가</button>' +
+        '</div>' +
+        '<div class="adm-desc" style="margin-top:10px">여러 명을 한 번에 넣으려면 아래 칸에 엑셀/구글시트에서 <b>반, 이름, 역할, 전공</b> 순서의 표를 복사해서 붙여넣으세요.</div>' +
+        '<textarea class="adm-textarea" id="adm-r-bulk" placeholder="1반	김OO	멘토	경영학과&#10;1반	이OO	멘티	심리학과" style="margin-top:8px;min-height:80px"></textarea>' +
+        '<div class="adm-actions" style="margin-top:8px"><button class="adm-btn ghost" type="button" data-adm="roster-bulk">붙여넣은 명단 한꺼번에 등록</button></div>' +
+        '</div>' +
+        (names.length ? names.map(function(t){
+          var members = groups[t].slice().sort(function(a,b){ return (a.d.role === "멘토" ? 0 : 1) - (b.d.role === "멘토" ? 0 : 1); });
+          return '<div class="adm-card"><div class="adm-card-title">' + esc(t) + ' <span class="adm-tag gray">' + members.length + '명</span></div>' +
+            '<div class="adm-table-wrap" style="margin-top:0"><table class="adm-table"><tbody>' + members.map(function(x){
+              return '<tr data-id="' + esc(x.id) + '"><td><b>' + esc(x.d.name || "") + '</b></td><td><span class="adm-tag' + (x.d.role === "멘토" ? "" : " gray") + '">' + esc(x.d.role || "") + '</span></td><td>' + esc(x.d.major || "") + '</td>' +
+                '<td style="text-align:right"><button class="adm-btn bad small" type="button" data-adm="roster-del">삭제</button></td></tr>';
+            }).join("") + '</tbody></table></div></div>';
+        }).join("") : '<div class="adm-empty">등록된 명단이 없어요.</div>') +
+        '<div class="adm-note">구글 시트로 명단을 관리하는 방법도 있어요 (배포가이드 9장). 시트를 연결하면 학생 화면은 시트 명단을 우선으로 보여줘요.</div>';
+    }
+
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster};
+    function render(){
+      renderTabs();
+      /* 입력 중인 화면은 실시간 갱신으로 덮어쓰지 않아요 */
+      var ae = document.activeElement;
+      if(ae && mainEl.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
+      VIEWS[tab]();
+    }
+    function go(t){ tab = t; editingNoticeId = null; renderTabs(); VIEWS[tab](); window.scrollTo(0,0); }
+
+    /* ---------- 이벤트 ---------- */
+    root.addEventListener("click", function(e){
+      var t = e.target.closest("[data-tab]");
+      if(t && root.contains(t)){ go(t.dataset.tab); return; }
+      var vf = e.target.closest("[data-vfilter]");
+      if(vf){ verifyFilter = vf.dataset.vfilter; viewVerify(); return; }
+      var bd = e.target.closest("[data-board]");
+      if(bd){ postsBoard = bd.dataset.board; viewPosts(); return; }
+      var b = e.target.closest("[data-adm]");
+      if(!b) return;
+      var a = b.dataset.adm;
+      var item = b.closest("[data-id]");
+      var id = item ? item.dataset.id : null;
+      function find(c){ return S[c].filter(function(x){ return x.id === id; })[0]; }
+
+      if(a === "exit"){ if(opts.onExit) opts.onExit(); return; }
+      if(a === "notice-save"){
+        var label = root.querySelector("#adm-n-label").value.trim();
+        var detail = root.querySelector("#adm-n-detail").value.trim();
+        if(!label){ alert("공지 제목을 입력해주세요."); return; }
+        var data = { tag: root.querySelector("#adm-n-tag").value, label: label, detail: detail, pinned: root.querySelector("#adm-n-pin").checked };
+        if(editingNoticeId){ act(col("announcements").doc(editingNoticeId).update(data)); }
+        else { data.createdAt = Date.now(); data.readBy = []; act(col("announcements").add(data)); }
+        editingNoticeId = null; document.activeElement && document.activeElement.blur(); viewNotice(); return;
+      }
+      if(a === "notice-cancel"){ editingNoticeId = null; viewNotice(); return; }
+      if(a === "notice-edit"){ editingNoticeId = id; viewNotice(); window.scrollTo(0,0); return; }
+      if(a === "notice-pin"){ var n = find("announcements"); if(n) act(col("announcements").doc(id).update({pinned: !n.d.pinned})); return; }
+      if(a === "notice-reads"){
+        var n2 = find("announcements"); var r = (n2 && n2.d.readBy) || [];
+        alert(r.length ? "확인한 사람 (" + r.length + "명)\n\n" + r.map(function(k){ var p = String(k).split("__"); return (p[1] ? p[1] + " " : "") + p[0]; }).join("\n") : "아직 확인한 사람이 없어요.");
+        return;
+      }
+      if(a === "notice-del"){ if(confirm("이 공지를 삭제할까요?")) act(col("announcements").doc(id).delete()); return; }
+      if(a === "notice-import"){
+        (opts.defaultNotices || []).forEach(function(n, i){
+          act(col("announcements").add({ tag: n.tag, label: n.label, detail: n.detail, pinned: false, readBy: [], createdAt: Date.now() - i * 1000 }));
+        });
+        return;
+      }
+      if(a === "event-add"){
+        var date = root.querySelector("#adm-e-date").value, title = root.querySelector("#adm-e-title").value.trim();
+        if(!date || !title){ alert("날짜와 제목을 입력해주세요."); return; }
+        act(col("sched_events").add({ date: date, title: title, createdAt: Date.now() }));
+        root.querySelector("#adm-e-title").value = ""; b.blur(); return;
+      }
+      if(a === "event-del"){ if(confirm("이 일정을 삭제할까요?")) act(col("sched_events").doc(id).delete()); return; }
+      if(a === "v-approve" || a === "v-reject" || a === "v-reset"){
+        act(col("verify_posts").doc(id).update({ status: a === "v-approve" ? "승인" : a === "v-reject" ? "반려" : "확인중" })); return;
+      }
+      if(a === "s-save"){
+        var st = item.querySelector('[data-field="status"]').value, rp = item.querySelector('[data-field="reply"]').value.trim();
+        act(col("suggestion_posts").doc(id).update({ status: st, reply: rp, repliedAt: Date.now() }));
+        b.textContent = "저장됨 ✓"; setTimeout(function(){ document.activeElement && document.activeElement.blur(); render(); }, 700); return;
+      }
+      if(a === "s-del"){ if(confirm("이 건의를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
+      if(a === "post-del"){ if(confirm("이 글을 삭제할까요? 되돌릴 수 없어요.")) act(col(postsBoard).doc(id).delete()); return; }
+      if(a === "roster-add"){
+        var rt = root.querySelector("#adm-r-team").value.trim(), rn = root.querySelector("#adm-r-name").value.trim();
+        if(!rt || !rn){ alert("반과 이름을 입력해주세요."); return; }
+        act(col("team_roster").add({ team: rt, name: rn, role: root.querySelector("#adm-r-role").value, major: root.querySelector("#adm-r-major").value.trim(), createdAt: Date.now() }));
+        root.querySelector("#adm-r-name").value = ""; root.querySelector("#adm-r-major").value = ""; root.querySelector("#adm-r-name").focus(); return;
+      }
+      if(a === "roster-bulk"){
+        var lines = root.querySelector("#adm-r-bulk").value.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+        var rows = lines.map(function(l){ return l.split(/\t|,/).map(function(s){ return s.trim(); }); })
+          .filter(function(r){ return r[0] && r[1] && !(r[0] === "반" || r[0] === "팀" || r[1] === "이름"); });
+        if(!rows.length){ alert("등록할 명단이 없어요. 반, 이름, 역할, 전공 순서로 붙여넣어 주세요."); return; }
+        if(!confirm(rows.length + "명을 등록할까요?")) return;
+        rows.forEach(function(r, i){ act(col("team_roster").add({ team: r[0], name: r[1], role: r[2] || "멘티", major: r[3] || "", createdAt: Date.now() + i })); });
+        root.querySelector("#adm-r-bulk").value = ""; return;
+      }
+      if(a === "roster-del"){ if(confirm("명단에서 삭제할까요?")) act(col("team_roster").doc(id).delete()); return; }
+      if(a === "csv-vote"){
+        downloadCsv("성과보고회_출석투표.csv", [["반","이름","응답","시각"]].concat(S.attendance_votes.map(function(x){
+          return [x.d.team, x.d.name, x.d.choice === "attend" ? "참석" : "불참", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
+        }))); return;
+      }
+      if(a === "csv-suggest"){
+        downloadCsv("건의함.csv", [["작성자","내용","상태","답변","작성시각"]].concat(S.suggestion_posts.slice().sort(byNewest).map(function(x){
+          return [x.d.author, x.d.text, x.d.status || "접수", x.d.reply || "", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
+        }))); return;
+      }
+      if(a === "csv-teams"){
+        var tm = mainEl._teams || {}, tn = mainEl._teamNames || [];
+        downloadCsv("반별_활동현황.csv", [["반","명단 인원","팀 게시글","미션 인증","승인","출석 투표"]].concat(tn.map(function(t){
+          var r = tm[t]; return [t, r.roster, r.posts, r.verify, r.approved, r.votes];
+        }))); return;
+      }
+    });
+
+    /* ---------- 실시간 구독 ---------- */
+    COLLS.forEach(function(name){
+      try{
+        var u = col(name).onSnapshot(function(snap){
+          S[name] = snap.docs.map(function(d){ return { id: String(d.id), d: d.data() || {} }; });
+          render();
+        }, function(err){ errors[name] = err; });
+        unsubs.push(u);
+      }catch(e){ errors[name] = e; }
+    });
+    render();
+    return { destroy: function(){ unsubs.forEach(function(u){ try{ if(typeof u === "function") u(); }catch(e){} }); root.innerHTML = ""; } };
+  }
+
+  window.DSFMAdmin = { mount: mount };
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  /* firebaseConfig — 학생용 사이트(index.html)와 똑같은 값을 붙여넣으세요. */
+  var firebaseConfig = {
+    apiKey: "AIzaSyDiPlp8TEQhaFJISh6DgRY4UlOx-_cDFBw",
+    authDomain: "dsfm-455c1.firebaseapp.com",
+    projectId: "dsfm-455c1",
+    storageBucket: "dsfm-455c1.firebasestorage.app",
+    messagingSenderId: "431929065623",
+    appId: "1:431929065623:web:bbd20ab2a8319fe2b569d2"
+  };
+
+  /* 학생 화면에 처음 들어있는 기본 공지 — "기본 공지 불러오기" 버튼이 이걸 Firestore로 옮겨요 */
+  var DEFAULT_NOTICES = [
+    {tag:"전체 이벤트", label:"PICNIC DAY", detail:"10월 18일(일) 오후 1시, 영근터에서 진행돼요. 팀별 참가 신청은 10월 12일까지 QUEST BOARD에서 받아요."},
+    {tag:"공통 마감", label:"QUEST 미션 마감", detail:"10월 31일(토)까지 EAT·CAMPUS·LOCAL·TOGETHER 중 2개 이상 완료해주세요. RANDOM은 이번 달 깜짝 공개돼요."},
+    {tag:"공통 마감", label:"활동보고서 제출", detail:"11월 20일(금)까지 개인별 활동보고서를 제출해주세요. 작성 가이드는 공지사항에 곧 올라올 예정이에요."}
+  ];
+
+  var errEl = document.getElementById("login-error");
+  function showErr(msg){ errEl.textContent = msg; errEl.style.display = "block"; }
+  var ready = false;
+  if(typeof firebase === "undefined"){
+    showErr("Firebase를 불러오지 못했어요. 인터넷 연결을 확인해주세요.");
+  } else if(firebaseConfig.apiKey === "YOUR_API_KEY"){
+    showErr("firebaseConfig가 아직 설정되지 않았어요. 이 파일 아래쪽의 firebaseConfig에 Firebase 설정값을 붙여넣어 주세요.");
+  } else {
+    firebase.initializeApp(firebaseConfig);
+    ready = true;
+  }
+
+  var ERR_KO = {
+    "auth/invalid-email": "이메일 형식이 올바르지 않아요.",
+    "auth/invalid-credential": "이메일 또는 비밀번호가 맞지 않아요.",
+    "auth/wrong-password": "이메일 또는 비밀번호가 맞지 않아요.",
+    "auth/user-not-found": "등록되지 않은 운영진 계정이에요.",
+    "auth/too-many-requests": "로그인 시도가 너무 많아요. 잠시 후 다시 시도해주세요.",
+    "auth/unauthorized-domain": "이 주소가 Firebase에 승인되지 않았어요. Authentication > 설정 > 승인된 도메인에 지금 주소를 추가해주세요."
+  };
+  function login(){
+    if(!ready) return;
+    errEl.style.display = "none";
+    var email = document.getElementById("admin-email").value.trim();
+    var pw = document.getElementById("admin-password").value;
+    if(!email || !pw){ showErr("이메일과 비밀번호를 입력해주세요."); return; }
+    firebase.auth().signInWithEmailAndPassword(email, pw).catch(function(err){
+      showErr(ERR_KO[err.code] || ("로그인에 실패했어요: " + (err.message || err.code)));
+    });
+  }
+  document.getElementById("login-submit").addEventListener("click", login);
+  ["admin-email","admin-password"].forEach(function(id){
+    document.getElementById(id).addEventListener("keydown", function(e){ if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); login(); } });
+  });
+
+  var handle = null;
+  if(ready){
+    firebase.auth().onAuthStateChanged(function(user){
+      var root = document.getElementById("admin-root");
+      if(user){
+        document.getElementById("login-screen").style.display = "none";
+        root.style.display = "block";
+        if(!handle){
+          handle = window.DSFMAdmin.mount(root, firebase.firestore(), {
+            whoami: user.email + " 로 로그인됨",
+            exitLabel: "로그아웃",
+            defaultNotices: DEFAULT_NOTICES,
+            onExit: function(){ firebase.auth().signOut(); }
+          });
+        }
+      } else {
+        if(handle){ handle.destroy(); handle = null; }
+        root.style.display = "none";
+        document.getElementById("login-screen").style.display = "flex";
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
