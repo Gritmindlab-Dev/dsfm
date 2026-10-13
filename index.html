@@ -173,6 +173,9 @@
   .rail-nav button svg{width:16px;height:16px;flex:none;opacity:.9;}
   .rail-nav button:hover{background:rgba(255,255,255,.08);}
   .rail-nav button.active{background:rgba(255,255,255,.94); color:var(--wine-deep); font-weight:700;}
+  .rail-logout{all:unset; box-sizing:border-box; cursor:pointer; display:flex; align-items:center; gap:10px; width:100%; margin:0 0 14px; padding:11px 14px; border-radius:12px; font-size:14px; font-weight:700; color:rgba(255,255,255,.85); border:1px solid rgba(255,255,255,.22);}
+  .rail-logout:hover{background:rgba(255,255,255,.12); color:#fff;}
+  .rail-logout svg{width:18px; height:18px; flex:none;}
   .rail-foot{font-size:10.5px; color:rgba(255,255,255,.5); line-height:1.7; padding:0 4px;}
   .rail-foot a{color:rgba(255,255,255,.7);}
 
@@ -570,6 +573,7 @@
     .rail-user{display:none;}
     .rail-nav{flex-direction:row; margin-top:0; overflow-x:auto;}
     .rail-foot{display:none;}
+    .rail-logout{display:none;}
     .main{padding:24px 18px 50px;}
     .team-layout{flex-direction:column;}
     .team-roster{width:100%;}
@@ -708,6 +712,7 @@
           마이페이지
         </button>
       </div>
+      <button type="button" class="rail-logout" id="rail-logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>로그아웃</button>
       <div class="rail-foot">
         DS-FM 온라인 공유공간<br>기획·운영 by GritMindLab
       </div>
@@ -1174,6 +1179,8 @@
     goToPage(gotoBtn.dataset.goto);
   });
 
+  var railLogoutBtn = document.getElementById("rail-logout");
+  if(railLogoutBtn) railLogoutBtn.addEventListener("click", function(){ location.reload(); });
   var mypageLogoutBtn = document.getElementById("mypage-logout");
   if(mypageLogoutBtn){
     mypageLogoutBtn.addEventListener("click", function(){
@@ -1543,8 +1550,8 @@
 
   function watchChecklist(){
     if(!db) return;
-    db.collection("team_checklist").where("team","==", state.team).orderBy("createdAt","desc").limit(50).onSnapshot(function(snap){
-      renderChecklist(snap.docs);
+    db.collection("team_checklist").where("team","==", state.team).limit(300).onSnapshot(function(snap){
+      renderChecklist(byCreated(snap.docs, -1).slice(0, 50));
     }, function(){
       document.getElementById("schedule-checklist").innerHTML =
         '<div class="offline-note">실시간 데이터를 불러오지 못했어요. 페이지를 새로고침 해보세요.</div>';
@@ -1924,8 +1931,8 @@
     var sub = document.getElementById("team-page-sub");
     if(sub) sub.textContent = (state.team ? state.team + " · " : "") + "같은 팀원들끼리만 보이는 게시판이에요";
     if(!db) return;
-    db.collection("team_posts").where("team","==", state.team).orderBy("createdAt","desc").limit(50).onSnapshot(function(snap){
-      renderPosts("team-posts", snap.docs, "아직 우리 팀 게시글이 없어요. 팀원들과 편하게 이야기해보세요!");
+    db.collection("team_posts").where("team","==", state.team).limit(300).onSnapshot(function(snap){
+      renderPosts("team-posts", byCreated(snap.docs, -1).slice(0, 50), "아직 우리 팀 게시글이 없어요. 팀원들과 편하게 이야기해보세요!");
     }, function(){
       document.getElementById("team-posts").innerHTML =
         '<div class="offline-note">실시간 데이터를 불러오지 못했어요. 페이지를 새로고침 해보세요.</div>';
@@ -2040,10 +2047,11 @@
     }).join("");
   }
 
+  function byCreated(docs, dir){ return docs.slice().sort(function(a, b){ return dir * ((a.data().createdAt || 0) - (b.data().createdAt || 0)); }); }
   function watchRoster(){
     if(!db || ROSTER_SHEET_CSV_URL) return;
-    db.collection("team_roster").where("teamKey","==", state.team).orderBy("createdAt","asc").limit(60).onSnapshot(function(snap){
-      renderRoster(snap.docs);
+    db.collection("team_roster").where("teamKey","==", state.team).limit(100).onSnapshot(function(snap){
+      renderRoster(byCreated(snap.docs, 1));
     }, function(){
       document.getElementById("roster-list").innerHTML =
         '<div class="offline-note">실시간 데이터를 불러오지 못했어요.</div>';
