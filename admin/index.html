@@ -508,6 +508,27 @@
       return { tag: q("#adm-p-tag").value.trim() || "투표", title: q("#adm-p-title").value.trim(), desc: q("#adm-p-desc").value.trim(),
         options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, order: Number(q("#adm-p-order").value) || 0 };
     }
+    /* 팀원 모두 투표를 마친 팀 — 마지막 팀원이 처음 투표한 시각 순서 (선착순) */
+    function voteMs(v){ var f = v.d.firstAt; return f && typeof f.toMillis === "function" ? f.toMillis() : (f && f.seconds ? f.seconds * 1000 : (v.d.createdAt || 0)); }
+    function teamRanking(pollId){
+      var teams = {};
+      scoped("team_roster").forEach(function(r){
+        if(r.d.staffPreview) return;
+        var t = r.d.teamKey || ((r.d.college || "") + " " + (r.d.team || ""));
+        (teams[t] = teams[t] || { ids: {}, n: 0 }); teams[t].ids[r.id] = 1; teams[t].n++;
+      });
+      var byRoster = {};
+      S.poll_votes.forEach(function(v){ if(v.d.pollId === pollId) byRoster[v.d.rosterId] = v; });
+      var done = [], doing = 0;
+      Object.keys(teams).forEach(function(t){
+        var T = teams[t], last = 0, cnt = 0;
+        Object.keys(T.ids).forEach(function(id){ var v = byRoster[id]; if(v){ cnt++; last = Math.max(last, voteMs(v)); } });
+        if(cnt === T.n) done.push({ team: t, n: T.n, at: last }); else if(cnt > 0) doing++;
+      });
+      done.sort(function(a, b){ return a.at - b.at; });
+      return { done: done, total: Object.keys(teams).length, doing: doing };
+    }
+    function fmtFull(ms){ if(!ms) return "-"; var d = new Date(ms); return (d.getMonth()+1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2); }
     function viewVote(){
       var polls = S.polls.slice().sort(function(a,b){ return (a.d.order || 0) - (b.d.order || 0) || (b.d.createdAt || 0) - (a.d.createdAt || 0); });
       var html = '<h2 class="adm-h">투표</h2>' +
@@ -541,6 +562,15 @@
               '<b style="flex:0 0 52px;text-align:right;font-size:13px">' + cnt[o] + '명</b></div>';
           }).join("") + (orphan ? '<div class="adm-desc" style="margin-top:6px">(지워진 선택지) ' + orphan + '명</div>' : '') +
           '<div class="adm-desc" style="margin-top:6px">응답 ' + votes.length + '명' + (isSuper && collegeFilter === "전체" ? "" : " (보기 범위 기준)") + '</div></div>' +
+          (function(){
+            var R = teamRanking(x.id);
+            return '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"><b style="font-size:13px">팀 전원 투표 완료 순위</b>' +
+              '<span class="adm-item-meta" style="margin-left:8px">완료 ' + R.done.length + '팀 · 진행 중 ' + R.doing + '팀 · 전체 ' + R.total + '팀</span>' +
+              (R.done.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>완료 시각</th></tr></thead><tbody>' +
+                R.done.map(function(r, i){
+                  return '<tr><td>' + (i < 3 ? '<span class="adm-tag green">' + (i + 1) + '등</span>' : (i + 1)) + '</td><td><b>' + esc(r.team) + '</b></td><td>' + r.n + '명</td><td>' + fmtFull(r.at) + '</td></tr>';
+                }).join("") + '</tbody></table></div>' : '<div class="adm-empty" style="padding:10px 0">아직 전원 투표를 마친 팀이 없어요.</div>') + '</div>';
+          })() +
           '<div class="adm-actions" style="margin-top:10px">' +
             '<button class="adm-btn ghost small" type="button" data-adm="poll-voters">' + (openVoters[x.id] ? "응답자 닫기" : "응답자 보기") + '</button>' +
             '<button class="adm-btn ghost small" type="button" data-adm="poll-csv">CSV로 내려받기</button>' +
