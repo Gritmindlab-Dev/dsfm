@@ -564,6 +564,8 @@
   }
   .login-demo-hint b{color:var(--wine-deep);}
 
+  .page-desc, .sched-block-sub, .composer-hint{display:none !important;}
+  .page-title{margin-bottom:18px;}
   /* 터치 기기(휴대폰·태블릿): 입력칸 16px 이상이어야 아이폰·아이패드에서 화면이 자동 확대되지 않아요 */
   @media (pointer:coarse){ input, textarea, select{font-size:16px !important;} }
 
@@ -725,19 +727,9 @@
         <section id="page-announce" class="page">
           <div class="page-eyebrow">운영진 공지</div>
           <h2 class="page-title">공지사항</h2>
-          <p class="page-desc">운영진이 올리는 공지와 일정을 확인하고, 성과보고회 참석 여부도 여기서 투표해요.</p>
+          <p class="page-desc">운영진이 올리는 공지와 일정을 확인하고, 진행 중인 투표에도 참여해요.</p>
 
-          <div class="card vote-card">
-            <span class="vote-tag">출석 체크</span>
-            <div class="vote-title">11/26(목) 성과보고회</div>
-            <div class="vote-sub">학기말 성과보고회 일정이에요. 참석 여부를 미리 투표해주시면 운영진이 준비하는 데 큰 도움이 돼요.</div>
-            <div class="vote-actions">
-              <button class="vote-btn attend" data-choice="attend">참석</button>
-              <button class="vote-btn absent" data-choice="absent">불참</button>
-            </div>
-            <div class="vote-counts" id="vote-counts"></div>
-            <div class="vote-mine" id="vote-mine">아직 투표하지 않았어요.</div>
-          </div>
+          <div id="poll-list"></div>
 
           <div class="sched-block">
             <div class="sched-block-head">
@@ -1132,6 +1124,8 @@
     state.role = m.role === "멘토" ? "멘토" : "멘티";
     state.rosterId = m.rosterId || "";
     state.team = m.teamKey || ((m.college ? m.college + " " : "") + (m.team || ""));
+    try{ firebase.firestore().collection("login_logs").add({ name: state.name, college: state.college, team: state.team, role: state.role,
+      device: /iPad|Tablet/i.test(navigator.userAgent) ? "태블릿" : (/Mobi|Android|iPhone/i.test(navigator.userAgent) ? "휴대폰" : "PC"), createdAt: Date.now() }).catch(function(){}); }catch(e){}
     try{
       if(typeof LOCAL !== "undefined") Object.keys(LOCAL).forEach(function(k){
         var arr = LOCAL[k];
@@ -1480,44 +1474,69 @@
     });
   }
   function myVoterKey(){ return state.name + "__" + state.team; }
-  function renderVote(docs){
-    attendanceDocs = docs;
-    var attend = 0, absent = 0, mine = null;
-    docs.forEach(function(d){
-      var v = d.data();
-      if(v.choice === "attend") attend++; else if(v.choice === "absent") absent++;
-      if(v.voterKey === myVoterKey()) mine = v.choice;
-    });
-    document.querySelectorAll(".vote-btn").forEach(function(b){
-      b.classList.toggle("selected", b.dataset.choice === mine);
-    });
-    document.getElementById("vote-counts").innerHTML =
-      '<span><b>' + attend + '</b>명 참석</span><span><b>' + absent + '</b>명 불참</span>';
-    document.getElementById("vote-mine").textContent = mine ? ("내 투표: " + (mine === "attend" ? "참석" : "불참")) : "아직 투표하지 않았어요.";
+  /* ---------- 투표 (운영진 페이지에서 최고 관리자가 만들고 고쳐요) ---------- */
+  var pollsCache = [], pollVotesCache = [], pollTimer = null;
+  function pollClosed(p){ return p.open === false || (p.closesAt && Date.now() >= p.closesAt); }
+  function visiblePolls(){
+    return pollsCache.filter(function(p){ return p.visible !== false && collegeVisible(p); })
+      .sort(function(a, b){ return (a.order || 0) - (b.order || 0) || (b.createdAt || 0) - (a.createdAt || 0); });
+  }
+  function pollVoteOf(pid, name){
+    var v = pollVotesCache.filter(function(x){ return x.pollId === pid && (name ? x.name === name : x.rosterId === state.rosterId); })[0];
+    return v ? v.choice : null;
+  }
+  function fmtClose(ts){ var d = new Date(ts); return (d.getMonth()+1) + "/" + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function renderPolls(){
+    var el = document.getElementById("poll-list");
+    if(!el) return;
+    var list = visiblePolls();
+    if(!list.length){ el.innerHTML = ""; return; }
+    el.innerHTML = list.map(function(p){
+      var mine = pollVoteOf(p.id), closed = pollClosed(p);
+      return '<div class="card vote-card" data-poll="' + esc(p.id) + '">' +
+        '<span class="vote-tag">' + esc(p.tag || "투표") + '</span>' +
+        '<div class="vote-title">' + esc(p.title || "") + '</div>' +
+        (p.desc ? '<div class="vote-sub" style="white-space:pre-wrap">' + esc(p.desc) + '</div>' : '') +
+        '<div class="vote-actions" style="flex-wrap:wrap">' + (p.options || []).map(function(o){
+          return '<button type="button" class="vote-btn' + (mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
+        }).join("") + '</div>' +
+        '<div class="vote-mine">' + (closed ? ("투표가 마감됐어요" + (mine ? " · 내 투표: " + esc(mine) : "")) :
+          (mine ? "내 투표: " + esc(mine) + " · 마감 전까지 바꿀 수 있어요" : "아직 투표하지 않았어요.")) +
+          (p.closesAt && !closed ? " · " + fmtClose(p.closesAt) + " 마감" : "") + '</div></div>';
+    }).join("");
   }
   function watchVote(){
     if(!db) return;
-    db.collection("attendance_votes").onSnapshot(function(snap){
-      renderVote(snap.docs);
+    db.collection("polls").onSnapshot(function(snap){
+      pollsCache = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+      renderPolls();
     }, function(){
-      document.getElementById("vote-mine").textContent = "실시간 데이터를 불러오지 못했어요.";
+      var el = document.getElementById("poll-list");
+      if(el) el.innerHTML = '<div class="offline-note">투표를 불러오지 못했어요. 새로고침해 주세요.</div>';
     });
+    db.collection("poll_votes").where("teamKey", "==", state.team).onSnapshot(function(snap){
+      pollVotesCache = snap.docs.map(function(d){ return d.data() || {}; });
+      renderPolls();
+    }, function(){});
+    if(!pollTimer) pollTimer = setInterval(renderPolls, 60000);
   }
   function wireVote(){
-    document.querySelectorAll(".vote-btn").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        if(!db) return;
-        var choice = btn.dataset.choice;
-        var key = myVoterKey();
-        var existing = attendanceDocs.filter(function(d){ return d.data().voterKey === key; })[0];
-        if(existing){
-          db.collection("attendance_votes").doc(existing.id).update({ choice: choice, createdAt: Date.now() });
-        } else {
-          db.collection("attendance_votes").add({
-            voterKey: key, name: state.name, team: state.team, choice: choice, createdAt: Date.now()
-          });
-        }
-      });
+    var el = document.getElementById("poll-list");
+    if(!el || el.__wired) return;
+    el.__wired = true;
+    el.addEventListener("click", function(e){
+      var b = e.target.closest("[data-opt]");
+      if(!b || !db) return;
+      var pid = b.closest("[data-poll]").dataset.poll;
+      var p = pollsCache.filter(function(x){ return x.id === pid; })[0];
+      if(!p || pollClosed(p)) return;
+      if(!state.rosterId){ alert("명단 정보가 없어 투표할 수 없어요. 다시 로그인해 주세요."); return; }
+      b.disabled = true;
+      db.collection("poll_votes").doc(pid + "_" + state.rosterId).set({
+        pollId: pid, rosterId: state.rosterId, name: state.name, college: state.college || "",
+        team: state.team, teamKey: state.team, role: state.role || "", choice: b.dataset.opt, createdAt: Date.now()
+      }).catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
+        .then(function(){ b.disabled = false; });
     });
   }
 
@@ -2187,13 +2206,9 @@
     document.getElementById("mypage-team").textContent = state.team ? (state.team + " · 멘토링 참여자") : "-";
     document.getElementById("mypage-avatar").textContent = (state.name || "?").slice(0,1);
 
-    var mine = null;
-    (attendanceDocs || []).forEach(function(d){
-      var v = d.data ? d.data() : d;
-      if(v.voterKey === myVoterKey()) mine = v.choice;
-    });
+    var vpl = visiblePolls(), vdone = vpl.filter(function(p){ return pollVoteOf(p.id); }).length;
     document.getElementById("mypage-vote-status").textContent =
-      mine ? (mine === "attend" ? "참석 투표 완료" : "불참 투표 완료") : "아직 투표하지 않았어요";
+      vpl.length ? ("투표 " + vpl.length + "개 중 " + vdone + "개 참여") : "진행 중인 투표가 없어요";
 
     var checkDocs = checklistDocsCache || [];
     var total = checkDocs.length;
@@ -2279,7 +2294,7 @@
     if(rl && !rl.innerHTML && !ROSTER_SHEET_CSV_URL){
       rl.innerHTML = '<div class="offline-note">서버에 연결하지 못했어요. 새로고침해 주세요.</div>';
     }
-    document.getElementById("vote-mine").textContent = "서버에 연결하지 못해 투표할 수 없어요. 새로고침해 주세요.";
+    var plEl = document.getElementById("poll-list"); if(plEl) plEl.innerHTML = '<div class="offline-note">서버에 연결하지 못해 투표할 수 없어요. 새로고침해 주세요.</div>';
     document.getElementById("notice-send").disabled = true;
     document.getElementById("suggest-send").disabled = true;
     document.getElementById("check-add").disabled = true;
@@ -2379,11 +2394,11 @@
     el.innerHTML = mentees.map(function(m){
       var mine = verify.filter(function(v){ return v.author === m.name && v.team === state.team; });
       var ok = mine.filter(function(v){ return v.status === "승인"; }).length;
-      var vote = votes.filter(function(v){ return v.name === m.name && v.team === state.team; })[0];
+      var vpl2 = visiblePolls(), vcnt = vpl2.filter(function(p){ return pollVoteOf(p.id, m.name); }).length;
       var np = posts.filter(function(p){ return p.author === m.name && p.team === state.team; }).length;
       return '<div class="roster-item"><div class="r-name">' + esc(m.name) + '<span class="r-role">멘티</span></div>' +
         '<div class="r-major">미션 인증 ' + mine.length + '건(승인 ' + ok + ') · 팀 글 ' + np + '개</div>' +
-        '<div class="r-major">성과보고회 ' + (vote ? (vote.choice === "attend" ? "참석" : "불참") : "미응답") + '</div></div>';
+        '<div class="r-major">투표 ' + (vpl2.length ? vcnt + "/" + vpl2.length + " 참여" : "진행 중인 투표 없음") + '</div></div>';
     }).join("");
   }
   document.getElementById("rail-nav").addEventListener("click", function(){ setTimeout(renderMenteeActivity, 0); });
