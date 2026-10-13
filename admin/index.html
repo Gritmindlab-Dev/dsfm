@@ -63,6 +63,11 @@
     align-items:center; justify-content:center; background:var(--wine); color:#fff;
   }
   .adm-tab.active .adm-count{background:#fff; color:var(--wine-deep);}
+  .adm-scope{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 22px; font-size:12.5px;
+    background:#fffaf2; border-bottom:1px solid var(--line); color:var(--ink);
+  }
+  .adm-scope b{color:var(--wine-deep);}
   .adm-main{max-width:1040px; margin:0 auto; padding:24px 22px 70px;}
   .adm-h{font-size:21px; font-weight:700; margin:0;}
   .adm-desc{font-size:13px; color:var(--ink-soft); margin-top:5px; line-height:1.6;}
@@ -138,6 +143,7 @@
   @media (max-width:760px){
     .adm-top{padding:14px 16px;}
     .adm-tabs{padding:10px 16px;}
+    .adm-scope{padding:10px 16px;}
     .adm-main{padding:18px 16px 60px;}
     .adm-actions .adm-btn{flex:1 1 auto;}
   }
@@ -156,7 +162,7 @@
     </form>
     <div class="login-error" id="login-error"></div>
     <div class="login-note">
-      운영진 계정은 Firebase 콘솔 &gt; Authentication &gt; 사용자에서 추가해요.<br>
+      운영진 계정은 총괄 관리자가 등록해요. 비밀번호를 모르면 총괄 관리자에게 문의해주세요.<br>
       <a href="../">← 학생용 사이트로</a>
     </div>
   </div>
@@ -207,15 +213,48 @@
     {key:"suggest", label:"건의함"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"출석 투표"},
-    {key:"roster",  label:"멘토·멘티 명단"}
+    {key:"roster",  label:"멘토·멘티 명단"},
+    {key:"accounts",label:"운영진 계정", superOnly:true}
   ];
-  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","attendance_votes","team_roster"];
+  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","attendance_votes","team_roster","login_keys"];
+  var DEFAULT_COLLEGES = ["글로벌융합대학","아트앤디자인대학","과학기술대학","자유전공학부"];
+  function keyFor(name, pin){
+    var text = "dsfm|" + String(name).replace(/\s+/g, "") + "|" + String(pin).replace(/\D/g, "");
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0" + b.toString(16)).slice(-2); }).join("");
+    });
+  }
   var SUGGEST_STATUS = ["접수","검토중","반영완료","보류"];
   var NOTICE_TAGS = ["운영진 공지","전체 이벤트","공통 마감","안내"];
 
-  function mount(root, db, opts){
+  function mount(host, db, opts){
     opts = opts || {};
-    var S = {}; COLLS.forEach(function(c){ S[c] = []; });
+    /* 화면을 다시 띄울 때 이벤트가 겹치지 않도록, 매번 새 컨테이너에 그려요 */
+    host.innerHTML = "";
+    var root = document.createElement("div");
+    host.appendChild(root);
+    var S = {}; COLLS.concat(["admins"]).forEach(function(c){ S[c] = []; });
+    /* 권한: 총괄 = 전체, 운영 = 자기 단과대만 */
+    var isSuper = opts.role !== "운영";
+    var myCollege = opts.college || "";
+    var COLLEGES = opts.colleges || DEFAULT_COLLEGES;
+    var collegeFilter = isSuper ? "전체" : myCollege;
+    function inScope(d){ return isSuper ? (collegeFilter === "전체" || d.college === collegeFilter) : d.college === myCollege; }
+    function sharedVisible(d){
+      if(!d.college || d.college === "전체") return true;
+      return isSuper ? (collegeFilter === "전체" || d.college === collegeFilter) : d.college === myCollege;
+    }
+    function canEdit(d){ return isSuper || (d.college && d.college === myCollege); }
+    function scoped(name){ return S[name].filter(function(x){ return inScope(x.d); }); }
+    function collegeOptions(sel, withAll){
+      return (withAll ? ['<option value="전체"' + (sel === "전체" ? " selected" : "") + '>전체 (모든 단과대)</option>'] : []).concat(COLLEGES.map(function(c){
+        return '<option' + (sel === c ? " selected" : "") + '>' + esc(c) + '</option>';
+      })).join("");
+    }
+    function targetField(id, current){
+      if(isSuper) return '<select class="adm-select" id="' + id + '" style="flex:0 1 200px">' + collegeOptions(current || "전체", true) + '</select>';
+      return '<input class="adm-input" id="' + id + '" value="' + esc(myCollege) + '" disabled style="flex:0 1 200px">';
+    }
     var errors = {};
     var tab = "dash";
     var verifyFilter = "확인중";
@@ -228,23 +267,31 @@
 
     root.innerHTML =
       '<div class="adm-top">' +
-        '<div><div class="adm-brand">DS-FM 공유공간 · 운영진</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
-        '<button class="adm-top-btn" type="button" data-adm="exit">' + esc(opts.exitLabel || "나가기") + '</button>' +
+        '<div><div class="adm-brand">DS-FM 공유공간 · ' + (isSuper ? "총괄 관리자" : "운영 관리자 · " + esc(myCollege)) + '</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        (opts.onRoleChange ? '<select class="adm-select" id="adm-role-switch" style="width:auto;padding:7px 10px;font-size:12.5px;background:rgba(255,255,255,.95)">' +
+          '<option value="총괄"' + (isSuper ? " selected" : "") + '>총괄 관리자 시점</option>' +
+          COLLEGES.map(function(c){ return '<option value="' + esc(c) + '"' + (!isSuper && myCollege === c ? " selected" : "") + '>운영 관리자 · ' + esc(c) + '</option>'; }).join("") +
+        '</select>' : "") +
+        '<button class="adm-top-btn" type="button" data-adm="exit">' + esc(opts.exitLabel || "나가기") + '</button></div>' +
       '</div>' +
       '<nav class="adm-tabs" id="adm-tabs"></nav>' +
+      '<div class="adm-scope">' + (isSuper ?
+        '<span>보기 범위</span><select class="adm-select" id="adm-scope-select" style="width:auto;padding:6px 10px;font-size:13px">' + collegeOptions("전체", true) + '</select>' :
+        '<span>담당 범위</span><b>' + esc(myCollege) + '</b><span style="color:var(--ink-soft)">· 우리 단과대 글·명단만 보이고 관리할 수 있어요</span>') + '</div>' +
       '<main class="adm-main" id="adm-main"></main>';
     var tabsEl = root.querySelector("#adm-tabs");
     var mainEl = root.querySelector("#adm-main");
 
     function counts(){
       return {
-        verify: S.verify_posts.filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
-        suggest: S.suggestion_posts.filter(function(x){ return !x.d.status || x.d.status === "접수"; }).length
+        verify: scoped("verify_posts").filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
+        suggest: scoped("suggestion_posts").filter(function(x){ return !x.d.status || x.d.status === "접수"; }).length
       };
     }
     function renderTabs(){
       var c = counts();
-      tabsEl.innerHTML = TABS.map(function(t){
+      tabsEl.innerHTML = TABS.filter(function(t){ return isSuper || !t.superOnly; }).map(function(t){
         var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : 0;
         return '<button type="button" class="adm-tab' + (t.key === tab ? " active" : "") + '" data-tab="' + t.key + '">' +
           esc(t.label) + (n ? '<span class="adm-count">' + n + '</span>' : "") + '</button>';
@@ -254,14 +301,15 @@
     /* ---------- 각 탭 ---------- */
     function viewDash(){
       var c = counts();
-      var attend = S.attendance_votes.filter(function(x){ return x.d.choice === "attend"; }).length;
-      var absent = S.attendance_votes.filter(function(x){ return x.d.choice === "absent"; }).length;
+      var votesS = scoped("attendance_votes");
+      var attend = votesS.filter(function(x){ return x.d.choice === "attend"; }).length;
+      var absent = votesS.filter(function(x){ return x.d.choice === "absent"; }).length;
       var teams = {};
       function bump(t, k){ t = t || "(반 미지정)"; teams[t] = teams[t] || {posts:0, verify:0, approved:0, roster:0, votes:0}; teams[t][k]++; }
-      S.team_posts.forEach(function(x){ bump(x.d.team, "posts"); });
-      S.verify_posts.forEach(function(x){ bump(x.d.team, "verify"); if(x.d.status === "승인") bump(x.d.team, "approved"); });
-      S.team_roster.forEach(function(x){ bump(x.d.team, "roster"); });
-      S.attendance_votes.forEach(function(x){ bump(x.d.team, "votes"); });
+      scoped("team_posts").forEach(function(x){ bump(x.d.team, "posts"); });
+      scoped("verify_posts").forEach(function(x){ bump(x.d.team, "verify"); if(x.d.status === "승인") bump(x.d.team, "approved"); });
+      scoped("team_roster").forEach(function(x){ bump(x.d.teamKey || x.d.team, "roster"); });
+      votesS.forEach(function(x){ bump(x.d.team, "votes"); });
       var teamNames = Object.keys(teams).sort(function(a,b){ return a.localeCompare(b, "ko", {numeric:true}); });
       var html = '<h2 class="adm-h">한눈에 보기</h2>' +
         '<p class="adm-desc">처리할 일과 활동 현황을 모아봤어요. 카드를 누르면 해당 메뉴로 이동해요.</p>' +
@@ -269,13 +317,13 @@
           stat("verify", "인증 승인 대기", c.verify, "건", c.verify > 0) +
           stat("suggest", "새 건의", c.suggest, "건", c.suggest > 0) +
           stat("vote", "성과보고회 참석", attend, "명", false, "불참 " + absent + "명") +
-          stat("posts", "자유게시판 글", S.private_posts.length, "개") +
-          stat("posts", "사진 게시판", S.photo_posts.length, "개") +
-          stat("notice", "등록된 공지", S.announcements.length, "개") +
+          stat("posts", "자유게시판 글", scoped("private_posts").length, "개") +
+          stat("posts", "사진 게시판", scoped("photo_posts").length, "개") +
+          stat("roster", "명단 인원", scoped("team_roster").length, "명") +
         '</div>' +
-        '<div class="adm-card"><div class="adm-card-title">반(팀)별 활동 현황</div>' +
+        '<div class="adm-card"><div class="adm-card-title">팀별 활동 현황</div>' +
         (teamNames.length ?
-          '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>반</th><th>명단 인원</th><th>팀 게시글</th><th>미션 인증</th><th>승인</th><th>출석 투표</th></tr></thead><tbody>' +
+          '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>팀</th><th>명단 인원</th><th>팀 게시글</th><th>미션 인증</th><th>승인</th><th>출석 투표</th></tr></thead><tbody>' +
           teamNames.map(function(t){ var r = teams[t];
             return '<tr><td><b>' + esc(t) + '</b></td><td>' + r.roster + '</td><td>' + r.posts + '</td><td>' + r.verify + '</td><td>' + r.approved + '</td><td>' + r.votes + '</td></tr>';
           }).join("") + '</tbody></table></div>' +
@@ -296,15 +344,16 @@
     function viewNotice(){
       var editing = editingNoticeId ? S.announcements.filter(function(x){ return x.id === editingNoticeId; })[0] : null;
       var e = editing ? editing.d : {};
-      var list = S.announcements.slice().sort(function(a,b){
+      var list = S.announcements.filter(function(x){ return sharedVisible(x.d); }).sort(function(a,b){
         if(!!b.d.pinned !== !!a.d.pinned) return b.d.pinned ? 1 : -1;
         return byNewest(a,b);
       });
       mainEl.innerHTML = '<h2 class="adm-h">공지 관리</h2>' +
-        '<p class="adm-desc">여기서 올린 공지가 학생 화면 "공지사항"에 바로 보여요. 상단 고정한 공지는 맨 위에 표시되고, 학생이 "확인했어요"를 누른 인원도 볼 수 있어요.</p>' +
+        '<p class="adm-desc">여기서 올린 공지가 학생 화면 "공지사항"에 바로 보여요. "전체" 공지는 모든 학생에게, 단과대를 고르면 그 단과대 학생에게만 보여요.' + (isSuper ? '' : ' 전체 공지는 총괄 관리자만 쓸 수 있어요.') + '</p>' +
         '<div class="adm-card"><div class="adm-card-title">' + (editing ? "공지 수정" : "새 공지 쓰기") + '</div>' +
           '<div class="adm-form">' +
             '<div class="adm-form-row">' +
+              targetField("adm-n-college", e.college) +
               '<select class="adm-select" id="adm-n-tag">' + NOTICE_TAGS.map(function(t){ return '<option' + (e.tag === t ? " selected" : "") + '>' + t + '</option>'; }).join("") + '</select>' +
               '<input class="adm-input" id="adm-n-label" placeholder="제목 (예: PICNIC DAY)" maxlength="80" value="' + esc(e.label || "") + '" style="flex:3 1 240px">' +
             '</div>' +
@@ -316,31 +365,33 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        (S.announcements.length ? "" :
-          '<div class="adm-note">아직 등록된 공지가 없어서, 학생 화면에는 처음에 넣어둔 기본 공지 3개가 보이고 있어요. ' +
-          '<button class="adm-btn ghost small" type="button" data-adm="notice-import" style="margin-left:6px">기본 공지 불러와서 편집하기</button></div>') +
+        (S.announcements.length || !isSuper ? "" :
+          '<div class="adm-note">아직 등록된 공지가 없어요. 기획 단계에서 정리한 공지 3개(PICNIC DAY, QUEST 미션 마감, 활동보고서 제출)를 불러와서 고쳐 쓸 수 있어요. ' +
+          '<button class="adm-btn ghost small" type="button" data-adm="notice-import" style="margin-left:6px">기획 공지 불러오기</button></div>') +
         '<div class="adm-list">' + (list.length ? list.map(function(x){
           var n = x.d, reads = (n.readBy || []).length;
           return '<div class="adm-item' + (n.pinned ? " pinned" : "") + '" data-id="' + esc(x.id) + '">' +
             '<div class="adm-item-top">' + (n.pinned ? '<span class="adm-tag">📌 고정</span>' : "") +
+              '<span class="adm-tag ' + (n.college && n.college !== "전체" ? "" : "gray") + '">' + esc(n.college && n.college !== "전체" ? n.college : "전체") + '</span>' +
               '<span class="adm-tag gold">' + esc(n.tag || "공지") + '</span><span class="adm-item-title">' + esc(n.label || "") + '</span></div>' +
             '<div class="adm-item-text">' + esc(n.detail || "") + '</div>' +
             '<div class="adm-item-meta">' + fmtTime(n.createdAt) + ' · 확인 ' + reads + '명</div>' +
             '<div class="adm-item-actions">' +
-              '<button class="adm-btn ghost small" type="button" data-adm="notice-edit">수정</button>' +
-              '<button class="adm-btn ghost small" type="button" data-adm="notice-pin">' + (n.pinned ? "고정 해제" : "상단 고정") + '</button>' +
+              (canEdit(n) ? '<button class="adm-btn ghost small" type="button" data-adm="notice-edit">수정</button>' +
+              '<button class="adm-btn ghost small" type="button" data-adm="notice-pin">' + (n.pinned ? "고정 해제" : "상단 고정") + '</button>' : "") +
               '<button class="adm-btn ghost small" type="button" data-adm="notice-reads">확인한 사람</button>' +
-              '<button class="adm-btn bad small" type="button" data-adm="notice-del">삭제</button>' +
+              (canEdit(n) ? '<button class="adm-btn bad small" type="button" data-adm="notice-del">삭제</button>' : "") +
             '</div></div>';
         }).join("") : '<div class="adm-empty">등록된 공지가 없어요.</div>') + '</div>';
     }
 
     function viewSched(){
-      var list = S.sched_events.slice().sort(function(a,b){ return String(a.d.date).localeCompare(String(b.d.date)); });
+      var list = S.sched_events.filter(function(x){ return sharedVisible(x.d); }).sort(function(a,b){ return String(a.d.date).localeCompare(String(b.d.date)); });
       var today = new Date(); var tk = today.getFullYear() + "-" + ("0"+(today.getMonth()+1)).slice(-2) + "-" + ("0"+today.getDate()).slice(-2);
       mainEl.innerHTML = '<h2 class="adm-h">일정 관리</h2>' +
         '<p class="adm-desc">등록한 일정은 학생 화면 스케줄 보드 캘린더와 홈의 "다가오는 일정"에 표시돼요. 매주 목요일 정기 미팅은 자동으로 표시돼요.</p>' +
         '<div class="adm-card"><div class="adm-card-title">일정 추가</div><div class="adm-form-row">' +
+          targetField("adm-e-college", isSuper ? "전체" : myCollege) +
           '<input class="adm-input" type="date" id="adm-e-date" style="flex:0 1 180px">' +
           '<input class="adm-input" id="adm-e-title" placeholder="일정 제목 (예: 성과보고회)" maxlength="80">' +
           '<button class="adm-btn" type="button" data-adm="event-add" style="flex:0 0 auto">추가</button>' +
@@ -349,13 +400,14 @@
           var past = String(x.d.date) < tk;
           return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;align-items:center;gap:10px;' + (past ? "opacity:.55" : "") + '">' +
             '<span class="adm-tag' + (past ? " gray" : "") + '">' + esc(x.d.date || "") + '</span>' +
+            '<span class="adm-tag gray">' + esc(x.d.college || "전체") + '</span>' +
             '<span class="adm-item-title" style="flex:1">' + esc(x.d.title || "") + '</span>' +
-            '<button class="adm-btn bad small" type="button" data-adm="event-del">삭제</button></div>';
+            (canEdit(x.d) ? '<button class="adm-btn bad small" type="button" data-adm="event-del">삭제</button>' : "") + '</div>';
         }).join("") : '<div class="adm-empty">등록된 일정이 없어요.</div>') + '</div>';
     }
 
     function viewVerify(){
-      var list = S.verify_posts.slice().sort(byNewest);
+      var list = scoped("verify_posts").sort(byNewest);
       if(verifyFilter !== "all") list = list.filter(function(x){ return (x.d.status || "확인중") === verifyFilter; });
       mainEl.innerHTML = '<h2 class="adm-h">인증 승인</h2>' +
         '<p class="adm-desc">학생들이 올린 미션 인증샷을 확인하고 승인·반려해요. 결과는 학생 화면 인증게시판과 마이페이지에 바로 반영돼요.</p>' +
@@ -379,7 +431,7 @@
     }
 
     function viewSuggest(){
-      var list = S.suggestion_posts.slice().sort(byNewest);
+      var list = scoped("suggestion_posts").sort(byNewest);
       mainEl.innerHTML = '<h2 class="adm-h">건의함</h2>' +
         '<p class="adm-desc">처리 상태와 답변을 남기면 학생 화면 "운영진에게 건의"에 함께 표시돼요. 익명 건의는 작성자가 "익명"으로만 보여요.</p>' +
         '<div class="adm-actions" style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="csv-suggest">CSV로 내려받기</button></div>' +
@@ -400,11 +452,11 @@
 
     function viewPosts(){
       var boards = [["private_posts","자유게시판"],["photo_posts","사진 게시판"],["team_posts","팀별 게시판"]];
-      var list = (S[postsBoard] || []).slice().sort(byNewest);
+      var list = scoped(postsBoard).sort(byNewest);
       mainEl.innerHTML = '<h2 class="adm-h">게시물 관리</h2>' +
         '<p class="adm-desc">부적절한 글이나 잘못 올라간 글을 삭제할 수 있어요. 삭제하면 되돌릴 수 없어요.</p>' +
         '<div class="adm-filters">' + boards.map(function(b){
-          return '<button type="button" class="adm-tab' + (postsBoard === b[0] ? " active" : "") + '" data-board="' + b[0] + '">' + b[1] + ' <span class="adm-count">' + (S[b[0]] || []).length + '</span></button>';
+          return '<button type="button" class="adm-tab' + (postsBoard === b[0] ? " active" : "") + '" data-board="' + b[0] + '">' + b[1] + ' <span class="adm-count">' + scoped(b[0]).length + '</span></button>';
         }).join("") + '</div>' +
         '<div class="adm-list">' + (list.length ? list.map(function(x){
           var p = x.d;
@@ -418,7 +470,7 @@
     }
 
     function viewVote(){
-      var list = S.attendance_votes.slice().sort(function(a,b){ return String(a.d.team || "").localeCompare(String(b.d.team || ""), "ko", {numeric:true}); });
+      var list = scoped("attendance_votes").sort(function(a,b){ return String(a.d.team || "").localeCompare(String(b.d.team || ""), "ko", {numeric:true}); });
       var attend = list.filter(function(x){ return x.d.choice === "attend"; }).length;
       mainEl.innerHTML = '<h2 class="adm-h">성과보고회 출석 투표</h2>' +
         '<p class="adm-desc">11/26(목) 성과보고회 참석 여부를 투표한 사람 명단이에요.</p>' +
@@ -426,7 +478,7 @@
           stat("vote", "참석", attend, "명") + stat("vote", "불참", list.length - attend, "명") + stat("vote", "투표 인원", list.length, "명") +
         '</div>' +
         '<div class="adm-card"><div class="adm-actions"><button class="adm-btn ghost small" type="button" data-adm="csv-vote">CSV로 내려받기</button></div>' +
-        (list.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>반</th><th>이름</th><th>응답</th><th>시각</th></tr></thead><tbody>' +
+        (list.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>팀</th><th>이름</th><th>응답</th><th>시각</th></tr></thead><tbody>' +
           list.map(function(x){ var v = x.d;
             return '<tr><td>' + esc(v.team || "") + '</td><td>' + esc(v.name || "") + '</td><td>' +
               (v.choice === "attend" ? '<span class="adm-tag green">참석</span>' : '<span class="adm-tag gray">불참</span>') + '</td><td>' + fmtTime(v.createdAt) + '</td></tr>';
@@ -434,36 +486,69 @@
     }
 
     function viewRoster(){
+      var list = scoped("team_roster");
+      var keyed = {};
+      S.login_keys.forEach(function(k){ if(k.d.rosterId) keyed[k.d.rosterId] = true; });
       var groups = {};
-      S.team_roster.forEach(function(x){ var t = x.d.team || "(반 미지정)"; (groups[t] = groups[t] || []).push(x); });
+      list.forEach(function(x){ var t = x.d.teamKey || ((x.d.college || "") + " " + (x.d.team || "")); (groups[t] = groups[t] || []).push(x); });
       var names = Object.keys(groups).sort(function(a,b){ return a.localeCompare(b, "ko", {numeric:true}); });
+      var mentors = list.filter(function(x){ return x.d.role === "멘토"; }).length;
       mainEl.innerHTML = '<h2 class="adm-h">멘토·멘티 명단</h2>' +
-        '<p class="adm-desc">여기서 등록한 명단이 각 반의 팀별 게시판 오른쪽에 표시돼요. 반 이름은 학생들이 로그인할 때 쓰는 반명과 똑같이 적어주세요 (예: 1반).</p>' +
-        '<div class="adm-card"><div class="adm-card-title">명단 추가</div><div class="adm-form-row">' +
-          '<input class="adm-input" id="adm-r-team" placeholder="반 (예: 1반)" maxlength="20" style="flex:0 1 120px">' +
-          '<input class="adm-input" id="adm-r-name" placeholder="이름" maxlength="20">' +
-          '<select class="adm-select" id="adm-r-role" style="flex:0 1 110px"><option>멘토</option><option>멘티</option></select>' +
-          '<input class="adm-input" id="adm-r-major" placeholder="전공 (선택)" maxlength="30">' +
+        '<p class="adm-desc">여기 등록된 사람만 학생 사이트에 로그인할 수 있어요. 학생은 <b>이름 + 휴대폰 번호 뒷자리 4자리</b>로 로그인하고, 단과대·팀·멘토/멘티는 명단에 적힌 대로 자동으로 정해져요.</p>' +
+        '<div class="adm-stats">' + stat("roster", "등록 인원", list.length, "명") + stat("roster", "멘토", mentors, "명") + stat("roster", "멘티", list.length - mentors, "명") + stat("roster", "팀 수", names.length, "개") + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">한 명씩 추가</div><div class="adm-form-row">' +
+          (isSuper ? '<select class="adm-select" id="adm-r-college" style="flex:1 1 170px">' + collegeOptions(collegeFilter !== "전체" ? collegeFilter : COLLEGES[0], false) + '</select>'
+                   : '<input class="adm-input" id="adm-r-college" value="' + esc(myCollege) + '" disabled style="flex:1 1 170px">') +
+          '<input class="adm-input" id="adm-r-team" placeholder="팀 (예: 1팀)" maxlength="20" style="flex:0 1 110px">' +
+          '<input class="adm-input" id="adm-r-name" placeholder="이름" maxlength="20" style="flex:1 1 110px">' +
+          '<select class="adm-select" id="adm-r-role" style="flex:0 1 100px"><option>멘토</option><option>멘티</option></select>' +
+          '<input class="adm-input" id="adm-r-pin" placeholder="휴대폰 뒷자리 4" inputmode="numeric" maxlength="4" style="flex:0 1 130px">' +
+          '<input class="adm-input" id="adm-r-major" placeholder="전공 (선택)" maxlength="30" style="flex:1 1 130px">' +
           '<button class="adm-btn" type="button" data-adm="roster-add" style="flex:0 0 auto">추가</button>' +
         '</div>' +
-        '<div class="adm-desc" style="margin-top:10px">여러 명을 한 번에 넣으려면 아래 칸에 엑셀/구글시트에서 <b>반, 이름, 역할, 전공</b> 순서의 표를 복사해서 붙여넣으세요.</div>' +
-        '<textarea class="adm-textarea" id="adm-r-bulk" placeholder="1반	김OO	멘토	경영학과&#10;1반	이OO	멘티	심리학과" style="margin-top:8px;min-height:80px"></textarea>' +
+        '<div class="adm-desc" style="margin-top:14px">받은 명단을 한꺼번에 넣으려면, 엑셀에서 아래 순서의 열을 복사해서 붙여넣으세요 (머리글 줄은 있어도 돼요).<br><b>단과대 · 팀 · 이름 · 역할(멘토/멘티) · 휴대폰 뒷자리 4자리 · 전공(선택)</b>' + (isSuper ? "" : '<br>' + esc(myCollege) + '이 아닌 줄은 건너뛰어요.') + '</div>' +
+        '<textarea class="adm-textarea" id="adm-r-bulk" placeholder="과학기술대학	1팀	김OO	멘토	1234	화학과&#10;과학기술대학	1팀	이OO	멘티	5678	수학과" style="margin-top:8px;min-height:90px"></textarea>' +
         '<div class="adm-actions" style="margin-top:8px"><button class="adm-btn ghost" type="button" data-adm="roster-bulk">붙여넣은 명단 한꺼번에 등록</button></div>' +
+        '<div class="adm-desc" id="adm-r-progress" style="margin-top:6px"></div>' +
         '</div>' +
         (names.length ? names.map(function(t){
-          var members = groups[t].slice().sort(function(a,b){ return (a.d.role === "멘토" ? 0 : 1) - (b.d.role === "멘토" ? 0 : 1); });
+          var members = groups[t].slice().sort(function(a,b){ return (a.d.role === "멘토" ? 0 : 1) - (b.d.role === "멘토" ? 0 : 1) || String(a.d.name).localeCompare(String(b.d.name), "ko"); });
           return '<div class="adm-card"><div class="adm-card-title">' + esc(t) + ' <span class="adm-tag gray">' + members.length + '명</span></div>' +
             '<div class="adm-table-wrap" style="margin-top:0"><table class="adm-table"><tbody>' + members.map(function(x){
               return '<tr data-id="' + esc(x.id) + '"><td><b>' + esc(x.d.name || "") + '</b></td><td><span class="adm-tag' + (x.d.role === "멘토" ? "" : " gray") + '">' + esc(x.d.role || "") + '</span></td><td>' + esc(x.d.major || "") + '</td>' +
+                '<td>' + (keyed[x.id] ? '<span class="adm-tag green">로그인 가능</span>' : '<span class="adm-tag red">로그인 정보 없음</span>') + '</td>' +
                 '<td style="text-align:right"><button class="adm-btn bad small" type="button" data-adm="roster-del">삭제</button></td></tr>';
             }).join("") + '</tbody></table></div></div>';
-        }).join("") : '<div class="adm-empty">등록된 명단이 없어요.</div>') +
-        '<div class="adm-note">구글 시트로 명단을 관리하는 방법도 있어요 (배포가이드 9장). 시트를 연결하면 학생 화면은 시트 명단을 우선으로 보여줘요.</div>';
+        }).join("") : '<div class="adm-empty">등록된 명단이 없어요.</div>');
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster};
-    function render(){
+    function viewAccounts(){
+      var list = S.admins.slice().sort(function(a,b){ return (a.d.role === "총괄" ? 0 : 1) - (b.d.role === "총괄" ? 0 : 1) || String(a.d.college || "").localeCompare(String(b.d.college || ""), "ko"); });
+      mainEl.innerHTML = '<h2 class="adm-h">운영진 계정</h2>' +
+        '<p class="adm-desc">운영진 페이지에 들어올 사람과 권한을 정해요. <b>총괄 관리자</b>는 모든 단과대와 계정 관리를, <b>운영 관리자</b>는 담당 단과대의 공지·일정·인증·건의·게시물·명단만 관리해요.</p>' +
+        '<div class="adm-card"><div class="adm-card-title">운영진 추가</div><div class="adm-form-row">' +
+          '<input class="adm-input" id="adm-a-email" type="email" placeholder="이메일 (로그인 아이디)" style="flex:2 1 220px">' +
+          '<input class="adm-input" id="adm-a-name" placeholder="이름·소속 (예: 홍길동 조교)" maxlength="30">' +
+          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option></select>' +
+          '<select class="adm-select" id="adm-a-college" style="flex:1 1 170px">' + collegeOptions(COLLEGES[0], false) + '</select>' +
+          '<button class="adm-btn" type="button" data-adm="account-add" style="flex:0 0 auto">추가</button>' +
+        '</div>' +
+        '<div class="adm-note">추가한 뒤, 같은 이메일로 <b>Firebase 콘솔 → Authentication → 사용자 추가</b>에서 비밀번호를 만들어 전달해주세요. 그 이메일·비밀번호로 운영진 페이지에 로그인하면 여기서 정한 권한이 적용돼요.</div>' +
+        '</div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+            '<span class="adm-tag' + (x.d.role === "총괄" ? "" : " gold") + '">' + (x.d.role === "총괄" ? "총괄 관리자" : "운영 관리자") + '</span>' +
+            (x.d.role === "운영" ? '<span class="adm-tag gray">' + esc(x.d.college || "") + '</span>' : "") +
+            '<span class="adm-item-title">' + esc(x.d.name || "") + '</span>' +
+            '<span class="adm-item-meta" style="margin:0;flex:1">' + esc(x.id) + '</span>' +
+            '<button class="adm-btn bad small" type="button" data-adm="account-del">삭제</button></div>';
+        }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
+    }
+
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, accounts:viewAccounts};
+    function render(force){
       renderTabs();
+      if(force){ VIEWS[tab](); return; }
       /* 입력 중인 화면은 실시간 갱신으로 덮어쓰지 않아요 */
       var ae = document.activeElement;
       if(ae && mainEl.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
@@ -471,7 +556,27 @@
     }
     function go(t){ tab = t; editingNoticeId = null; renderTabs(); VIEWS[tab](); window.scrollTo(0,0); }
 
+    /* 명단 1명 등록: team_roster(공개 명단) + login_keys(로그인 확인용, 이름+뒷자리 해시가 문서 ID) */
+    function addMember(p){
+      var teamKey = p.college + " " + p.team;
+      return keyFor(p.name, p.pin).then(function(key){
+        return col("login_keys").doc(key).get().then(function(snap){
+          var exists = snap && (typeof snap.exists === "function" ? snap.exists() : snap.exists);
+          if(exists) return "같은 이름과 휴대폰 뒷자리로 이미 등록돼 있어요.";
+          return col("team_roster").add({ college: p.college, team: p.team, teamKey: teamKey, name: p.name, role: p.role, major: p.major || "", createdAt: Date.now() })
+            .then(function(ref){
+              return col("login_keys").doc(key).set({ rosterId: ref.id, name: p.name, college: p.college, team: p.team, teamKey: teamKey, role: p.role, createdAt: Date.now() });
+            }).then(function(){ return ""; });
+        });
+      }).catch(function(e){ return "저장하지 못했어요 (" + (e && e.message ? e.message : e) + ")"; });
+    }
+
     /* ---------- 이벤트 ---------- */
+    root.addEventListener("change", function(e){
+      if(e.target.id === "adm-scope-select"){ collegeFilter = e.target.value; render(true); }
+      if(e.target.id === "adm-role-switch" && opts.onRoleChange){ opts.onRoleChange(e.target.value); }
+      if(e.target.id === "adm-a-role"){ var cs = root.querySelector("#adm-a-college"); if(cs) cs.disabled = e.target.value === "총괄"; }
+    });
     root.addEventListener("click", function(e){
       var t = e.target.closest("[data-tab]");
       if(t && root.contains(t)){ go(t.dataset.tab); return; }
@@ -491,7 +596,7 @@
         var label = root.querySelector("#adm-n-label").value.trim();
         var detail = root.querySelector("#adm-n-detail").value.trim();
         if(!label){ alert("공지 제목을 입력해주세요."); return; }
-        var data = { tag: root.querySelector("#adm-n-tag").value, label: label, detail: detail, pinned: root.querySelector("#adm-n-pin").checked };
+        var data = { college: isSuper ? root.querySelector("#adm-n-college").value : myCollege, tag: root.querySelector("#adm-n-tag").value, label: label, detail: detail, pinned: root.querySelector("#adm-n-pin").checked };
         if(editingNoticeId){ act(col("announcements").doc(editingNoticeId).update(data)); }
         else { data.createdAt = Date.now(); data.readBy = []; act(col("announcements").add(data)); }
         editingNoticeId = null; document.activeElement && document.activeElement.blur(); viewNotice(); return;
@@ -507,14 +612,14 @@
       if(a === "notice-del"){ if(confirm("이 공지를 삭제할까요?")) act(col("announcements").doc(id).delete()); return; }
       if(a === "notice-import"){
         (opts.defaultNotices || []).forEach(function(n, i){
-          act(col("announcements").add({ tag: n.tag, label: n.label, detail: n.detail, pinned: false, readBy: [], createdAt: Date.now() - i * 1000 }));
+          act(col("announcements").add({ college: "전체", tag: n.tag, label: n.label, detail: n.detail, pinned: false, readBy: [], createdAt: Date.now() - i * 1000 }));
         });
         return;
       }
       if(a === "event-add"){
         var date = root.querySelector("#adm-e-date").value, title = root.querySelector("#adm-e-title").value.trim();
         if(!date || !title){ alert("날짜와 제목을 입력해주세요."); return; }
-        act(col("sched_events").add({ date: date, title: title, createdAt: Date.now() }));
+        act(col("sched_events").add({ date: date, title: title, college: isSuper ? root.querySelector("#adm-e-college").value : myCollege, createdAt: Date.now() }));
         root.querySelector("#adm-e-title").value = ""; b.blur(); return;
       }
       if(a === "event-del"){ if(confirm("이 일정을 삭제할까요?")) act(col("sched_events").doc(id).delete()); return; }
@@ -529,51 +634,106 @@
       if(a === "s-del"){ if(confirm("이 건의를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
       if(a === "post-del"){ if(confirm("이 글을 삭제할까요? 되돌릴 수 없어요.")) act(col(postsBoard).doc(id).delete()); return; }
       if(a === "roster-add"){
-        var rt = root.querySelector("#adm-r-team").value.trim(), rn = root.querySelector("#adm-r-name").value.trim();
-        if(!rt || !rn){ alert("반과 이름을 입력해주세요."); return; }
-        act(col("team_roster").add({ team: rt, name: rn, role: root.querySelector("#adm-r-role").value, major: root.querySelector("#adm-r-major").value.trim(), createdAt: Date.now() }));
-        root.querySelector("#adm-r-name").value = ""; root.querySelector("#adm-r-major").value = ""; root.querySelector("#adm-r-name").focus(); return;
+        var rc = isSuper ? root.querySelector("#adm-r-college").value : myCollege;
+        var person = { college: rc, team: root.querySelector("#adm-r-team").value.trim(), name: root.querySelector("#adm-r-name").value.trim(),
+          role: root.querySelector("#adm-r-role").value, pin: root.querySelector("#adm-r-pin").value.replace(/\D/g, ""), major: root.querySelector("#adm-r-major").value.trim() };
+        if(!person.team || !person.name){ alert("팀과 이름을 입력해주세요."); return; }
+        if(person.pin.length !== 4){ alert("휴대폰 번호 뒷자리 4자리를 입력해주세요."); return; }
+        addMember(person).then(function(msg){
+          if(msg){ alert(msg); return; }
+          root.querySelector("#adm-r-name").value = ""; root.querySelector("#adm-r-pin").value = ""; root.querySelector("#adm-r-major").value = "";
+          root.querySelector("#adm-r-name").focus();
+        });
+        return;
       }
       if(a === "roster-bulk"){
         var lines = root.querySelector("#adm-r-bulk").value.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
-        var rows = lines.map(function(l){ return l.split(/\t|,/).map(function(s){ return s.trim(); }); })
-          .filter(function(r){ return r[0] && r[1] && !(r[0] === "반" || r[0] === "팀" || r[1] === "이름"); });
-        if(!rows.length){ alert("등록할 명단이 없어요. 반, 이름, 역할, 전공 순서로 붙여넣어 주세요."); return; }
-        if(!confirm(rows.length + "명을 등록할까요?")) return;
-        rows.forEach(function(r, i){ act(col("team_roster").add({ team: r[0], name: r[1], role: r[2] || "멘티", major: r[3] || "", createdAt: Date.now() + i })); });
-        root.querySelector("#adm-r-bulk").value = ""; return;
+        var people = [], skipped = [];
+        lines.forEach(function(l){
+          var r = l.split(/\t|,/).map(function(x){ return x.trim(); });
+          if(/단과|소속/.test(r[0]) || r[2] === "이름") return;
+          var person = { college: r[0], team: r[1], name: r[2], role: /멘토/.test(r[3] || "") ? "멘토" : "멘티", pin: String(r[4] || "").replace(/\D/g, "").slice(-4), major: r[5] || "" };
+          if(!person.college || !person.team || !person.name || person.pin.length !== 4){ skipped.push(l + "  ← 칸이 비었거나 뒷자리가 4자리가 아님"); return; }
+          if(COLLEGES.indexOf(person.college) < 0){ skipped.push(l + "  ← 단과대 이름 확인 (" + COLLEGES.join(", ") + ")"); return; }
+          if(!isSuper && person.college !== myCollege){ skipped.push(l + "  ← 담당 단과대가 아님"); return; }
+          people.push(person);
+        });
+        if(!people.length){ alert("등록할 명단이 없어요." + (skipped.length ? "\n\n건너뛴 줄:\n" + skipped.slice(0, 10).join("\n") : "")); return; }
+        if(!confirm(people.length + "명을 등록할까요?" + (skipped.length ? "\n(건너뛸 줄 " + skipped.length + "개)" : ""))) return;
+        var prog = root.querySelector("#adm-r-progress"), done = 0, warns = [], finished = 0, idx = 0;
+        /* 여러 명을 동시에(6명씩) 등록해서 1,000명도 몇 분 안에 끝나요 */
+        function worker(){
+          if(idx >= people.length) return Promise.resolve();
+          var pp = people[idx++];
+          return addMember(pp).then(function(msg){
+            if(msg) warns.push(pp.college + " " + pp.team + " " + pp.name + ": " + msg); else done++;
+            finished++;
+            prog.textContent = "등록 중… " + finished + " / " + people.length + " (창을 닫지 마세요)";
+            return worker();
+          });
+        }
+        var pool = []; for(var w = 0; w < 6; w++) pool.push(worker());
+        Promise.all(pool).then(function(){
+          prog.textContent = "";
+          root.querySelector("#adm-r-bulk").value = "";
+          alert(done + "명 등록했어요." + (warns.length ? "\n\n확인이 필요한 사람 (" + warns.length + "명):\n" + warns.slice(0, 20).join("\n") : "") + (skipped.length ? "\n\n건너뛴 줄:\n" + skipped.slice(0, 15).join("\n") : ""));
+          render(true);
+        });
+        return;
       }
-      if(a === "roster-del"){ if(confirm("명단에서 삭제할까요?")) act(col("team_roster").doc(id).delete()); return; }
+      if(a === "roster-del"){
+        if(!confirm("명단에서 삭제할까요? 이 사람은 더 이상 로그인할 수 없어요.")) return;
+        S.login_keys.filter(function(k){ return k.d.rosterId === id; }).forEach(function(k){ act(col("login_keys").doc(k.id).delete()); });
+        act(col("team_roster").doc(id).delete());
+        return;
+      }
+      if(a === "account-add"){
+        var em = root.querySelector("#adm-a-email").value.trim().toLowerCase();
+        var role = root.querySelector("#adm-a-role").value;
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ alert("이메일을 정확히 입력해주세요."); return; }
+        act(col("admins").doc(em).set({ email: em, name: root.querySelector("#adm-a-name").value.trim(), role: role,
+          college: role === "운영" ? root.querySelector("#adm-a-college").value : "", createdAt: Date.now() }));
+        root.querySelector("#adm-a-email").value = ""; root.querySelector("#adm-a-name").value = ""; b.blur();
+        return;
+      }
+      if(a === "account-del"){ if(confirm(id + " 의 운영진 권한을 삭제할까요?")) act(col("admins").doc(id).delete()); return; }
       if(a === "csv-vote"){
-        downloadCsv("성과보고회_출석투표.csv", [["반","이름","응답","시각"]].concat(S.attendance_votes.map(function(x){
+        downloadCsv("성과보고회_출석투표.csv", [["팀","이름","응답","시각"]].concat(scoped("attendance_votes").map(function(x){
           return [x.d.team, x.d.name, x.d.choice === "attend" ? "참석" : "불참", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
         }))); return;
       }
       if(a === "csv-suggest"){
-        downloadCsv("건의함.csv", [["작성자","내용","상태","답변","작성시각"]].concat(S.suggestion_posts.slice().sort(byNewest).map(function(x){
-          return [x.d.author, x.d.text, x.d.status || "접수", x.d.reply || "", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
+        downloadCsv("건의함.csv", [["단과대","작성자","내용","상태","답변","작성시각"]].concat(scoped("suggestion_posts").sort(byNewest).map(function(x){
+          return [x.d.college || "", x.d.author, x.d.text, x.d.status || "접수", x.d.reply || "", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
         }))); return;
       }
       if(a === "csv-teams"){
         var tm = mainEl._teams || {}, tn = mainEl._teamNames || [];
-        downloadCsv("반별_활동현황.csv", [["반","명단 인원","팀 게시글","미션 인증","승인","출석 투표"]].concat(tn.map(function(t){
+        downloadCsv("팀별_활동현황.csv", [["팀","명단 인원","팀 게시글","미션 인증","승인","출석 투표"]].concat(tn.map(function(t){
           var r = tm[t]; return [t, r.roster, r.posts, r.verify, r.approved, r.votes];
         }))); return;
       }
     });
 
+    /* 대량 등록 중 화면이 수천 번 다시 그려지지 않도록 묶어서 그려요 */
+    var renderTimer = null;
+    function scheduleRender(){
+      if(renderTimer) return;
+      renderTimer = setTimeout(function(){ renderTimer = null; render(); }, 300);
+    }
+
     /* ---------- 실시간 구독 ---------- */
-    COLLS.forEach(function(name){
+    COLLS.concat(isSuper ? ["admins"] : []).forEach(function(name){
       try{
         var u = col(name).onSnapshot(function(snap){
           S[name] = snap.docs.map(function(d){ return { id: String(d.id), d: d.data() || {} }; });
-          render();
+          scheduleRender();
         }, function(err){ errors[name] = err; });
         unsubs.push(u);
       }catch(e){ errors[name] = e; }
     });
     render();
-    return { destroy: function(){ unsubs.forEach(function(u){ try{ if(typeof u === "function") u(); }catch(e){} }); root.innerHTML = ""; } };
+    return { destroy: function(){ unsubs.forEach(function(u){ try{ if(typeof u === "function") u(); }catch(e){} }); if(root.parentNode) root.parentNode.removeChild(root); } };
   }
 
   window.DSFMAdmin = { mount: mount };
@@ -593,6 +753,11 @@
     appId: "1:431929065623:web:bbd20ab2a8319fe2b569d2"
   };
 
+  /* 사이트 관리자(개발 담당) UID — 운영진 계정 목록과 상관없이 항상 총괄 권한.
+     firestore.rules 의 OWNER UID 목록과 똑같이 맞춰주세요. */
+  var OWNER_UIDS = ["0Amr9PWdKTNxUCeFuwVOFGD3AWo2"];
+  var COLLEGES = ["글로벌융합대학","아트앤디자인대학","과학기술대학","자유전공학부"];
+
   /* 학생 화면에 처음 들어있는 기본 공지 — "기본 공지 불러오기" 버튼이 이걸 Firestore로 옮겨요 */
   var DEFAULT_NOTICES = [
     {tag:"전체 이벤트", label:"PICNIC DAY", detail:"10월 18일(일) 오후 1시, 영근터에서 진행돼요. 팀별 참가 신청은 10월 12일까지 QUEST BOARD에서 받아요."},
@@ -605,7 +770,7 @@
   var ready = false;
   if(typeof firebase === "undefined"){
     showErr("Firebase를 불러오지 못했어요. 인터넷 연결을 확인해주세요.");
-  } else if(firebaseConfig.apiKey === "YOUR_API_KEY"){
+  } else if(false){
     showErr("firebaseConfig가 아직 설정되지 않았어요. 이 파일 아래쪽의 firebaseConfig에 Firebase 설정값을 붙여넣어 주세요.");
   } else {
     firebase.initializeApp(firebaseConfig);
@@ -640,16 +805,34 @@
     firebase.auth().onAuthStateChanged(function(user){
       var root = document.getElementById("admin-root");
       if(user){
+        if(handle) return;
         document.getElementById("login-screen").style.display = "none";
         root.style.display = "block";
-        if(!handle){
-          handle = window.DSFMAdmin.mount(root, firebase.firestore(), {
-            whoami: user.email + " 로 로그인됨",
+        var fdb = firebase.firestore();
+        function mountWith(role, college, label){
+          handle = window.DSFMAdmin.mount(root, fdb, {
+            role: role, college: college, colleges: COLLEGES,
+            whoami: user.email + " · " + label,
             exitLabel: "로그아웃",
             defaultNotices: DEFAULT_NOTICES,
             onExit: function(){ firebase.auth().signOut(); }
           });
         }
+        if(OWNER_UIDS.indexOf(user.uid) >= 0){ mountWith("총괄", "", "사이트 관리자"); return; }
+        var email = String(user.email || "").toLowerCase();
+        fdb.collection("admins").doc(email).get().then(function(snap){
+          var a = snap.exists ? snap.data() : null;
+          if(!a || (a.role !== "총괄" && a.role !== "운영") || (a.role === "운영" && COLLEGES.indexOf(a.college) < 0)){
+            root.style.display = "none"; document.getElementById("login-screen").style.display = "flex";
+            firebase.auth().signOut();
+            showErr("운영진 권한이 등록되지 않은 계정이에요. 총괄 관리자에게 '운영진 계정' 메뉴에서 이 이메일을 등록해달라고 요청해주세요.");
+            return;
+          }
+          mountWith(a.role, a.role === "운영" ? a.college : "", a.role === "총괄" ? "총괄 관리자" : "운영 관리자 · " + a.college);
+        }).catch(function(err){
+          firebase.auth().signOut();
+          showErr("권한을 확인하지 못했어요: " + (err.message || err.code));
+        });
       } else {
         if(handle){ handle.destroy(); handle = null; }
         root.style.display = "none";
