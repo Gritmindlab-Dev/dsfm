@@ -495,7 +495,7 @@
     function viewRoster(){
       var list = scoped("team_roster");
       var keyed = {};
-      S.login_keys.forEach(function(k){ if(k.d.rosterId) keyed[k.d.rosterId] = true; });
+      S.login_keys.forEach(function(k){ if(k.d.rosterId) keyed[k.d.rosterId] = true; (k.d.choices || []).forEach(function(c){ keyed[c.rosterId] = true; }); });
       var groups = {};
       list.forEach(function(x){ var t = x.d.teamKey || ((x.d.college || "") + " " + (x.d.team || "")); (groups[t] = groups[t] || []).push(x); });
       var names = Object.keys(groups).sort(function(a,b){ return a.localeCompare(b, "ko", {numeric:true}); });
@@ -606,10 +606,17 @@
       return keyFor(p.name, p.pin).then(function(key){
         return col("login_keys").doc(key).get().then(function(snap){
           var exists = snap && (typeof snap.exists === "function" ? snap.exists() : snap.exists);
-          if(exists) return "같은 이름과 휴대폰 뒷자리로 이미 등록돼 있어요.";
+          var old = exists ? snap.data() : null;
+          if(old && old.adminEmail) return "운영진 계정과 이름·뒷자리가 같아요. 운영진에게 확인해주세요.";
+          /* 이름+뒷자리가 같은 사람이 이미 있으면 로그인할 때 반을 고르도록 choices 에 함께 넣어요 */
+          var prev = old ? (old.choices && old.choices.length ? old.choices : [{ rosterId: old.rosterId, college: old.college, team: old.team, teamKey: old.teamKey, role: old.role }]) : [];
+          if(prev.some(function(c){ return c.teamKey === teamKey; })) return "같은 반에 같은 이름과 휴대폰 뒷자리로 이미 등록돼 있어요.";
           return col("team_roster").add({ college: p.college, team: p.team, teamKey: teamKey, name: p.name, role: p.role, major: p.major || "", createdAt: Date.now() })
             .then(function(ref){
-              return col("login_keys").doc(key).set({ rosterId: ref.id, name: p.name, college: p.college, team: p.team, teamKey: teamKey, role: p.role, createdAt: Date.now() });
+              var me = { rosterId: ref.id, college: p.college, team: p.team, teamKey: teamKey, role: p.role };
+              if(!prev.length) return col("login_keys").doc(key).set({ rosterId: ref.id, name: p.name, college: p.college, team: p.team, teamKey: teamKey, role: p.role, createdAt: Date.now() });
+              var first = prev[0];
+              return col("login_keys").doc(key).set({ rosterId: first.rosterId, name: p.name, college: first.college, team: first.team, teamKey: first.teamKey, role: first.role, choices: prev.concat([me]), createdAt: Date.now() });
             }).then(function(){ return ""; });
         });
       }).catch(function(e){ return "저장하지 못했어요 (" + (e && e.message ? e.message : e) + ")"; });
@@ -727,7 +734,13 @@
       }
       if(a === "roster-del"){
         if(!confirm("명단에서 삭제할까요? 이 사람은 더 이상 로그인할 수 없어요.")) return;
-        S.login_keys.filter(function(k){ return k.d.rosterId === id; }).forEach(function(k){ act(col("login_keys").doc(k.id).delete()); });
+        S.login_keys.filter(function(k){ return k.d.rosterId === id || (k.d.choices || []).some(function(c){ return c.rosterId === id; }); }).forEach(function(k){
+          var rest = (k.d.choices || []).filter(function(c){ return c.rosterId !== id; });
+          if(!rest.length || (rest.length === 1 && !k.d.choices.length)){ act(col("login_keys").doc(k.id).delete()); return; }
+          var f = rest[0], nd = { rosterId: f.rosterId, name: k.d.name, college: f.college, team: f.team, teamKey: f.teamKey, role: f.role, createdAt: k.d.createdAt || Date.now() };
+          if(rest.length > 1) nd.choices = rest;
+          act(col("login_keys").doc(k.id).set(nd));
+        });
         act(col("team_roster").doc(id).delete());
         return;
       }
