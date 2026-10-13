@@ -1089,12 +1089,35 @@
         done();
         var ok = snap && (typeof snap.exists === "function" ? snap.exists() : snap.exists);
         if(!ok) return fail("명단에서 찾을 수 없어요. 이름과 휴대폰 뒷자리를 다시 확인해주세요. 계속 안 되면 소속 단과대 운영진에게 문의해주세요.");
-        enterAs(snap.data());
+        var m = snap.data();
+        if(m.choices && m.choices.length > 1) return pickChoice(m);
+        enterAs(m);
       }).catch(function(err){
         done(); fail("확인 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.");
         if(window.console) console.warn(err);
       });
     });
+  }
+  /* 이름+뒷자리가 같은 사람이 여러 반에 있을 때: 단과대·반을 골라서 입장 */
+  function pickChoice(m){
+    var errEl = document.getElementById("login-error");
+    var box = document.getElementById("login-choice");
+    if(!box){
+      box = document.createElement("div"); box.id = "login-choice";
+      box.style.cssText = "margin-top:12px;padding:12px;border-radius:12px;background:#fbf5f1;border:1.5px solid #ecdde1;font-size:13px;line-height:1.5";
+      errEl.parentNode.insertBefore(box, errEl.nextSibling);
+    }
+    box.innerHTML = '<div style="font-weight:700;margin-bottom:8px">같은 이름·뒷자리가 여러 반에 있어요. 내 단과대와 반을 골라주세요.</div>' +
+      m.choices.map(function(c, i){
+        return '<button type="button" data-choice="' + i + '" style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:10px;border:1.5px solid #ecdde1;background:#fff;font:inherit;font-size:14px;text-align:left;cursor:pointer">' +
+          esc(c.college || "") + ' · <b>' + esc(c.team || "") + '</b>' + (c.role === "멘토" ? ' (멘토)' : '') + '</button>';
+      }).join("");
+    box.onclick = function(ev){
+      var b = ev.target.closest("[data-choice]"); if(!b) return;
+      var c = m.choices[+b.dataset.choice];
+      box.remove();
+      enterAs({ name: m.name, rosterId: c.rosterId, college: c.college, team: c.team, teamKey: c.teamKey, role: c.role });
+    };
   }
   function enterAs(m){
     loggedIn = true;
