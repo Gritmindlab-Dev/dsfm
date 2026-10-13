@@ -154,16 +154,22 @@
 <div id="login-screen">
   <div class="login-card">
     <h1>DS-FM 운영진 페이지</h1>
-    <div class="sub">운영진 계정으로 로그인해주세요.</div>
-    <form id="login-form">
-      <div class="field"><label for="admin-email">이메일</label><input type="email" id="admin-email" autocomplete="username"></div>
+    <div class="sub" id="login-sub">이름, 휴대폰 뒷자리 4자리, 비밀번호를 입력해주세요.</div>
+    <form id="login-form" onsubmit="return false">
+      <div id="pin-fields">
+        <div class="field"><label for="admin-name">이름</label><input type="text" id="admin-name" autocomplete="username"></div>
+        <div class="field"><label for="admin-pin">휴대폰 뒷자리 4자리</label><input type="tel" id="admin-pin" inputmode="numeric" maxlength="4"></div>
+      </div>
+      <div id="email-fields" style="display:none">
+        <div class="field"><label for="admin-email">이메일</label><input type="email" id="admin-email"></div>
+      </div>
       <div class="field"><label for="admin-password">비밀번호</label><input type="password" id="admin-password" autocomplete="current-password"></div>
       <button class="login-submit" id="login-submit" type="button">로그인</button>
     </form>
     <div class="login-error" id="login-error"></div>
     <div class="login-note">
       운영진 계정은 총괄 관리자가 등록해요. 비밀번호를 모르면 총괄 관리자에게 문의해주세요.<br>
-      <a href="../">← 학생용 사이트로</a>
+      <a href="../">← 학생용 사이트로</a> · <a href="#" id="mode-toggle" style="font-weight:400;color:var(--ink-soft)">사이트 관리자 이메일 로그인</a>
     </div>
   </div>
 </div>
@@ -273,6 +279,7 @@
           '<option value="총괄"' + (isSuper ? " selected" : "") + '>총괄 관리자 시점</option>' +
           COLLEGES.map(function(c){ return '<option value="' + esc(c) + '"' + (!isSuper && myCollege === c ? " selected" : "") + '>운영 관리자 · ' + esc(c) + '</option>'; }).join("") +
         '</select>' : "") +
+        (opts.adminLogin && opts.adminLogin.canChangeOwn ? '<button class="adm-top-btn" type="button" data-adm="mypw">비밀번호 변경</button>' : "") +
         '<button class="adm-top-btn" type="button" data-adm="exit">' + esc(opts.exitLabel || "나가기") + '</button></div>' +
       '</div>' +
       '<nav class="adm-tabs" id="adm-tabs"></nav>' +
@@ -523,6 +530,43 @@
     }
 
     function viewAccounts(){
+      if(!opts.adminLogin) return viewAccountsEmail();
+      var list = S.admins.slice().sort(function(a,b){ return (a.d.role === "총괄" ? 0 : 1) - (b.d.role === "총괄" ? 0 : 1) || String(a.d.college || "").localeCompare(String(b.d.college || ""), "ko") || String(a.d.name || "").localeCompare(String(b.d.name || ""), "ko"); });
+      mainEl.innerHTML = '<h2 class="adm-h">운영진 계정</h2>' +
+        '<p class="adm-desc">운영진은 <b>이름 + 휴대폰 뒷자리 4자리 + 비밀번호</b>로 운영진 페이지에 로그인해요. <b>총괄 관리자</b>는 모든 단과대와 계정 관리를, <b>운영 관리자</b>는 담당 단과대의 공지·일정·인증·건의·게시물·명단만 관리해요.</p>' +
+        '<div class="adm-card"><div class="adm-card-title">운영진 추가</div><div class="adm-form-row">' +
+          '<input class="adm-input" id="adm-a-name" placeholder="이름" maxlength="20" style="flex:1 1 110px">' +
+          '<input class="adm-input" id="adm-a-pin" placeholder="휴대폰 뒷자리 4자리" inputmode="numeric" maxlength="4" style="flex:1 1 140px">' +
+          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option></select>' +
+          '<select class="adm-select" id="adm-a-college" style="flex:1 1 170px">' + collegeOptions(COLLEGES[0], false) + '</select>' +
+          '<input class="adm-input" id="adm-a-pw" placeholder="처음 비밀번호 (6자 이상)" autocomplete="new-password" style="flex:1 1 170px">' +
+          '<button class="adm-btn" type="button" data-adm="account-add" style="flex:0 0 auto">추가</button>' +
+        '</div>' +
+        '<div class="adm-note">추가한 사람에게 <b>운영진 페이지 주소와 처음 비밀번호</b>를 알려주세요. 로그인한 뒤 오른쪽 위 <b>비밀번호 변경</b>에서 자기 비밀번호로 바꿀 수 있어요. 비밀번호를 잊으면 아래 목록에서 새 비밀번호를 만들어 주면 돼요.</div>' +
+        '</div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var isPin = !!x.d.loginKey;
+          return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+            '<span class="adm-tag' + (x.d.role === "총괄" ? "" : " gold") + '">' + (x.d.role === "총괄" ? "총괄 관리자" : "운영 관리자") + '</span>' +
+            (x.d.role === "운영" ? '<span class="adm-tag gray">' + esc(x.d.college || "") + '</span>' : "") +
+            '<span class="adm-item-title">' + esc(x.d.name || "") + '</span>' +
+            '<span class="adm-item-meta" style="margin:0;flex:1">' + (isPin ? "이름 + 뒷자리 " + esc(x.d.pinHint || "") + " 로그인" : esc(x.id)) + '</span>' +
+            (isPin ? '<input class="adm-input" data-role="newpw" placeholder="새 비밀번호" autocomplete="new-password" style="flex:0 1 150px;padding:7px 10px;font-size:13px">' +
+              '<button class="adm-btn ghost small" type="button" data-adm="account-reset">비밀번호 새로 만들기</button>' : "") +
+            '<button class="adm-btn bad small" type="button" data-adm="account-del">삭제</button></div>';
+        }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
+    }
+
+    function viewMyPw(){
+      mainEl.innerHTML = '<h2 class="adm-h">비밀번호 변경</h2>' +
+        '<div class="adm-card" style="max-width:420px"><div class="adm-form-row" style="flex-direction:column;align-items:stretch">' +
+          '<input class="adm-input" id="adm-pw-1" type="password" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">' +
+          '<input class="adm-input" id="adm-pw-2" type="password" placeholder="새 비밀번호 한 번 더" autocomplete="new-password">' +
+          '<button class="adm-btn" type="button" data-adm="mypw-save">바꾸기</button>' +
+        '</div><div class="adm-note" id="adm-pw-msg">다음 로그인부터 새 비밀번호를 써요.</div></div>';
+    }
+
+    function viewAccountsEmail(){
       var list = S.admins.slice().sort(function(a,b){ return (a.d.role === "총괄" ? 0 : 1) - (b.d.role === "총괄" ? 0 : 1) || String(a.d.college || "").localeCompare(String(b.d.college || ""), "ko"); });
       mainEl.innerHTML = '<h2 class="adm-h">운영진 계정</h2>' +
         '<p class="adm-desc">운영진 페이지에 들어올 사람과 권한을 정해요. <b>총괄 관리자</b>는 모든 단과대와 계정 관리를, <b>운영 관리자</b>는 담당 단과대의 공지·일정·인증·건의·게시물·명단만 관리해요.</p>' +
@@ -545,7 +589,7 @@
         }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, accounts:viewAccounts};
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, accounts:viewAccounts, mypw:viewMyPw};
     function render(force){
       renderTabs();
       if(force){ VIEWS[tab](); return; }
@@ -687,6 +731,47 @@
         act(col("team_roster").doc(id).delete());
         return;
       }
+      if(a === "mypw"){ go("mypw"); return; }
+      if(a === "mypw-save"){
+        var p1 = root.querySelector("#adm-pw-1").value, p2 = root.querySelector("#adm-pw-2").value, msgEl = root.querySelector("#adm-pw-msg");
+        if(p1.length < 6){ msgEl.textContent = "비밀번호는 6자 이상이어야 해요."; return; }
+        if(p1 !== p2){ msgEl.textContent = "두 비밀번호가 달라요."; return; }
+        b.disabled = true; msgEl.textContent = "바꾸는 중…";
+        opts.adminLogin.changeOwn(p1).then(function(){ msgEl.textContent = "바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요."; root.querySelector("#adm-pw-1").value = ""; root.querySelector("#adm-pw-2").value = ""; })
+          .catch(function(e){ msgEl.textContent = (e && e.code === "auth/requires-recent-login") ? "보안을 위해 로그아웃했다가 다시 로그인한 뒤 바꿔주세요." : "바꾸지 못했어요: " + (e && e.message ? e.message : e); })
+          .then(function(){ b.disabled = false; });
+        return;
+      }
+      if(a === "account-add" && opts.adminLogin){
+        var nm = root.querySelector("#adm-a-name").value.replace(/\s+/g, "");
+        var pin = root.querySelector("#adm-a-pin").value.replace(/\D/g, "");
+        var role2 = root.querySelector("#adm-a-role").value;
+        var pw = root.querySelector("#adm-a-pw").value;
+        if(!nm){ alert("이름을 입력해주세요."); return; }
+        if(pin.length !== 4){ alert("휴대폰 뒷자리 4자리를 입력해주세요."); return; }
+        if(pw.length < 6){ alert("처음 비밀번호는 6자 이상이어야 해요."); return; }
+        b.disabled = true; b.textContent = "추가 중…";
+        opts.adminLogin.create({ name: nm, pin: pin, role: role2, college: role2 === "운영" ? root.querySelector("#adm-a-college").value : "", password: pw })
+          .then(function(){ alert(nm + " 님을 추가했어요.\n로그인: 이름 " + nm + " / 뒷자리 " + pin + " / 처음 비밀번호"); viewAccounts(); })
+          .catch(function(e){ alert("추가하지 못했어요: " + (e && e.message ? e.message : e)); b.disabled = false; b.textContent = "추가"; });
+        return;
+      }
+      if(a === "account-reset"){
+        var ad = find("admins"); var npw = item.querySelector('[data-role="newpw"]').value;
+        if(!ad) return;
+        if(npw.length < 6){ alert("새 비밀번호는 6자 이상이어야 해요."); return; }
+        b.disabled = true; b.textContent = "만드는 중…";
+        opts.adminLogin.reset(ad, npw).then(function(){ alert((ad.d.name || "") + " 님의 비밀번호를 새로 만들었어요."); viewAccounts(); })
+          .catch(function(e){ alert("만들지 못했어요: " + (e && e.message ? e.message : e)); b.disabled = false; b.textContent = "비밀번호 새로 만들기"; });
+        return;
+      }
+      if(a === "account-del" && opts.adminLogin){
+        var ad2 = find("admins"); if(!ad2) return;
+        if(!confirm((ad2.d.name || id) + " 님의 운영진 권한을 삭제할까요?")) return;
+        if(ad2.d.loginKey) act(col("login_keys").doc(ad2.d.loginKey).delete());
+        act(col("admins").doc(id).delete());
+        return;
+      }
       if(a === "account-add"){
         var em = root.querySelector("#adm-a-email").value.trim().toLowerCase();
         var role = root.querySelector("#adm-a-role").value;
@@ -785,18 +870,52 @@
     "auth/too-many-requests": "로그인 시도가 너무 많아요. 잠시 후 다시 시도해주세요.",
     "auth/unauthorized-domain": "이 주소가 Firebase에 승인되지 않았어요. Authentication > 설정 > 승인된 도메인에 지금 주소를 추가해주세요."
   };
+  /* 운영진 로그인: 이름 + 휴대폰 뒷자리 → login_keys/{sha256("dsfm-admin|이름|뒷자리")} 에서
+     로그인용 내부 계정(이메일 형식)을 찾아 비밀번호로 Firebase 로그인 */
+  var ADMIN_DOMAIN = "admin.dsfm-455c1.firebaseapp.com";
+  function adminKey(name, pin){
+    var text = "dsfm-admin|" + String(name).replace(/\s+/g, "") + "|" + String(pin).replace(/\D/g, "");
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0" + b.toString(16)).slice(-2); }).join("");
+    });
+  }
+  var emailMode = false;
+  document.getElementById("mode-toggle").addEventListener("click", function(e){
+    e.preventDefault(); emailMode = !emailMode; errEl.style.display = "none";
+    document.getElementById("pin-fields").style.display = emailMode ? "none" : "";
+    document.getElementById("email-fields").style.display = emailMode ? "" : "none";
+    document.getElementById("login-sub").textContent = emailMode ? "사이트 관리자 이메일로 로그인해요." : "이름, 휴대폰 뒷자리 4자리, 비밀번호를 입력해주세요.";
+    this.textContent = emailMode ? "운영진 로그인 (이름·뒷자리)" : "사이트 관리자 이메일 로그인";
+  });
+  function fail(err){ showErr(ERR_KO[err.code] || ("로그인에 실패했어요: " + (err.message || err.code))); }
   function login(){
     if(!ready) return;
     errEl.style.display = "none";
-    var email = document.getElementById("admin-email").value.trim();
     var pw = document.getElementById("admin-password").value;
-    if(!email || !pw){ showErr("이메일과 비밀번호를 입력해주세요."); return; }
-    firebase.auth().signInWithEmailAndPassword(email, pw).catch(function(err){
-      showErr(ERR_KO[err.code] || ("로그인에 실패했어요: " + (err.message || err.code)));
-    });
+    if(emailMode){
+      var email = document.getElementById("admin-email").value.trim();
+      if(!email || !pw){ showErr("이메일과 비밀번호를 입력해주세요."); return; }
+      firebase.auth().signInWithEmailAndPassword(email, pw).catch(fail);
+      return;
+    }
+    var name = document.getElementById("admin-name").value.replace(/\s+/g, "");
+    var pin = document.getElementById("admin-pin").value.replace(/\D/g, "");
+    if(!name){ showErr("이름을 입력해주세요."); return; }
+    if(pin.length !== 4){ showErr("휴대폰 뒷자리 4자리를 입력해주세요."); return; }
+    if(!pw){ showErr("비밀번호를 입력해주세요."); return; }
+    adminKey(name, pin).then(function(key){
+      return firebase.firestore().collection("login_keys").doc(key).get();
+    }).then(function(snap){
+      var d = snap.exists ? snap.data() : null;
+      if(!d || !d.adminEmail){ showErr("등록된 운영진이 아니에요. 이름과 휴대폰 뒷자리를 확인해주세요."); return; }
+      return firebase.auth().signInWithEmailAndPassword(d.adminEmail, pw).catch(function(err){
+        if(err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") showErr("비밀번호가 맞지 않아요.");
+        else fail(err);
+      });
+    }).catch(fail);
   }
   document.getElementById("login-submit").addEventListener("click", login);
-  ["admin-email","admin-password"].forEach(function(id){
+  ["admin-name","admin-pin","admin-email","admin-password"].forEach(function(id){
     document.getElementById(id).addEventListener("keydown", function(e){ if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); login(); } });
   });
 
@@ -809,10 +928,42 @@
         document.getElementById("login-screen").style.display = "none";
         root.style.display = "block";
         var fdb = firebase.firestore();
-        function mountWith(role, college, label){
+        var isPinUser = String(user.email || "").slice(-ADMIN_DOMAIN.length - 1) === "@" + ADMIN_DOMAIN;
+        var adminLogin = {
+          canChangeOwn: isPinUser,
+          changeOwn: function(pw){ return firebase.auth().currentUser.updatePassword(pw); },
+          /* 새 운영진 로그인 계정 만들기 — 보조 앱으로 만들어서 지금 로그인한 총괄 관리자는 그대로 유지 */
+          _make: function(key, pw){
+            var em = "a" + key.slice(0, 20) + "-" + Date.now().toString(36) + "@" + ADMIN_DOMAIN;
+            var app2 = firebase.apps.filter(function(a){ return a.name === "creator"; })[0] || firebase.initializeApp(firebaseConfig, "creator");
+            return app2.auth().createUserWithEmailAndPassword(em, pw).then(function(){ return app2.auth().signOut(); }).then(function(){ return em; });
+          },
+          create: function(p){
+            var self = this, key;
+            return adminKey(p.name, p.pin).then(function(k){ key = k; return fdb.collection("login_keys").doc(key).get(); })
+              .then(function(snap){
+                if(snap.exists) throw new Error("같은 이름과 휴대폰 뒷자리의 운영진이 이미 있어요.");
+                return self._make(key, p.password);
+              }).then(function(em){
+                return fdb.collection("admins").doc(em).set({ email: em, name: p.name, role: p.role, college: p.college, loginKey: key, pinHint: "**" + p.pin.slice(-2), createdAt: Date.now() })
+                  .then(function(){ return fdb.collection("login_keys").doc(key).set({ adminEmail: em, name: p.name, college: "", kind: "admin", createdAt: Date.now() }); });
+              });
+          },
+          /* 비밀번호 재설정 — 새 로그인 계정을 만들어 바꿔 끼우고, 예전 계정은 권한을 지워요 */
+          reset: function(ad, pw){
+            var d = ad.d, oldId = ad.id;
+            return this._make(d.loginKey, pw).then(function(em){
+              var nd = {}; Object.keys(d).forEach(function(k){ nd[k] = d[k]; }); nd.email = em; nd.updatedAt = Date.now();
+              return fdb.collection("admins").doc(em).set(nd)
+                .then(function(){ return fdb.collection("login_keys").doc(d.loginKey).set({ adminEmail: em, name: d.name || "", college: "", kind: "admin", createdAt: Date.now() }); })
+                .then(function(){ return fdb.collection("admins").doc(oldId).delete(); });
+            });
+          }
+        };
+        function mountWith(role, college, label, displayName){
           handle = window.DSFMAdmin.mount(root, fdb, {
-            role: role, college: college, colleges: COLLEGES,
-            whoami: user.email + " · " + label,
+            role: role, college: college, colleges: COLLEGES, adminLogin: adminLogin,
+            whoami: (displayName || user.email) + " · " + label,
             exitLabel: "로그아웃",
             defaultNotices: DEFAULT_NOTICES,
             onExit: function(){ firebase.auth().signOut(); }
@@ -825,10 +976,10 @@
           if(!a || (a.role !== "총괄" && a.role !== "운영") || (a.role === "운영" && COLLEGES.indexOf(a.college) < 0)){
             root.style.display = "none"; document.getElementById("login-screen").style.display = "flex";
             firebase.auth().signOut();
-            showErr("운영진 권한이 등록되지 않은 계정이에요. 총괄 관리자에게 '운영진 계정' 메뉴에서 이 이메일을 등록해달라고 요청해주세요.");
+            showErr("운영진 권한이 없는 계정이에요. 총괄 관리자에게 문의해주세요.");
             return;
           }
-          mountWith(a.role, a.role === "운영" ? a.college : "", a.role === "총괄" ? "총괄 관리자" : "운영 관리자 · " + a.college);
+          mountWith(a.role, a.role === "운영" ? a.college : "", a.role === "총괄" ? "총괄 관리자" : "운영 관리자 · " + a.college, a.name);
         }).catch(function(err){
           firebase.auth().signOut();
           showErr("권한을 확인하지 못했어요: " + (err.message || err.code));
