@@ -1483,6 +1483,15 @@
     return v ? v.choice : null;
   }
   function fmtClose(ts){ var d = new Date(ts); return (d.getMonth()+1) + "/" + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+  /* 우리 팀 참여 현황 (팀원 모두 투표하면 '완료') */
+  function teamProgress(p){
+    var total = (rosterCache || []).length;
+    if(!total) return "";
+    var n = pollVotesCache.filter(function(x){ return x.pollId === p.id; }).length;
+    var done = n >= total;
+    return '<div style="margin-top:8px;font-size:12px;font-weight:700;color:' + (done ? 'var(--good,#3f7a5c)' : 'var(--ink-soft)') + '">' +
+      (done ? '우리 팀 모두 투표 완료 (' + total + '명)' : '우리 팀 ' + n + '/' + total + '명 투표') + '</div>';
+  }
   function renderPolls(){
     var el = document.getElementById("poll-list");
     if(!el) return;
@@ -1499,7 +1508,7 @@
         }).join("") + '</div>' +
         '<div class="vote-mine">' + (closed ? ("투표가 마감됐어요" + (mine ? " · 내 투표: " + esc(mine) : "")) :
           (mine ? "내 투표: " + esc(mine) + " · 마감 전까지 바꿀 수 있어요" : "아직 투표하지 않았어요.")) +
-          (p.closesAt && !closed ? " · " + fmtClose(p.closesAt) + " 마감" : "") + '</div></div>';
+          (p.closesAt && !closed ? " · " + fmtClose(p.closesAt) + " 마감" : "") + '</div>' + teamProgress(p) + '</div>';
     }).join("");
   }
   function watchVote(){
@@ -1529,10 +1538,13 @@
       if(!p || pollClosed(p)) return;
       if(!state.rosterId){ alert("명단 정보가 없어 투표할 수 없어요. 다시 로그인해 주세요."); return; }
       b.disabled = true;
-      db.collection("poll_votes").doc(pid + "_" + state.rosterId).set({
-        pollId: pid, rosterId: state.rosterId, name: state.name, college: state.college || "",
-        team: state.team, teamKey: state.team, role: state.role || "", choice: b.dataset.opt, createdAt: Date.now()
-      }).catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
+      var prev = pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0];
+      var data = { pollId: pid, rosterId: state.rosterId, name: state.name, college: state.college || "",
+        team: state.team, teamKey: state.team, role: state.role || "", choice: b.dataset.opt, updatedAt: Date.now() };
+      /* 처음 투표한 시각은 서버 시간으로 한 번만 기록 (선착순 집계용) — 나중에 바꿔도 유지돼요 */
+      if(!prev){ data.createdAt = Date.now(); data.firstAt = firebase.firestore.FieldValue.serverTimestamp(); }
+      db.collection("poll_votes").doc(pid + "_" + state.rosterId).set(data, { merge: true })
+        .catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
         .then(function(){ b.disabled = false; });
     });
   }
@@ -2048,6 +2060,7 @@
   /* ---------- 팀별 게시판 - 멘토·멘티 명단 (db-backed) ---------- */
   function renderRoster(docs){
     rosterCache = docs.map(function(d){ return d.data(); });
+    try{ renderPolls(); }catch(e){}
     setTimeout(renderMenteeActivity, 0);
     var el = document.getElementById("roster-list");
     if(!docs.length){
