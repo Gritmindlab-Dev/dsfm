@@ -1508,8 +1508,7 @@
         '<button type="button" class="vote-btn' + (yesSel ? ' selected' : '') + '" data-attend="' + esc(p.id) + '"' + (closed ? ' disabled' : '') + '>참석</button>' +
         '<button type="button" class="vote-btn absent' + (noSel ? ' selected' : '') + '" data-opt="참석불가"' + (closed ? ' disabled' : '') + '>참석불가</button>' +
       '</div>';
-    /* 참석을 고르면 날짜가 나와요 */
-    if(!yesSel) return attendRow;
+    /* 참석·참석불가와 날짜를 한 번에 보여줘요 (날짜를 누르면 참석으로 처리) */
     return attendRow +
       (attendHint[p.id] && !(mine && mine !== "참석불가") && !closed ? '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석할 날짜를 골라주세요.</div>' : '') +
       '<div class="vote-actions" style="flex-wrap:wrap;margin-top:10px">' + dates.map(function(o){
