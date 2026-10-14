@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DS-FM 운영진 페이지</title>
+<title>신입생 멘토링(DS-FM/GLM) 운영진 페이지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -156,7 +156,7 @@
 
 <div id="login-screen">
   <div class="login-card">
-    <h1>DS-FM 운영진 페이지</h1>
+    <h1>신입생 멘토링(DS-FM/GLM) 운영진 페이지</h1>
     <div class="sub" id="login-sub">이름, 휴대폰 뒷자리 4자리, 비밀번호를 입력해주세요.</div>
     <form id="login-form" onsubmit="return false">
       <div id="pin-fields">
@@ -279,7 +279,7 @@
 
     root.innerHTML =
       '<div class="adm-top">' +
-        '<div><div class="adm-brand">DS-FM 공유공간 · ' + (isMaster ? "최고 관리자" : isSuper ? "총괄 관리자" : "운영 관리자 · " + esc(myCollege)) + '</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
+        '<div><div class="adm-brand">신입생 멘토링(DS-FM/GLM) · ' + (isMaster ? "최고 관리자" : isSuper ? "총괄 관리자" : "운영 관리자 · " + esc(myCollege)) + '</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
         (opts.onRoleChange ? '<select class="adm-select" id="adm-role-switch" style="width:auto;padding:7px 10px;font-size:12.5px;background:rgba(255,255,255,.95)">' +
           '<option value="총괄"' + (isSuper ? " selected" : "") + '>총괄 관리자 시점</option>' +
