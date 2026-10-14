@@ -1498,6 +1498,21 @@
     (closed ? '' : '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px">참석불가 사유는 익명이 아니에요. 이름과 함께 운영진에게 전달돼요.</div>' +
       '<div style="margin-top:10px"><button type="button" class="vote-btn selected" data-grid-submit="1" style="flex:none;padding:10px 22px">' + (md ? "수정해서 제출" : "제출") + '</button></div>');
   }
+  /* 날짜 고르기 + 참석/참석불가 (mode: "datepick") — 참석이면 날짜 하나, 참석불가면 사유 필수 */
+  var attendHint = {};
+  function renderDatepick(p, closed, mine, draft){
+    var dates = (p.options || []).filter(function(o){ return o !== "참석불가"; });
+    var noSel = draft === "참석불가" || (!draft && mine === "참석불가");
+    var yesSel = !noSel && (attendHint[p.id] || (mine && mine !== "참석불가"));
+    return '<div class="vote-actions" style="flex-wrap:wrap">' + dates.map(function(o){
+        return '<button type="button" class="vote-btn' + (!draft && mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
+      }).join("") + '</div>' +
+      '<div class="vote-actions" style="margin-top:10px">' +
+        '<button type="button" class="vote-btn' + (yesSel ? ' selected' : '') + '" data-attend="' + esc(p.id) + '"' + (closed ? ' disabled' : '') + '>참석</button>' +
+        '<button type="button" class="vote-btn absent' + (noSel ? ' selected' : '') + '" data-opt="참석불가"' + (closed ? ' disabled' : '') + '>참석불가</button>' +
+      '</div>' +
+      (attendHint[p.id] && !(mine && mine !== "참석불가") && !closed ? '<div style="margin-top:8px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석할 날짜를 위에서 골라주세요.</div>' : '');
+  }
   function needsReason(p, o){ return (p.reasonOptions || []).indexOf(o) >= 0; }
   function myVoteDoc(pid){ return pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0]; }
   function pollClosed(p){ return p.open === false || (p.closesAt && Date.now() >= p.closesAt); }
@@ -1539,10 +1554,10 @@
         '<span class="vote-tag">' + esc(p.tag || "투표") + '</span>' +
         '<div class="vote-title">' + esc(p.title || "") + '</div>' +
         (p.desc ? '<div class="vote-sub" style="white-space:pre-wrap">' + esc(p.desc) + '</div>' : '') +
-        (p.mode === "grid" ? renderGrid(p, closed) :
+        (p.mode === "grid" ? renderGrid(p, closed) : (p.mode === "datepick" ? renderDatepick(p, closed, mine, draft) :
         '<div class="vote-actions" style="flex-wrap:wrap">' + (p.options || []).map(function(o){
           return '<button type="button" class="vote-btn' + ((draft ? draft === o : mine === o) ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
-        }).join("") + '</div>' +
+        }).join("") + '</div>') +
         (draft && !closed ? '<div style="margin-top:12px">' +
           '<textarea data-reason="' + esc(p.id) + '" maxlength="300" placeholder="\'' + esc(draft) + '\' 사유를 꼭 적어주세요" style="width:100%;box-sizing:border-box;min-height:70px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);font:inherit;font-size:14px;resize:vertical">' + esc(reasonText[p.id] != null ? reasonText[p.id] : (md && md.choice === draft ? md.reason || "" : "")) + '</textarea>' +
           '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">익명이 아니에요. 이름과 함께 운영진에게 전달돼요.</div>' +
@@ -1628,6 +1643,8 @@
         submitVote(spid, sp.options[0], "", gs, { mode: "grid", answers: answers, reasons: reasons });
         return;
       }
+      var at = e.target.closest("[data-attend]");
+      if(at){ attendHint[at.dataset.attend] = true; delete reasonDraft[at.dataset.attend]; renderPolls(); return; }
       var rc = e.target.closest("[data-reason-cancel]");
       if(rc){ delete reasonDraft[rc.dataset.reasonCancel]; delete reasonText[rc.dataset.reasonCancel]; renderPolls(); return; }
       var b = e.target.closest("[data-opt]");
@@ -1636,11 +1653,11 @@
       var p = pollsCache.filter(function(x){ return x.id === pid2; })[0];
       if(!p || pollClosed(p)) return;
       if(needsReason(p, b.dataset.opt)){
-        reasonDraft[pid2] = b.dataset.opt; renderPolls();
+        reasonDraft[pid2] = b.dataset.opt; delete attendHint[pid2]; renderPolls();
         var t = el.querySelector('textarea[data-reason="' + pid2 + '"]'); if(t) t.focus();
         return;
       }
-      delete reasonDraft[pid2];
+      delete reasonDraft[pid2]; delete attendHint[pid2];
       submitVote(pid2, b.dataset.opt, "", b);
     });
   }
