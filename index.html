@@ -1472,7 +1472,34 @@
   }
   function myVoterKey(){ return state.name + "__" + state.team; }
   /* ---------- 투표 (운영진 페이지에서 최고 관리자가 만들고 고쳐요) ---------- */
-  var pollsCache = [], pollVotesCache = [], pollTimer = null;
+  var pollsCache = [], pollVotesCache = [], pollTimer = null, reasonDraft = {}, reasonText = {};
+  /* 날짜별 참석/참석불가 투표(mode: "grid") — 날짜마다 답하고, 참석불가는 사유 필수 */
+  var gridDraft = {};
+  function gridState(p){
+    if(!gridDraft[p.id]){
+      var md = myVoteDoc(p.id) || {};
+      gridDraft[p.id] = { answers: JSON.parse(JSON.stringify(md.answers || {})), reasons: JSON.parse(JSON.stringify(md.reasons || {})) };
+    }
+    return gridDraft[p.id];
+  }
+  function renderGrid(p, closed){
+    var g = gridState(p), md = myVoteDoc(p.id);
+    return (p.options || []).map(function(o, i){
+      var a = g.answers[o];
+      return '<div style="margin-top:12px;padding:12px;border-radius:12px;background:var(--cream);border:1px solid var(--line)">' +
+        '<div style="font-weight:700;font-size:14px;margin-bottom:8px">' + esc(o) + '</div>' +
+        '<div class="vote-actions" style="margin-top:0">' +
+          '<button type="button" class="vote-btn' + (a === "참석" ? " selected" : "") + '" data-grid="' + i + '" data-ans="참석"' + (closed ? " disabled" : "") + '>참석</button>' +
+          '<button type="button" class="vote-btn absent' + (a === "참석불가" ? " selected" : "") + '" data-grid="' + i + '" data-ans="참석불가"' + (closed ? " disabled" : "") + '>참석불가</button>' +
+        '</div>' +
+        (a === "참석불가" ? '<textarea data-grid-reason="' + i + '" maxlength="300" placeholder="참석이 어려운 사유를 꼭 적어주세요"' + (closed ? " disabled" : "") + ' style="width:100%;box-sizing:border-box;margin-top:8px;min-height:56px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--line);font:inherit;font-size:14px;resize:vertical">' + esc(g.reasons[o] || "") + '</textarea>' : '') +
+      '</div>';
+    }).join("") +
+    (closed ? '' : '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px">참석불가 사유는 익명이 아니에요. 이름과 함께 운영진에게 전달돼요.</div>' +
+      '<div style="margin-top:10px"><button type="button" class="vote-btn selected" data-grid-submit="1" style="flex:none;padding:10px 22px">' + (md ? "수정해서 제출" : "제출") + '</button></div>');
+  }
+  function needsReason(p, o){ return (p.reasonOptions || []).indexOf(o) >= 0; }
+  function myVoteDoc(pid){ return pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0]; }
   function pollClosed(p){ return p.open === false || (p.closesAt && Date.now() >= p.closesAt); }
   function visiblePolls(){
     return pollsCache.filter(function(p){ return p.visible !== false && collegeVisible(p); })
@@ -1497,19 +1524,56 @@
     if(!el) return;
     var list = visiblePolls();
     if(!list.length){ el.innerHTML = ""; return; }
+    /* 다시 그릴 때 쓰고 있던 사유가 지워지지 않게 */
+    var focusedPid = null;
+    el.querySelectorAll("textarea[data-reason]").forEach(function(t){ reasonText[t.dataset.reason] = t.value; if(document.activeElement === t) focusedPid = t.dataset.reason; });
+    var focusedGrid = null;
+    el.querySelectorAll("textarea[data-grid-reason]").forEach(function(t){
+      var pid = t.closest("[data-poll]").dataset.poll, p0 = pollsCache.filter(function(x){ return x.id === pid; })[0];
+      if(p0 && gridDraft[pid]) gridDraft[pid].reasons[p0.options[+t.dataset.gridReason]] = t.value;
+      if(document.activeElement === t) focusedGrid = [pid, t.dataset.gridReason];
+    });
     el.innerHTML = list.map(function(p){
-      var mine = pollVoteOf(p.id), closed = pollClosed(p);
+      var mine = pollVoteOf(p.id), closed = pollClosed(p), md = myVoteDoc(p.id), draft = reasonDraft[p.id];
       return '<div class="card vote-card" data-poll="' + esc(p.id) + '">' +
         '<span class="vote-tag">' + esc(p.tag || "투표") + '</span>' +
         '<div class="vote-title">' + esc(p.title || "") + '</div>' +
         (p.desc ? '<div class="vote-sub" style="white-space:pre-wrap">' + esc(p.desc) + '</div>' : '') +
+        (p.mode === "grid" ? renderGrid(p, closed) :
         '<div class="vote-actions" style="flex-wrap:wrap">' + (p.options || []).map(function(o){
-          return '<button type="button" class="vote-btn' + (mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
+          return '<button type="button" class="vote-btn' + ((draft ? draft === o : mine === o) ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
         }).join("") + '</div>' +
-        '<div class="vote-mine">' + (closed ? ("투표가 마감됐어요" + (mine ? " · 내 투표: " + esc(mine) : "")) :
+        (draft && !closed ? '<div style="margin-top:12px">' +
+          '<textarea data-reason="' + esc(p.id) + '" maxlength="300" placeholder="\'' + esc(draft) + '\' 사유를 꼭 적어주세요" style="width:100%;box-sizing:border-box;min-height:70px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);font:inherit;font-size:14px;resize:vertical">' + esc(reasonText[p.id] != null ? reasonText[p.id] : (md && md.choice === draft ? md.reason || "" : "")) + '</textarea>' +
+          '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">익명이 아니에요. 이름과 함께 운영진에게 전달돼요.</div>' +
+          '<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="vote-btn selected" data-reason-submit="' + esc(p.id) + '" style="flex:0 0 auto;padding:9px 16px">제출</button>' +
+          '<button type="button" class="vote-btn" data-reason-cancel="' + esc(p.id) + '" style="flex:0 0 auto;padding:9px 16px">취소</button></div></div>' : '') +
+        (!draft && md && md.reason && needsReason(p, md.choice) ? '<div style="margin-top:8px;font-size:12.5px;color:var(--ink-soft)">내 사유: ' + esc(md.reason) + '</div>' : '')) +
+        '<div class="vote-mine">' + (p.mode === "grid" ? (closed ? "투표가 마감됐어요" + (md ? " · 제출 완료" : "") : (md ? "제출 완료 · 마감 전까지 바꿀 수 있어요" : "아직 제출하지 않았어요.")) :
+          closed ? ("투표가 마감됐어요" + (mine ? " · 내 투표: " + esc(mine) : "")) :
           (mine ? "내 투표: " + esc(mine) + " · 마감 전까지 바꿀 수 있어요" : "아직 투표하지 않았어요.")) +
           (p.closesAt && !closed ? " · " + fmtClose(p.closesAt) + " 마감" : "") + '</div>' + teamProgress(p) + '</div>';
     }).join("");
+    if(focusedGrid){ var gt = el.querySelector('[data-poll="' + focusedGrid[0] + '"] textarea[data-grid-reason="' + focusedGrid[1] + '"]'); if(gt){ gt.focus(); gt.setSelectionRange(gt.value.length, gt.value.length); } }
+    if(focusedPid){ var ft = el.querySelector('textarea[data-reason="' + focusedPid + '"]'); if(ft){ ft.focus(); ft.setSelectionRange(ft.value.length, ft.value.length); } }
+  }
+  function submitVote(pid, opt, reason, btn, extra){
+    var p = pollsCache.filter(function(x){ return x.id === pid; })[0];
+    if(!p || pollClosed(p)) return;
+    if(!state.rosterId){ alert("명단 정보가 없어 투표할 수 없어요. 다시 로그인해 주세요."); return; }
+    if(btn) btn.disabled = true;
+    var prev = myVoteDoc(pid);
+    var data = { pollId: pid, rosterId: state.rosterId, name: state.name, college: state.college || "",
+      team: state.team, teamKey: state.team, role: state.role || "", choice: opt, reason: reason || "", updatedAt: Date.now() };
+    if(extra){ Object.keys(extra).forEach(function(k){ data[k] = extra[k]; }); }
+    /* 처음 투표한 시각은 서버 시간으로 한 번만 기록 (선착순 집계용) — 나중에 바꿔도 유지돼요 */
+    if(!prev){ data.createdAt = Date.now(); data.firstAt = firebase.firestore.FieldValue.serverTimestamp(); }
+    /* 날짜별 투표는 통째로 덮어써요 (예전 사유가 남지 않게) — 처음 투표 시각은 그대로 옮겨요 */
+    if(extra && prev){ data.createdAt = prev.createdAt || Date.now(); if(prev.firstAt) data.firstAt = prev.firstAt; }
+    db.collection("poll_votes").doc(pid + "_" + state.rosterId).set(data, extra ? {} : { merge: true })
+      .then(function(){ delete reasonDraft[pid]; delete reasonText[pid]; delete gridDraft[pid]; renderPolls(); })
+      .catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
+      .then(function(){ if(btn) btn.disabled = false; });
   }
   function watchVote(){
     if(!db) return;
@@ -1531,21 +1595,53 @@
     if(!el || el.__wired) return;
     el.__wired = true;
     el.addEventListener("click", function(e){
+      if(!db) return;
+      var rs = e.target.closest("[data-reason-submit]");
+      if(rs){
+        var pid = rs.dataset.reasonSubmit, ta = el.querySelector('textarea[data-reason="' + pid + '"]');
+        var txt = ta ? ta.value.trim() : "";
+        if(!txt){ alert("사유를 적어주세요."); if(ta) ta.focus(); return; }
+        submitVote(pid, reasonDraft[pid], txt, rs); return;
+      }
+      var gb = e.target.closest("[data-grid]");
+      if(gb){
+        var gpid = gb.closest("[data-poll]").dataset.poll, gp = pollsCache.filter(function(x){ return x.id === gpid; })[0];
+        if(!gp || pollClosed(gp)) return;
+        el.querySelectorAll('[data-poll="' + gpid + '"] textarea[data-grid-reason]').forEach(function(t){ gridState(gp).reasons[gp.options[+t.dataset.gridReason]] = t.value; });
+        gridState(gp).answers[gp.options[+gb.dataset.grid]] = gb.dataset.ans; renderPolls();
+        if(gb.dataset.ans === "참석불가"){ var nt = el.querySelector('[data-poll="' + gpid + '"] textarea[data-grid-reason="' + gb.dataset.grid + '"]'); if(nt) nt.focus(); }
+        return;
+      }
+      var gs = e.target.closest("[data-grid-submit]");
+      if(gs){
+        var spid = gs.closest("[data-poll]").dataset.poll, sp = pollsCache.filter(function(x){ return x.id === spid; })[0];
+        if(!sp) return;
+        var g = gridState(sp);
+        el.querySelectorAll('[data-poll="' + spid + '"] textarea[data-grid-reason]').forEach(function(t){ g.reasons[sp.options[+t.dataset.gridReason]] = t.value.trim(); });
+        var missing = sp.options.filter(function(o){ return !g.answers[o]; });
+        if(missing.length){ alert(missing.join(", ") + " 참석 여부를 골라주세요."); return; }
+        var noReason = sp.options.filter(function(o){ return g.answers[o] === "참석불가" && !(g.reasons[o] || "").trim(); });
+        if(noReason.length){ alert(noReason.join(", ") + " 참석불가 사유를 적어주세요."); return; }
+        var answers = {}, reasons = {};
+        sp.options.forEach(function(o){ answers[o] = g.answers[o]; if(g.answers[o] === "참석불가") reasons[o] = g.reasons[o].trim(); });
+        /* choice 는 규칙 검사용으로 첫 날짜를 넣고, 실제 응답은 answers·reasons 에 있어요 */
+        submitVote(spid, sp.options[0], "", gs, { mode: "grid", answers: answers, reasons: reasons });
+        return;
+      }
+      var rc = e.target.closest("[data-reason-cancel]");
+      if(rc){ delete reasonDraft[rc.dataset.reasonCancel]; delete reasonText[rc.dataset.reasonCancel]; renderPolls(); return; }
       var b = e.target.closest("[data-opt]");
-      if(!b || !db) return;
-      var pid = b.closest("[data-poll]").dataset.poll;
-      var p = pollsCache.filter(function(x){ return x.id === pid; })[0];
+      if(!b) return;
+      var pid2 = b.closest("[data-poll]").dataset.poll;
+      var p = pollsCache.filter(function(x){ return x.id === pid2; })[0];
       if(!p || pollClosed(p)) return;
-      if(!state.rosterId){ alert("명단 정보가 없어 투표할 수 없어요. 다시 로그인해 주세요."); return; }
-      b.disabled = true;
-      var prev = pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0];
-      var data = { pollId: pid, rosterId: state.rosterId, name: state.name, college: state.college || "",
-        team: state.team, teamKey: state.team, role: state.role || "", choice: b.dataset.opt, updatedAt: Date.now() };
-      /* 처음 투표한 시각은 서버 시간으로 한 번만 기록 (선착순 집계용) — 나중에 바꿔도 유지돼요 */
-      if(!prev){ data.createdAt = Date.now(); data.firstAt = firebase.firestore.FieldValue.serverTimestamp(); }
-      db.collection("poll_votes").doc(pid + "_" + state.rosterId).set(data, { merge: true })
-        .catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
-        .then(function(){ b.disabled = false; });
+      if(needsReason(p, b.dataset.opt)){
+        reasonDraft[pid2] = b.dataset.opt; renderPolls();
+        var t = el.querySelector('textarea[data-reason="' + pid2 + '"]'); if(t) t.focus();
+        return;
+      }
+      delete reasonDraft[pid2];
+      submitVote(pid2, b.dataset.opt, "", b);
     });
   }
 
