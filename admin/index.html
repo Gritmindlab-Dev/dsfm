@@ -498,15 +498,20 @@
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">대상 <select class="adm-select" id="adm-p-college" style="width:auto">' + collegeOptions(p.college || "전체", true) + '</select></label>' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">마감 <input class="adm-input" id="adm-p-close" type="datetime-local" value="' + toLocalInput(p.closesAt) + '" style="width:auto"></label>' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">순서 <input class="adm-input" id="adm-p-order" type="number" value="' + esc(p.order != null ? p.order : 1) + '" style="width:80px"></label>' +
-        '</div></div>';
+        '</div>' +
+        '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px"><input type="checkbox" id="adm-p-grid"' + (p.mode === "grid" ? " checked" : "") + '> 선택지(날짜)마다 참석 / 참석불가로 받기 — 참석불가는 사유 필수</label>' +
+        '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">사유를 꼭 받을 선택지 <input class="adm-input" id="adm-p-reason" placeholder="예) 참석불가 (쉼표로 구분, 일반 투표용)" value="' + esc((p.reasonOptions || []).join(", ")) + '" style="flex:1 1 220px"></label>' +
+        '</div>';
     }
     function readPollForm(){
       var q = function(id){ return root.querySelector(id); };
       var opts2 = q("#adm-p-options").value.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
       var seen = {}; opts2 = opts2.filter(function(o){ if(seen[o]) return false; seen[o] = 1; return true; });
       var cl = q("#adm-p-close").value;
+      var ro = q("#adm-p-reason").value.split(",").map(function(x){ return x.trim(); }).filter(function(x){ return x && opts2.indexOf(x) >= 0; });
       return { tag: q("#adm-p-tag").value.trim() || "투표", title: q("#adm-p-title").value.trim(), desc: q("#adm-p-desc").value.trim(),
-        options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, order: Number(q("#adm-p-order").value) || 0 };
+        options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, order: Number(q("#adm-p-order").value) || 0,
+        mode: q("#adm-p-grid").checked ? "grid" : "single", reasonOptions: ro };
     }
     /* 팀원 모두 투표를 마친 팀 — 마지막 팀원이 처음 투표한 시각 순서 (선착순) */
     function voteMs(v){ var f = v.d.firstAt; return f && typeof f.toMillis === "function" ? f.toMillis() : (f && f.seconds ? f.seconds * 1000 : (v.d.createdAt || 0)); }
@@ -528,6 +533,14 @@
       done.sort(function(a, b){ return a.at - b.at; });
       return { done: done, total: Object.keys(teams).length, doing: doing };
     }
+    function voteAnswer(p, v){
+      if(p.mode !== "grid") return v.d.choice || "";
+      var a = v.d.answers || {}; return (p.options || []).map(function(o){ return o + " " + (a[o] || "-"); }).join(" / ");
+    }
+    function voteReason(p, v){
+      if(p.mode !== "grid") return v.d.reason || "";
+      var r = v.d.reasons || {}; return (p.options || []).filter(function(o){ return r[o]; }).map(function(o){ return o + ": " + r[o]; }).join(" / ");
+    }
     function fmtFull(ms){ if(!ms) return "-"; var d = new Date(ms); return (d.getMonth()+1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2); }
     function viewVote(){
       var polls = S.polls.slice().sort(function(a,b){ return (a.d.order || 0) - (b.d.order || 0) || (b.d.createdAt || 0) - (a.d.createdAt || 0); });
@@ -544,8 +557,11 @@
       html += polls.length ? polls.map(function(x){
         var p = x.d, closed = pollClosed(p);
         var votes = scoped("poll_votes").filter(function(v){ return v.d.pollId === x.id; });
-        var cnt = {}; (p.options || []).forEach(function(o){ cnt[o] = 0; });
-        var orphan = 0; votes.forEach(function(v){ if(cnt[v.d.choice] != null) cnt[v.d.choice]++; else orphan++; });
+        var isGrid = p.mode === "grid";
+        var cnt = {}, cntNo = {}; (p.options || []).forEach(function(o){ cnt[o] = 0; cntNo[o] = 0; });
+        var orphan = 0;
+        if(isGrid) votes.forEach(function(v){ var a = v.d.answers || {}; Object.keys(cnt).forEach(function(o){ if(a[o] === "참석") cnt[o]++; else if(a[o] === "참석불가") cntNo[o]++; }); });
+        else votes.forEach(function(v){ if(cnt[v.d.choice] != null) cnt[v.d.choice]++; else orphan++; });
         var max = Math.max.apply(null, [1].concat(Object.keys(cnt).map(function(k){ return cnt[k]; })));
         return '<div class="adm-card" data-id="' + esc(x.id) + '">' +
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
@@ -559,7 +575,7 @@
           '<div style="margin-top:10px">' + Object.keys(cnt).map(function(o){
             return '<div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="flex:0 0 150px;font-size:13px">' + esc(o) + '</span>' +
               '<span style="flex:1;height:10px;border-radius:6px;background:var(--line);overflow:hidden"><span style="display:block;height:100%;width:' + Math.round(cnt[o] / max * 100) + '%;background:var(--wine-soft)"></span></span>' +
-              '<b style="flex:0 0 52px;text-align:right;font-size:13px">' + cnt[o] + '명</b></div>';
+              '<b style="flex:0 0 ' + (isGrid ? '120px' : '52px') + ';text-align:right;font-size:13px">' + (isGrid ? '참석 ' + cnt[o] + ' · 불가 ' + cntNo[o] : cnt[o] + '명') + '</b></div>';
           }).join("") + (orphan ? '<div class="adm-desc" style="margin-top:6px">(지워진 선택지) ' + orphan + '명</div>' : '') +
           '<div class="adm-desc" style="margin-top:6px">응답 ' + votes.length + '명' + (isSuper && collegeFilter === "전체" ? "" : " (보기 범위 기준)") + '</div></div>' +
           (function(){
@@ -579,9 +595,9 @@
               '<button class="adm-btn ghost small" type="button" data-adm="poll-hide">' + (p.visible === false ? "학생 화면에 보이기" : "학생 화면에서 숨기기") + '</button>' +
               '<button class="adm-btn bad small" type="button" data-adm="poll-del">삭제</button>' : '') +
           '</div>' +
-          (openVoters[x.id] ? (votes.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>팀</th><th>이름</th><th>역할</th><th>응답</th><th>시각</th></tr></thead><tbody>' +
+          (openVoters[x.id] ? (votes.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>팀</th><th>이름</th><th>역할</th><th>응답</th><th>사유</th><th>시각</th></tr></thead><tbody>' +
             votes.sort(function(a,b){ return String(a.d.teamKey || "").localeCompare(String(b.d.teamKey || ""), "ko", {numeric:true}); }).map(function(v){
-              return '<tr><td>' + esc(v.d.teamKey || v.d.team || "") + '</td><td>' + esc(v.d.name || "") + '</td><td>' + esc(v.d.role || "") + '</td><td>' + esc(v.d.choice || "") + '</td><td>' + fmtTime(v.d.createdAt) + '</td></tr>';
+              return '<tr><td>' + esc(v.d.teamKey || v.d.team || "") + '</td><td>' + esc(v.d.name || "") + '</td><td>' + esc(v.d.role || "") + '</td><td>' + esc(voteAnswer(p, v)) + '</td><td>' + esc(voteReason(p, v)) + '</td><td>' + fmtTime(v.d.updatedAt || v.d.createdAt) + '</td></tr>';
             }).join("") + '</tbody></table></div>' : '<div class="adm-empty">아직 응답이 없어요.</div>') : '') +
           (p.visible === false ? '<div class="adm-note">학생 화면에서 숨겨진 투표예요.</div>' : '') +
         '</div>';
@@ -956,8 +972,12 @@
       }
       if(a === "poll-csv"){
         var pc = find("polls"); if(!pc) return;
-        downloadCsv((pc.d.title || "투표").replace(/[\\/:*?"<>|]/g, "") + ".csv", [["단과대","팀","이름","역할","응답","시각"]].concat(scoped("poll_votes").filter(function(v){ return v.d.pollId === id; }).map(function(v){
-          return [v.d.college || "", v.d.teamKey || v.d.team || "", v.d.name || "", v.d.role || "", v.d.choice || "", v.d.createdAt ? new Date(v.d.createdAt).toLocaleString("ko-KR") : ""];
+        var pg = pc.d.mode === "grid", popts = pc.d.options || [];
+        var head = ["단과대","팀","이름","역할"].concat(pg ? popts.reduce(function(acc, o){ return acc.concat([o, o + " 사유"]); }, []) : ["응답","사유"]).concat(["시각"]);
+        downloadCsv((pc.d.title || "투표").replace(/[\\/:*?"<>|]/g, "") + ".csv", [head].concat(scoped("poll_votes").filter(function(v){ return v.d.pollId === id; }).map(function(v){
+          var mid = pg ? popts.reduce(function(acc, o){ return acc.concat([(v.d.answers || {})[o] || "", (v.d.reasons || {})[o] || ""]); }, []) : [v.d.choice || "", v.d.reason || ""];
+          var ts = v.d.updatedAt || v.d.createdAt;
+          return [v.d.college || "", v.d.teamKey || v.d.team || "", v.d.name || "", v.d.role || ""].concat(mid).concat([ts ? new Date(ts).toLocaleString("ko-KR") : ""]);
         }))); return;
       }
       if(a === "csv-logs" && isMaster){
