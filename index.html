@@ -1504,14 +1504,17 @@
     var dates = (p.options || []).filter(function(o){ return o !== "참석불가"; });
     var noSel = draft === "참석불가" || (!draft && mine === "참석불가");
     var yesSel = !noSel && (attendHint[p.id] || (mine && mine !== "참석불가"));
-    return '<div class="vote-actions" style="flex-wrap:wrap">' + dates.map(function(o){
-        return '<button type="button" class="vote-btn' + (!draft && mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
-      }).join("") + '</div>' +
-      '<div class="vote-actions" style="margin-top:10px">' +
+    var attendRow = '<div class="vote-actions">' +
         '<button type="button" class="vote-btn' + (yesSel ? ' selected' : '') + '" data-attend="' + esc(p.id) + '"' + (closed ? ' disabled' : '') + '>참석</button>' +
         '<button type="button" class="vote-btn absent' + (noSel ? ' selected' : '') + '" data-opt="참석불가"' + (closed ? ' disabled' : '') + '>참석불가</button>' +
-      '</div>' +
-      (attendHint[p.id] && !(mine && mine !== "참석불가") && !closed ? '<div style="margin-top:8px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석할 날짜를 위에서 골라주세요.</div>' : '');
+      '</div>';
+    /* 참석을 고르면 날짜가 나와요 */
+    if(!yesSel) return attendRow;
+    return attendRow +
+      (attendHint[p.id] && !(mine && mine !== "참석불가") && !closed ? '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석할 날짜를 골라주세요.</div>' : '') +
+      '<div class="vote-actions" style="flex-wrap:wrap;margin-top:10px">' + dates.map(function(o){
+        return '<button type="button" class="vote-btn' + (!draft && mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
+      }).join("") + '</div>';
   }
   function needsReason(p, o){ return (p.reasonOptions || []).indexOf(o) >= 0; }
   function myVoteDoc(pid){ return pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0]; }
