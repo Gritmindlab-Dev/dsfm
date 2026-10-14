@@ -499,11 +499,20 @@
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">마감 <input class="adm-input" id="adm-p-close" type="datetime-local" value="' + toLocalInput(p.closesAt) + '" style="width:auto"></label>' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">순서 <input class="adm-input" id="adm-p-order" type="number" value="' + esc(p.order != null ? p.order : 1) + '" style="width:80px"></label>' +
         '</div>' +
-        '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px"><input type="checkbox" id="adm-p-grid"' + (p.mode === "grid" ? " checked" : "") + '> 선택지(날짜)마다 참석 / 참석불가로 받기 — 참석불가는 사유 필수</label>' +
+        '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">투표 방식 <select class="adm-select" id="adm-p-mode" style="width:auto">' +
+          [["single","선택지 중 하나 고르기"],["datepick","날짜 하나 고르기 + 참석 / 참석불가 (불가는 사유 필수)"],["grid","날짜마다 참석 / 참석불가 (불가는 사유 필수)"]].map(function(m){
+            return '<option value="' + m[0] + '"' + ((p.mode || "single") === m[0] ? " selected" : "") + '>' + m[1] + '</option>'; }).join("") + '</select></label>' +
         '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">사유를 꼭 받을 선택지 <input class="adm-input" id="adm-p-reason" placeholder="예) 참석불가 (쉼표로 구분, 일반 투표용)" value="' + esc((p.reasonOptions || []).join(", ")) + '" style="flex:1 1 220px"></label>' +
         '</div>';
     }
-    function readPollForm(){
+    function readPollForm(){ var f = readPollForm0();
+      if(f.mode === "datepick"){
+        f.options = f.options.filter(function(o){ return o !== "참석불가"; }).concat(["참석불가"]);
+        if(f.reasonOptions.indexOf("참석불가") < 0) f.reasonOptions.push("참석불가");
+      }
+      return f;
+    }
+    function readPollForm0(){
       var q = function(id){ return root.querySelector(id); };
       var opts2 = q("#adm-p-options").value.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
       var seen = {}; opts2 = opts2.filter(function(o){ if(seen[o]) return false; seen[o] = 1; return true; });
@@ -511,7 +520,7 @@
       var ro = q("#adm-p-reason").value.split(",").map(function(x){ return x.trim(); }).filter(function(x){ return x && opts2.indexOf(x) >= 0; });
       return { tag: q("#adm-p-tag").value.trim() || "투표", title: q("#adm-p-title").value.trim(), desc: q("#adm-p-desc").value.trim(),
         options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, order: Number(q("#adm-p-order").value) || 0,
-        mode: q("#adm-p-grid").checked ? "grid" : "single", reasonOptions: ro };
+        mode: q("#adm-p-mode").value, reasonOptions: ro };
     }
     /* 팀원 모두 투표를 마친 팀 — 마지막 팀원이 처음 투표한 시각 순서 (선착순) */
     function voteMs(v){ var f = v.d.firstAt; return f && typeof f.toMillis === "function" ? f.toMillis() : (f && f.seconds ? f.seconds * 1000 : (v.d.createdAt || 0)); }
@@ -949,7 +958,7 @@
       if(a === "poll-save"){
         var pf = readPollForm();
         if(!pf.title){ alert("투표 제목을 입력해주세요."); return; }
-        if(pf.options.length < 2){ alert("선택지를 두 개 이상 적어주세요."); return; }
+        if(pf.options.length < (pf.mode === "grid" ? 1 : 2)){ alert("선택지를 " + (pf.mode === "grid" ? "한" : "두") + " 개 이상 적어주세요."); return; }
         if(editingPollId){
           var eid = editingPollId; editingPollId = null; pf.updatedAt = Date.now();
           act(col("polls").doc(eid).update(pf)); viewVote();
