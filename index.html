@@ -564,6 +564,20 @@
   }
   .login-demo-hint b{color:var(--wine-deep);}
 
+
+  .mission-card{margin-top:14px; padding:20px 22px;}
+  .mission-top{display:flex; gap:8px; align-items:center;}
+  .mission-st{font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px;}
+  .mission-st.on{background:#e3efe8; color:var(--good);} .mission-st.end{background:var(--cream); color:var(--ink-soft); border:1px solid var(--line);} .mission-st.soon{background:#f7ecd9; color:#8a5a1f;}
+  .mission-meta{margin-top:12px; display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ink);}
+  .mission-meta b{display:inline-block; min-width:42px; color:var(--wine-deep); font-size:12px;}
+  .mission-team{margin-top:14px; padding:11px 13px; border-radius:12px; background:var(--cream); border:1px solid var(--line); font-size:13px; font-weight:700; color:var(--wine-deep);}
+  .mission-team.done{background:#e3efe8; border-color:#cfe3d7; color:var(--good);}
+  .mission-bar{display:block; margin-top:8px; height:8px; border-radius:6px; background:#fff; overflow:hidden;}
+  .mission-bar span{display:block; height:100%; background:var(--wine-soft); border-radius:6px;}
+  .mission-team.done .mission-bar span{background:var(--good);}
+  .mission-go{all:unset; box-sizing:border-box; cursor:pointer; display:block; width:100%; margin-top:12px; text-align:center; padding:11px; border-radius:11px; background:var(--wine-deep); color:#fff; font-weight:700; font-size:14px;}
+  .mission-go:hover{background:var(--wine);}
   .page-desc, .sched-block-sub, .composer-hint{display:none !important;}
   .page-title{margin-bottom:18px;}
   /* 터치 기기(휴대폰·태블릿): 입력칸 16px 이상이어야 아이폰·아이패드에서 화면이 자동 확대되지 않아요 */
@@ -682,6 +696,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           공지사항
         </button>
+        <button data-page="mission">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>
+          월별 미션
+        </button>
         <button data-page="notice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           자유게시판
@@ -764,6 +782,13 @@
         </section>
 
         <!-- 자유게시판 -->
+        <section id="page-mission" class="page" style="display:none">
+          <div class="page-eyebrow">MONTHLY MISSION</div>
+          <h2 class="page-title">월별 미션</h2>
+          <div id="mission-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
+          <div id="mission-list"></div>
+        </section>
+
         <section id="page-notice" class="page" style="display:none">
           <div class="page-eyebrow">학생 전용</div>
           <h2 class="page-title">자유게시판</h2>
@@ -1603,7 +1628,7 @@
     });
     db.collection("poll_votes").where("teamKey", "==", state.team).onSnapshot(function(snap){
       pollVotesCache = snap.docs.map(function(d){ return d.data() || {}; });
-      renderPolls();
+      renderPolls(); try{ renderMissions(); }catch(e){}
     }, function(){});
     if(!pollTimer) pollTimer = setInterval(renderPolls, 60000);
   }
@@ -1662,6 +1687,56 @@
       delete reasonDraft[pid2]; delete attendHint[pid2];
       submitVote(pid2, b.dataset.opt, "", b);
     });
+  }
+
+  /* ================= 월별 미션 (운영진 페이지에서 총괄·최고 관리자가 등록) ================= */
+  var missionsCache = [], missionMonth = null;
+  function monthLabel(m){ var p = String(m || "").split("-"); return p.length === 2 ? (+p[1]) + "월" : m; }
+  function fmtMissionDate(ts){ var d = new Date(ts), w = "일월화수목금토"[d.getDay()]; return (d.getMonth()+1) + "/" + d.getDate() + "(" + w + ") " + (d.getHours() < 12 ? "오전 " : "오후 ") + ((d.getHours() % 12) || 12) + "시" + (d.getMinutes() ? " " + d.getMinutes() + "분" : ""); }
+  function renderMissions(){
+    var el = document.getElementById("mission-list"), tabs = document.getElementById("mission-tabs");
+    if(!el) return;
+    var list = missionsCache.filter(function(m){ return m.visible !== false && collegeVisible(m); });
+    var months = list.map(function(m){ return m.month; }).filter(function(m, i, a){ return m && a.indexOf(m) === i; }).sort();
+    if(!list.length){ tabs.innerHTML = ""; el.innerHTML = '<div class="home-empty">아직 등록된 미션이 없어요.</div>'; return; }
+    var now = new Date(), cur = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2);
+    if(!missionMonth || months.indexOf(missionMonth) < 0) missionMonth = months.indexOf(cur) >= 0 ? cur : months[months.length - 1];
+    tabs.innerHTML = months.map(function(m){
+      return '<button type="button" class="vote-btn' + (m === missionMonth ? ' selected' : '') + '" data-mmonth="' + esc(m) + '" style="flex:none;padding:8px 18px">' + esc(monthLabel(m)) + ' 미션</button>';
+    }).join("");
+    el.innerHTML = list.filter(function(m){ return m.month === missionMonth; })
+      .sort(function(a, b){ return (a.order || 0) - (b.order || 0) || (a.createdAt || 0) - (b.createdAt || 0); })
+      .map(function(m){
+        var ended = m.endAt && Date.now() >= m.endAt, started = !m.startAt || Date.now() >= m.startAt;
+        var status = ended ? '<span class="mission-st end">마감</span>' : (started ? '<span class="mission-st on">진행 중</span>' : '<span class="mission-st soon">예정</span>');
+        var team = "";
+        if(m.linkPollId){
+          var total = (rosterCache || []).length, n = pollVotesCache.filter(function(x){ return x.pollId === m.linkPollId; }).length;
+          if(total) team = '<div class="mission-team' + (n >= total ? ' done' : '') + '">' + (n >= total ? '우리 팀 미션 완료! (' + total + '명 모두 투표)' : '우리 팀 ' + n + ' / ' + total + '명 투표 완료') +
+            '<span class="mission-bar"><span style="width:' + Math.round(Math.min(n, total) / total * 100) + '%"></span></span></div>';
+        }
+        var go = m.action === "poll" ? '<button type="button" class="mission-go" data-goto="announce">투표하러 가기 →</button>' :
+                 m.action === "verify" ? '<button type="button" class="mission-go" data-goto="verify">인증하러 가기 →</button>' : '';
+        return '<div class="card mission-card">' +
+          '<div class="mission-top">' + (m.tag ? '<span class="vote-tag">' + esc(m.tag) + '</span>' : '') + status + '</div>' +
+          '<div class="vote-title">' + esc(m.title || "") + '</div>' +
+          (m.desc ? '<div class="vote-sub" style="white-space:pre-wrap">' + esc(m.desc) + '</div>' : '') +
+          '<div class="mission-meta">' +
+            (m.endAt ? '<div><b>기간</b>' + (m.startAt ? fmtMissionDate(m.startAt) + ' ~ ' : '~ ') + fmtMissionDate(m.endAt) + '</div>' : '') +
+            (m.reward ? '<div><b>보상</b>' + esc(m.reward) + '</div>' : '') +
+            (m.howto ? '<div><b>방법</b>' + esc(m.howto) + '</div>' : '') +
+          '</div>' + team + (ended ? '' : go) + '</div>';
+      }).join("") || '<div class="home-empty">이 달에 등록된 미션이 없어요.</div>';
+  }
+  function watchMissions(){
+    if(!db) return;
+    db.collection("missions").onSnapshot(function(snap){
+      missionsCache = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+      renderMissions();
+    }, function(){ var el = document.getElementById("mission-list"); if(el) el.innerHTML = '<div class="offline-note">미션을 불러오지 못했어요. 새로고침해 주세요.</div>'; });
+    var tabs = document.getElementById("mission-tabs");
+    if(tabs && !tabs.__wired){ tabs.__wired = true; tabs.addEventListener("click", function(e){ var b = e.target.closest("[data-mmonth]"); if(b){ missionMonth = b.dataset.mmonth; renderMissions(); } }); }
+    setInterval(renderMissions, 30000);
   }
 
   /* ---------- team checklist (mentor-managed, db-backed) ---------- */
@@ -2175,7 +2250,7 @@
   /* ---------- 팀별 게시판 - 멘토·멘티 명단 (db-backed) ---------- */
   function renderRoster(docs){
     rosterCache = docs.map(function(d){ return d.data(); });
-    try{ renderPolls(); }catch(e){}
+    try{ renderPolls(); renderMissions(); }catch(e){}
     setTimeout(renderMenteeActivity, 0);
     var el = document.getElementById("roster-list");
     if(!docs.length){
@@ -2386,6 +2461,7 @@
       watchVerify();
       wireVote();
       watchVote();
+      watchMissions();
     }catch(e){
       console.error("Firebase 초기화 실패:", e);
       offlineFallback();
