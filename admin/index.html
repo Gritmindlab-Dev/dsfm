@@ -223,11 +223,12 @@
     {key:"suggest", label:"건의함"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"투표"},
+    {key:"missions",label:"월별 미션"},
     {key:"roster",  label:"멘토·멘티 명단"},
     {key:"accounts",label:"운영진 계정", masterOnly:true},
     {key:"logs",    label:"로그인 기록", masterOnly:true}
   ];
-  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","polls","poll_votes","team_roster","login_keys"];
+  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","polls","poll_votes","missions","team_roster","login_keys"];
   var DEFAULT_COLLEGES = ["글로벌융합대학","아트앤디자인대학","과학기술대학","자유전공학부"];
   function keyFor(name, pin){
     var text = "dsfm|" + String(name).replace(/\s+/g, "") + "|" + String(pin).replace(/\D/g, "");
@@ -660,6 +661,73 @@
       mainEl.innerHTML = html;
     }
 
+    var editingMissionId = null;
+    function toDateInput(ts){ if(!ts) return ""; var d = new Date(ts - new Date().getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
+    function viewMissions(){
+      var list = S.missions.slice().sort(function(a,b){ return String(b.d.month || "").localeCompare(String(a.d.month || "")) || (a.d.order || 0) - (b.d.order || 0); });
+      var m = editingMissionId ? ((S.missions.filter(function(x){ return x.id === editingMissionId; })[0] || {}).d || {}) : {};
+      var now = new Date(), curM = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2);
+      var html = '<h2 class="adm-h">월별 미션</h2>';
+      if(isSuper){
+        html += '<div class="adm-card"><div class="adm-card-title">' + (editingMissionId ? "미션 수정" : "새 미션 등록") + '</div>' +
+          '<div class="adm-form-row" style="flex-direction:column;align-items:stretch;gap:8px">' +
+          '<div class="adm-form-row">' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">월 <input class="adm-input" id="adm-m-month" type="month" value="' + esc(m.month || curM) + '" style="width:auto"></label>' +
+            '<input class="adm-input" id="adm-m-tag" placeholder="꼬리표 (예: 팀 미션)" maxlength="12" value="' + esc(m.tag || "") + '" style="flex:0 1 150px">' +
+            '<input class="adm-input" id="adm-m-title" placeholder="미션 제목" maxlength="60" value="' + esc(m.title || "") + '" style="flex:3 1 240px">' +
+          '</div>' +
+          '<textarea class="adm-textarea" id="adm-m-desc" placeholder="미션 설명" maxlength="800" style="min-height:70px">' + esc(m.desc || "") + '</textarea>' +
+          '<div class="adm-form-row">' +
+            '<input class="adm-input" id="adm-m-reward" placeholder="보상 (예: 선착순 3팀 상품)" maxlength="60" value="' + esc(m.reward || "") + '" style="flex:1 1 200px">' +
+            '<input class="adm-input" id="adm-m-howto" placeholder="방법 (예: 팀원 모두 투표 완료)" maxlength="80" value="' + esc(m.howto || "") + '" style="flex:1 1 200px">' +
+          '</div>' +
+          '<div class="adm-form-row">' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">시작 <input class="adm-input" id="adm-m-start" type="datetime-local" value="' + toDateInput(m.startAt) + '" style="width:auto"></label>' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">마감 <input class="adm-input" id="adm-m-end" type="datetime-local" value="' + toDateInput(m.endAt) + '" style="width:auto"></label>' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">대상 <select class="adm-select" id="adm-m-college" style="width:auto">' + collegeOptions(m.college || "전체", true) + '</select></label>' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">순서 <input class="adm-input" id="adm-m-order" type="number" value="' + esc(m.order != null ? m.order : 1) + '" style="width:70px"></label>' +
+          '</div>' +
+          '<div class="adm-form-row">' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">학생 버튼 <select class="adm-select" id="adm-m-action" style="width:auto">' +
+              [["poll","투표하러 가기"],["verify","인증하러 가기"],["none","버튼 없음"]].map(function(o){ return '<option value="' + o[0] + '"' + ((m.action || "verify") === o[0] ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") + '</select></label>' +
+            '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">연결 투표 (팀 진행률 표시) <select class="adm-select" id="adm-m-poll" style="width:auto"><option value="">없음</option>' +
+              S.polls.map(function(x){ return '<option value="' + esc(x.id) + '"' + (m.linkPollId === x.id ? " selected" : "") + '>' + esc(x.d.title || "") + '</option>'; }).join("") + '</select></label>' +
+          '</div></div>' +
+          '<div class="adm-actions" style="margin-top:10px"><button class="adm-btn" type="button" data-adm="mission-save">' + (editingMissionId ? "수정 저장" : "미션 올리기") + '</button>' +
+          (editingMissionId ? '<button class="adm-btn ghost" type="button" data-adm="mission-cancel">취소</button>' : '') + '</div></div>';
+      }
+      var months = list.map(function(x){ return x.d.month; }).filter(function(v, i, a){ return a.indexOf(v) === i; });
+      html += months.length ? months.map(function(mo){
+        return '<div class="adm-card"><div class="adm-card-title">' + esc(String(mo || "").replace(/^(\d+)-0?(\d+)$/, "$1년 $2월")) + ' 미션</div>' +
+          list.filter(function(x){ return x.d.month === mo; }).map(function(x){
+            var d = x.d, ended = d.endAt && Date.now() >= d.endAt;
+            var prog = "";
+            if(d.linkPollId){
+              var R = teamRanking(d.linkPollId);
+              prog = '<div class="adm-desc" style="margin-top:6px">팀 전원 완료 <b>' + R.done.length + '팀</b> · 진행 중 ' + R.doing + '팀 · 전체 ' + R.total + '팀' +
+                (R.done.length ? ' — ' + R.done.slice(0, 3).map(function(r){ return r.rank + '등 ' + esc(r.team); }).join(", ") : '') + '</div>';
+            }
+            return '<div class="adm-item" data-id="' + esc(x.id) + '">' +
+              '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+                '<span class="adm-tag' + (ended ? " gray" : " green") + '">' + (ended ? "마감" : "진행") + '</span>' +
+                (d.tag ? '<span class="adm-tag gold">' + esc(d.tag) + '</span>' : '') +
+                '<span class="adm-tag gray">' + esc(d.college || "전체") + '</span>' +
+                '<b>' + esc(d.title || "") + '</b>' +
+                (d.visible === false ? '<span class="adm-tag red">숨김</span>' : '') +
+              '</div>' +
+              (d.desc ? '<div class="adm-desc" style="margin-top:6px;white-space:pre-wrap">' + esc(d.desc) + '</div>' : '') +
+              '<div class="adm-item-meta">' + (d.endAt ? '마감 ' + new Date(d.endAt).toLocaleString("ko-KR") : '마감일 없음') + (d.reward ? ' · 보상: ' + esc(d.reward) : '') + '</div>' + prog +
+              (isSuper ? '<div class="adm-actions" style="margin-top:8px">' +
+                (d.linkPollId ? '<button class="adm-btn ghost small" type="button" data-tab="vote">투표 결과·팀 순위 보기</button>' : '') +
+                '<button class="adm-btn ghost small" type="button" data-adm="mission-edit">수정</button>' +
+                '<button class="adm-btn ghost small" type="button" data-adm="mission-hide">' + (d.visible === false ? "학생 화면에 보이기" : "숨기기") + '</button>' +
+                '<button class="adm-btn bad small" type="button" data-adm="mission-del">삭제</button></div>' : '') +
+            '</div>';
+          }).join("") + '</div>';
+      }).join("") : '<div class="adm-empty">아직 등록된 미션이 없어요.</div>';
+      mainEl.innerHTML = html;
+    }
+
     function viewLogs(){
       var list = S.login_logs.filter(function(x){ return inScope(x.d); }).sort(byNewest);
       var today = new Date(); today.setHours(0,0,0,0);
@@ -781,7 +849,7 @@
         }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
     function render(force){
       renderTabs();
       if(force){ VIEWS[tab](); return; }
@@ -1025,6 +1093,22 @@
         S.poll_votes.filter(function(v){ return v.d.pollId === id; }).forEach(function(v){ act(col("poll_votes").doc(v.id).delete()); });
         act(col("polls").doc(id).delete()); return;
       }
+      if(a === "mission-save"){
+        var q = function(i){ return root.querySelector(i); };
+        var st = q("#adm-m-start").value, en = q("#adm-m-end").value;
+        var md = { month: q("#adm-m-month").value, tag: q("#adm-m-tag").value.trim(), title: q("#adm-m-title").value.trim(), desc: q("#adm-m-desc").value.trim(),
+          reward: q("#adm-m-reward").value.trim(), howto: q("#adm-m-howto").value.trim(), startAt: st ? new Date(st).getTime() : null, endAt: en ? new Date(en).getTime() : null,
+          college: q("#adm-m-college").value, order: Number(q("#adm-m-order").value) || 0, action: q("#adm-m-action").value, linkPollId: q("#adm-m-poll").value || "" };
+        if(!md.month){ alert("월을 골라주세요."); return; }
+        if(!md.title){ alert("미션 제목을 입력해주세요."); return; }
+        if(editingMissionId){ var mid = editingMissionId; editingMissionId = null; md.updatedAt = Date.now(); act(col("missions").doc(mid).update(md)); }
+        else { md.visible = true; md.createdAt = Date.now(); act(col("missions").add(md)); }
+        viewMissions(); return;
+      }
+      if(a === "mission-cancel"){ editingMissionId = null; viewMissions(); return; }
+      if(a === "mission-edit"){ editingMissionId = id; viewMissions(); window.scrollTo(0, 0); return; }
+      if(a === "mission-hide"){ var mh = find("missions"); if(mh) act(col("missions").doc(id).update({ visible: mh.d.visible === false })); return; }
+      if(a === "mission-del"){ var mdl = find("missions"); if(mdl && confirm("'" + (mdl.d.title || "") + "' 미션을 삭제할까요?")) act(col("missions").doc(id).delete()); return; }
       if(a === "poll-team-csv"){
         var ptc = find("polls"); if(!ptc) return;
         var RR = teamRanking(id);
