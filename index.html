@@ -1739,6 +1739,43 @@
     setInterval(renderMissions, 30000);
   }
 
+  /* ================= 로그인 팝업 공지 (운영진 페이지 '공지 관리'에서 '팝업으로 띄우기' 체크) ================= */
+  var popupShown = {};
+  function todayKey(){ var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  function maybePopup(docs){
+    if(!state.name || document.getElementById("announce-popup")) return;
+    var list = (docs || []).map(function(d){ var o = d.data() || {}; o.id = d.id; return o; })
+      .filter(function(n){ return n.popup && collegeVisible(n); })
+      .sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+    var n = list.filter(function(x){
+      if(popupShown[x.id]) return false;
+      try{ if(localStorage.getItem("dsfm_popup_" + x.id) === todayKey()) return false; }catch(e){}
+      return true;
+    })[0];
+    if(!n) return;
+    popupShown[n.id] = true;
+    var wrap = document.createElement("div");
+    wrap.id = "announce-popup";
+    wrap.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(42,30,34,.55);display:flex;align-items:center;justify-content:center;padding:20px";
+    wrap.innerHTML = '<div style="width:100%;max-width:400px;max-height:85vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">' +
+      '<div style="background:linear-gradient(160deg,var(--wine-deep),var(--wine));color:#fff;padding:20px 22px 18px;border-radius:20px 20px 0 0">' +
+        '<div style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18)">' + esc(n.tag || "공지") + '</div>' +
+        '<div style="font-size:19px;font-weight:800;margin-top:8px;line-height:1.35">' + esc(n.label || "") + '</div></div>' +
+      '<div style="padding:18px 22px;font-size:14.5px;line-height:1.75;color:var(--ink);white-space:pre-wrap">' + esc(n.detail || "") + '</div>' +
+      '<div style="display:flex;gap:8px;padding:0 22px 20px">' +
+        '<button type="button" data-pop="today" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-size:13px;color:var(--ink-soft)">오늘 하루 보지 않기</button>' +
+        '<button type="button" data-pop="close" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;padding:12px;border-radius:12px;background:var(--wine-deep);color:#fff;font-size:14px;font-weight:700">확인</button>' +
+      '</div></div>';
+    wrap.addEventListener("click", function(e){
+      var b = e.target.closest("[data-pop]");
+      if(!b && e.target !== wrap) return;
+      if(b && b.dataset.pop === "today"){ try{ localStorage.setItem("dsfm_popup_" + n.id, todayKey()); }catch(err){} }
+      wrap.remove();
+      setTimeout(function(){ maybePopup(docs); }, 200);
+    });
+    document.body.appendChild(wrap);
+  }
+
   /* ---------- team checklist (mentor-managed, db-backed) ---------- */
   function renderChecklist(docs){
     checklistDocsCache = docs;
@@ -2697,6 +2734,7 @@
       d.collection("announcements").onSnapshot(function(snap){
         announceDocs = snap.docs;
         renderAnnouncements();
+        try{ maybePopup(snap.docs); }catch(e){}
       }, function(){});
     }catch(e){}
   }
