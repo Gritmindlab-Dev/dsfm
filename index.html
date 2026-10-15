@@ -762,7 +762,7 @@
               <span class="sched-block-icon">🗓️</span>
               <div>
                 <div class="sched-block-title">다가오는 일정</div>
-                <div class="sched-block-sub">정기 미팅과 등록된 일정을 모아봤어요</div>
+                <div class="sched-block-sub">등록된 일정을 모아봤어요</div>
               </div>
             </div>
             <div class="notice-list" id="home-upcoming"><div class="home-empty">불러오는 중이에요...</div></div>
@@ -825,7 +825,7 @@
         <section id="page-schedule" class="page" style="display:none">
           <div class="page-eyebrow">팀 운영</div>
           <h2 class="page-title">스케줄 보드</h2>
-          <p class="page-desc">정기 미팅 요일과 우리 팀 체크리스트까지 — 이번 주에 챙겨야 할 일정을 한곳에서 확인해요.</p>
+          <p class="page-desc">우리 팀 일정과 체크리스트를 한곳에서 확인해요.</p>
 
           <div class="sched-block">
             <div class="sched-block-head">
@@ -855,17 +855,6 @@
               </div>
               <div class="composer-hint">등록한 일정은 캘린더에 날짜별로 표시돼요.</div>
             </div>
-          </div>
-
-          <div class="sched-block">
-            <div class="sched-block-head">
-              <span class="sched-block-icon meeting">🗓️</span>
-              <div>
-                <div class="sched-block-title">정기 미팅 일정</div>
-                <div class="sched-block-sub">멘토·멘티가 매주 만나는 기본 일정이에요</div>
-              </div>
-            </div>
-            <div class="card meeting-card" id="schedule-meeting"></div>
           </div>
 
           <div class="sched-block">
@@ -1212,9 +1201,7 @@
 
   /* ---------- schedule (static) ---------- */
   (function renderSchedule(){
-    document.getElementById("schedule-meeting").innerHTML =
-      '<div><div class="meeting-cadence">' + esc(MEETING.cadence) + '</div>' +
-      '<div class="meeting-note">' + esc(MEETING.note) + '</div></div>';
+    /* 고정 정기 미팅 표시는 뺐어요 — 팀 일정은 스케줄 보드에 직접 등록 */
   })();
 
   /* ---------- 일정 캘린더 (db-backed) ---------- */
@@ -1242,7 +1229,7 @@
       var isThu = new Date(y, m, d).getDay() === 4;
       var dayEvents = calEventsCache.filter(function(e){ return collegeVisible(e) && e.date === key; });
       var chips = [];
-      if(isThu) chips.push('<span class="cal-chip meeting">정기미팅</span>');
+
       dayEvents.slice(0, 2).forEach(function(e){ chips.push('<span class="cal-chip">' + esc(e.title) + '</span>'); });
       var moreCount = dayEvents.length > 2 ? dayEvents.length - 2 : 0;
       if(moreCount) chips.push('<span class="cal-chip more">+' + moreCount + '</span>');
@@ -1269,7 +1256,7 @@
     var dayEvents = calEventsCache.filter(function(e){ return collegeVisible(e) && e.date === calSelectedDate; });
     var label = (d.getMonth() + 1) + "월 " + d.getDate() + "일 (" + CAL_WEEKDAY_KO[d.getDay()] + ")";
     var items = [];
-    if(isThu) items.push('<div class="cal-detail-item"><span class="cal-chip meeting">정기미팅</span>' + esc(MEETING.cadence) + '</div>');
+
     dayEvents.forEach(function(e){ items.push('<div class="cal-detail-item"><span class="cal-chip">일정</span>' + esc(e.title) + '</div>'); });
     if(!items.length) items.push('<div class="cal-detail-empty">이 날은 등록된 일정이 없어요.</div>');
     el.innerHTML = '<div class="cal-detail-date">' + label + '</div>' + items.join("");
@@ -1338,10 +1325,7 @@
     var upcoming = (calEventsCache || []).filter(function(e){ return collegeVisible(e) && e.date >= todayKey; })
       .sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); })
       .slice(0, 2);
-    var items = [
-      '<div class="notice-item"><div class="notice-top"><span class="notice-tag">정기미팅</span><span class="notice-label">' + esc(nextThursdayLabel()) + '</span></div>' +
-      '<div class="notice-detail">' + esc(MEETING.cadence) + '</div></div>'
-    ];
+    var items = [];
     upcoming.forEach(function(e){
       var d = new Date(e.date + "T00:00:00");
       var label = (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + CAL_WEEKDAY_KO[d.getDay()] + ")";
@@ -1350,7 +1334,7 @@
         '<div class="notice-detail">' + esc(label) + '</div></div>'
       );
     });
-    upEl.innerHTML = items.join("");
+    upEl.innerHTML = items.length ? items.join("") : '<div class="home-empty">다가오는 일정이 없어요. 스케줄 보드에서 팀 일정을 등록해 보세요.</div>';
 
     var recent = [];
     (noticeDocsCache || []).slice(0, 2).forEach(function(d){
