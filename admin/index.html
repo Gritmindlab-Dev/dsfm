@@ -563,14 +563,24 @@
       });
       var byRoster = {};
       S.poll_votes.forEach(function(v){ if(v.d.pollId === pollId) byRoster[v.d.rosterId] = v; });
-      var done = [], doing = 0;
+      var done = [], doing = 0, all = [];
       Object.keys(teams).forEach(function(t){
         var T = teams[t], last = 0, cnt = 0;
         Object.keys(T.ids).forEach(function(id){ var v = byRoster[id]; if(v){ cnt++; last = Math.max(last, voteMs(v)); } });
-        if(cnt === T.n) done.push({ team: t, n: T.n, at: last }); else if(cnt > 0) doing++;
+        var row = { team: t, n: T.n, cnt: cnt, at: cnt === T.n ? last : 0 };
+        all.push(row);
+        if(cnt === T.n) done.push(row); else if(cnt > 0) doing++;
       });
       done.sort(function(a, b){ return a.at - b.at; });
-      return { done: done, total: Object.keys(teams).length, doing: doing };
+      done.forEach(function(r, i){ r.rank = i + 1; });
+      /* 완료 팀(완료 순) → 진행 중(참여율 높은 순) → 아직 0명 */
+      all.sort(function(a, b){
+        var ad = a.cnt === a.n, bd = b.cnt === b.n;
+        if(ad !== bd) return ad ? -1 : 1;
+        if(ad) return a.at - b.at;
+        return (b.cnt / b.n) - (a.cnt / a.n) || b.cnt - a.cnt || a.team.localeCompare(b.team, "ko", {numeric:true});
+      });
+      return { done: done, total: Object.keys(teams).length, doing: doing, all: all };
     }
     function voteAnswer(p, v){
       if(p.mode !== "grid") return v.d.choice || "";
@@ -621,10 +631,16 @@
             var R = teamRanking(x.id);
             return '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"><b style="font-size:13px">팀 전원 투표 완료 순위</b>' +
               '<span class="adm-item-meta" style="margin-left:8px">완료 ' + R.done.length + '팀 · 진행 중 ' + R.doing + '팀 · 전체 ' + R.total + '팀</span>' +
-              (R.done.length ? '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>완료 시각</th></tr></thead><tbody>' +
-                R.done.map(function(r, i){
-                  return '<tr><td>' + (i < 3 ? '<span class="adm-tag green">' + (i + 1) + '등</span>' : (i + 1)) + '</td><td><b>' + esc(r.team) + '</b></td><td>' + r.n + '명</td><td>' + fmtFull(r.at) + '</td></tr>';
-                }).join("") + '</tbody></table></div>' : '<div class="adm-empty" style="padding:10px 0">아직 전원 투표를 마친 팀이 없어요.</div>') + '</div>';
+              (R.all.length ? '<div class="adm-table-wrap" style="max-height:420px;overflow:auto"><table class="adm-table"><thead><tr><th>순위</th><th>팀</th><th>투표 완료</th><th style="min-width:120px">진행률</th><th>전원 완료 시각</th></tr></thead><tbody>' +
+                R.all.map(function(r){
+                  var pct = r.n ? Math.round(r.cnt / r.n * 100) : 0, dn = r.cnt === r.n;
+                  return '<tr><td>' + (dn ? (r.rank <= 3 ? '<span class="adm-tag green">' + r.rank + '등</span>' : r.rank) : '-') + '</td><td><b>' + esc(r.team) + '</b></td>' +
+                    '<td><b>' + r.cnt + '</b> / ' + r.n + '명</td>' +
+                    '<td><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;height:8px;border-radius:5px;background:var(--line);overflow:hidden"><span style="display:block;height:100%;width:' + pct + '%;background:' + (dn ? 'var(--good)' : 'var(--wine-soft)') + '"></span></span><span style="font-size:12px;min-width:34px;text-align:right">' + pct + '%</span></div></td>' +
+                    '<td>' + (dn ? fmtFull(r.at) : '-') + '</td></tr>';
+                }).join("") + '</tbody></table></div>' +
+                '<div class="adm-actions" style="margin-top:8px"><button class="adm-btn ghost small" type="button" data-adm="poll-team-csv">팀별 현황 CSV</button></div>'
+                : '<div class="adm-empty" style="padding:10px 0">명단이 없어요.</div>') + '</div>';
           })() +
           '<div class="adm-actions" style="margin-top:10px">' +
             '<button class="adm-btn ghost small" type="button" data-adm="poll-voters">' + (openVoters[x.id] ? "응답자 닫기" : "응답자 보기") + '</button>' +
@@ -1008,6 +1024,13 @@
         if(!confirm("'" + (pd.d.title || "") + "' 투표를 삭제할까요? 들어온 응답도 함께 지워져요.")) return;
         S.poll_votes.filter(function(v){ return v.d.pollId === id; }).forEach(function(v){ act(col("poll_votes").doc(v.id).delete()); });
         act(col("polls").doc(id).delete()); return;
+      }
+      if(a === "poll-team-csv"){
+        var ptc = find("polls"); if(!ptc) return;
+        var RR = teamRanking(id);
+        downloadCsv((ptc.d.title || "투표").replace(/[\\/:*?"<>|]/g, "") + "_팀별현황.csv", [["순위","팀","투표 완료","팀 인원","진행률(%)","전원 완료 시각"]].concat(RR.all.map(function(r){
+          return [r.cnt === r.n ? r.rank : "", r.team, r.cnt, r.n, r.n ? Math.round(r.cnt / r.n * 100) : 0, r.cnt === r.n ? new Date(r.at).toLocaleString("ko-KR") : ""];
+        }))); return;
       }
       if(a === "poll-csv"){
         var pc = find("polls"); if(!pc) return;
