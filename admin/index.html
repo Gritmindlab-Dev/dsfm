@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DS-FM 운영진 페이지</title>
+<title>신입생 멘토링(DS-FM/GLM) 운영진 페이지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -156,7 +156,7 @@
 
 <div id="login-screen">
   <div class="login-card">
-    <h1 style="line-height:1.35;text-align:center">DS-FM 운영진 페이지</h1>
+    <h1 style="line-height:1.35;text-align:center">신입생 멘토링(DS-FM/GLM)<br>운영진 페이지</h1>
     <div class="sub" id="login-sub" style="text-align:center">이름, 휴대폰 뒷자리 4자리, 비밀번호를 입력해주세요.</div>
     <form id="login-form" onsubmit="return false">
       <div id="pin-fields">
@@ -279,7 +279,7 @@
 
     root.innerHTML =
       '<div class="adm-top">' +
-        '<div><div class="adm-brand">DS-FM 공유공간 · ' + (isMaster ? "최고 관리자" : isSuper ? "총괄 관리자" : "운영 관리자 · " + esc(myCollege)) + '</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
+        '<div><div class="adm-brand">신입생 멘토링(DS-FM/GLM) · ' + (isMaster ? "최고 관리자" : isSuper ? "총괄 관리자" : "운영 관리자 · " + esc(myCollege)) + '</div><div class="adm-who">' + esc(opts.whoami || "") + '</div></div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
         (opts.onRoleChange ? '<select class="adm-select" id="adm-role-switch" style="width:auto;padding:7px 10px;font-size:12.5px;background:rgba(255,255,255,.95)">' +
           '<option value="총괄"' + (isSuper ? " selected" : "") + '>총괄 관리자 시점</option>' +
@@ -334,6 +334,7 @@
           stat("posts", "사진 게시판", scoped("photo_posts").length, "개") +
           stat("roster", "명단 인원", scoped("team_roster").length, "명") +
         '</div>' +
+        dashPolls() +
         '<div class="adm-card"><div class="adm-card-title">팀별 활동 현황</div>' +
         (teamNames.length ?
           '<div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>팀</th><th>명단 인원</th><th>팀 게시글</th><th>미션 인증</th><th>승인</th><th>투표 응답</th></tr></thead><tbody>' +
@@ -346,6 +347,35 @@
       if(opts.demoNote) html += '<div class="adm-note">' + opts.demoNote + '</div>';
       mainEl.innerHTML = html;
       mainEl._teams = teams; mainEl._teamNames = teamNames;
+    }
+    /* 한눈에 보기: 진행 중인 투표 현황 (모든 운영진이 볼 수 있어요) */
+    function dashPolls(){
+      var polls = S.polls.filter(function(x){ return x.d.visible !== false && sharedVisible(x.d); })
+        .sort(function(a,b){ return (a.d.order || 0) - (b.d.order || 0); });
+      if(!polls.length) return "";
+      return '<div class="adm-card"><div class="adm-card-title">투표 현황</div>' + polls.map(function(x){
+        var p = x.d, votes = scoped("poll_votes").filter(function(v){ return v.d.pollId === x.id; });
+        var closed = p.open === false || (p.closesAt && Date.now() >= p.closesAt);
+        var parts;
+        if(p.mode === "grid"){
+          parts = (p.options || []).map(function(o){
+            var y = votes.filter(function(v){ return (v.d.answers || {})[o] === "참석"; }).length;
+            return '<span class="adm-tag gray">' + esc(o) + ' 참석 ' + y + '</span>';
+          });
+        } else {
+          parts = (p.options || []).map(function(o){
+            var n = votes.filter(function(v){ return v.d.choice === o; }).length;
+            return '<span class="adm-tag' + (o === "참석불가" || o === "불참" ? " red" : " gray") + '">' + esc(o) + ' ' + n + '명</span>';
+          });
+        }
+        var R = teamRanking(x.id);
+        return '<div style="padding:10px 0;border-top:1px solid var(--line)">' +
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>' + esc(p.title || "") + '</b>' +
+          '<span class="adm-tag' + (closed ? " gray" : " green") + '">' + (closed ? "마감" : "진행 중") + '</span>' +
+          '<span class="adm-item-meta" style="margin:0">응답 ' + votes.length + '명 · 팀 전원 완료 ' + R.done.length + '팀' + (p.closesAt ? ' · ' + fmtFull(p.closesAt).slice(0, -3) + ' 마감' : '') + '</span>' +
+          '<button class="adm-btn ghost small" type="button" data-tab="vote" style="margin-left:auto">자세히 보기</button></div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + parts.join("") + '</div></div>';
+      }).join("") + '</div>';
     }
     function stat(goto, label, n, unit, alert, sub){
       return '<button type="button" class="adm-stat' + (alert ? " alert" : "") + '" data-tab="' + goto + '">' +
