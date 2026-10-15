@@ -696,7 +696,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           공지사항
         </button>
-        <button data-page="mission">
+        <button data-page="mission" id="nav-mission" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>
           월별 미션
         </button>
@@ -1697,6 +1697,10 @@
     var el = document.getElementById("mission-list"), tabs = document.getElementById("mission-tabs");
     if(!el) return;
     var list = missionsCache.filter(function(m){ return m.visible !== false && collegeVisible(m); });
+    /* 보이는 미션이 없으면 메뉴도 숨겨요 (운영진 페이지에서 '학생 화면에 보이기'를 누르면 다시 나타나요) */
+    var nav = document.getElementById("nav-mission");
+    if(nav) nav.style.display = list.length ? "" : "none";
+    if(!list.length && document.getElementById("page-mission").style.display !== "none") goToPage("announce");
     var months = list.map(function(m){ return m.month; }).filter(function(m, i, a){ return m && a.indexOf(m) === i; }).sort();
     if(!list.length){ tabs.innerHTML = ""; el.innerHTML = '<div class="home-empty">아직 등록된 미션이 없어요.</div>'; return; }
     var now = new Date(), cur = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2);
