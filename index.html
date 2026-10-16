@@ -1507,21 +1507,28 @@
     (closed ? '' : '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:8px">참석불가 사유는 익명이 아니에요. 이름과 함께 운영진에게 전달돼요.</div>' +
       '<div style="margin-top:10px"><button type="button" class="vote-btn selected" data-grid-submit="1" style="flex:none;padding:10px 22px">' + (md ? "수정해서 제출" : "제출") + '</button></div>');
   }
-  /* 날짜 고르기 + 참석/참석불가 (mode: "datepick") — 참석이면 날짜 하나, 참석불가면 사유 필수 */
-  var attendHint = {};
+  /* 날짜 고르기 + 참석/참석불가 (mode: "datepick") — 참석이면 가능한 날짜를 여러 개 고를 수 있고, 참석불가면 사유 필수 */
+  var attendHint = {}, dateSel = {};
+  function myDates(p){
+    if(dateSel[p.id]) return dateSel[p.id];
+    var md = myVoteDoc(p.id);
+    if(!md || md.choice === "참석불가") return [];
+    return (md.dates && md.dates.length) ? md.dates.slice() : (md.choice ? [md.choice] : []);
+  }
   function renderDatepick(p, closed, mine, draft){
     var dates = (p.options || []).filter(function(o){ return o !== "참석불가"; });
-    var noSel = draft === "참석불가" || (!draft && mine === "참석불가");
-    var yesSel = !noSel && (attendHint[p.id] || (mine && mine !== "참석불가"));
+    var sel = draft ? [] : myDates(p);
+    var noSel = draft === "참석불가" || (!draft && !sel.length && mine === "참석불가");
+    var yesSel = !noSel && (attendHint[p.id] || sel.length > 0);
     var attendRow = '<div class="vote-actions">' +
         '<button type="button" class="vote-btn' + (yesSel ? ' selected' : '') + '" data-attend="' + esc(p.id) + '"' + (closed ? ' disabled' : '') + '>참석</button>' +
         '<button type="button" class="vote-btn absent' + (noSel ? ' selected' : '') + '" data-opt="참석불가"' + (closed ? ' disabled' : '') + '>참석불가</button>' +
       '</div>';
-    /* 참석·참석불가와 날짜를 한 번에 보여줘요 (날짜를 누르면 참석으로 처리) */
+    /* 참석·참석불가와 날짜를 한 번에 보여줘요 (날짜를 누르면 참석으로 처리, 여러 개 선택 가능) */
     return attendRow +
-      (attendHint[p.id] && !(mine && mine !== "참석불가") && !closed ? '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석할 날짜를 골라주세요.</div>' : '') +
-      '<div class="vote-actions" style="flex-wrap:wrap;margin-top:10px">' + dates.map(function(o){
-        return '<button type="button" class="vote-btn' + (!draft && mine === o ? ' selected' : '') + '" data-opt="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + esc(o) + '</button>';
+      (closed ? '' : '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--wine-deep)">참석 가능한 날짜를 모두 골라주세요 (여러 개 선택 가능)</div>') +
+      '<div class="vote-actions" style="flex-wrap:wrap;margin-top:8px">' + dates.map(function(o){
+        return '<button type="button" class="vote-btn' + (sel.indexOf(o) >= 0 ? ' selected' : '') + '" data-date="' + esc(o) + '" style="min-width:120px;padding:11px 12px"' + (closed ? ' disabled' : '') + '>' + (sel.indexOf(o) >= 0 ? '✓ ' : '') + esc(o) + '</button>';
       }).join("") + '</div>';
   }
   function needsReason(p, o){ return (p.reasonOptions || []).indexOf(o) >= 0; }
@@ -1561,6 +1568,7 @@
     });
     el.innerHTML = list.map(function(p){
       var mine = pollVoteOf(p.id), closed = pollClosed(p), md = myVoteDoc(p.id), draft = reasonDraft[p.id];
+      if(p.mode === "datepick" && md && md.dates && md.dates.length) mine = md.dates.join(", ");
       return '<div class="card vote-card" data-poll="' + esc(p.id) + '">' +
         '<span class="vote-tag">' + esc(p.tag || "투표") + '</span>' +
         '<div class="vote-title">' + esc(p.title || "") + '</div>' +
@@ -1627,6 +1635,8 @@
         var pid = rs.dataset.reasonSubmit, ta = el.querySelector('textarea[data-reason="' + pid + '"]');
         var txt = ta ? ta.value.trim() : "";
         if(!txt){ alert("사유를 적어주세요."); if(ta) ta.focus(); return; }
+        var rp = pollsCache.filter(function(x){ return x.id === pid; })[0];
+        if(rp && rp.mode === "datepick"){ delete dateSel[pid]; submitVote(pid, reasonDraft[pid], txt, rs, { dates: [] }); return; }
         submitVote(pid, reasonDraft[pid], txt, rs); return;
       }
       var gb = e.target.closest("[data-grid]");
@@ -1656,6 +1666,18 @@
       }
       var at = e.target.closest("[data-attend]");
       if(at){ attendHint[at.dataset.attend] = true; delete reasonDraft[at.dataset.attend]; renderPolls(); return; }
+      var db2 = e.target.closest("[data-date]");
+      if(db2){
+        var dpid = db2.closest("[data-poll]").dataset.poll, dp = pollsCache.filter(function(x){ return x.id === dpid; })[0];
+        if(!dp || pollClosed(dp)) return;
+        var cur = reasonDraft[dpid] ? [] : myDates(dp).slice(), dv = db2.dataset.date, k = cur.indexOf(dv);
+        if(k >= 0) cur.splice(k, 1); else cur.push(dv);
+        if(!cur.length){ alert("참석 가능한 날짜를 하나 이상 골라주세요.\n참석이 어려우면 '참석불가'를 눌러주세요."); return; }
+        var order = (dp.options || []); cur.sort(function(a, b){ return order.indexOf(a) - order.indexOf(b); });
+        dateSel[dpid] = cur; delete reasonDraft[dpid]; delete attendHint[dpid]; renderPolls();
+        submitVote(dpid, cur[0], "", null, { dates: cur.slice() });
+        return;
+      }
       var rc = e.target.closest("[data-reason-cancel]");
       if(rc){ delete reasonDraft[rc.dataset.reasonCancel]; delete reasonText[rc.dataset.reasonCancel]; renderPolls(); return; }
       var b = e.target.closest("[data-opt]");
