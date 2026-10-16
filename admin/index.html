@@ -202,6 +202,8 @@
     var d = new Date(ts);
     return (d.getMonth()+1) + "." + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2);
   }
+  /* 한 학생이 고른 선택지들 (날짜 여러 개를 고른 경우 dates 에 있어요) */
+  function voteChoices(v){ var d = v.d || v; return (d.dates && d.dates.length) ? d.dates : (d.choice ? [d.choice] : []); }
   function byNewest(a, b){ return (b.d.createdAt || 0) - (a.d.createdAt || 0); }
   function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
   function downloadCsv(filename, rows){
@@ -365,7 +367,7 @@
           });
         } else {
           parts = (p.options || []).map(function(o){
-            var n = votes.filter(function(v){ return v.d.choice === o; }).length;
+            var n = votes.filter(function(v){ return voteChoices(v).indexOf(o) >= 0; }).length;
             return '<span class="adm-tag' + (o === "참석불가" || o === "불참" ? " red" : " gray") + '">' + esc(o) + ' ' + n + '명</span>';
           });
         }
@@ -531,7 +533,7 @@
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">순서 <input class="adm-input" id="adm-p-order" type="number" value="' + esc(p.order != null ? p.order : 1) + '" style="width:80px"></label>' +
         '</div>' +
         '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">투표 방식 <select class="adm-select" id="adm-p-mode" style="width:auto">' +
-          [["single","선택지 중 하나 고르기"],["datepick","날짜 하나 고르기 + 참석 / 참석불가 (불가는 사유 필수)"],["grid","날짜마다 참석 / 참석불가 (불가는 사유 필수)"]].map(function(m){
+          [["single","선택지 중 하나 고르기"],["datepick","날짜 고르기(여러 개 가능) + 참석 / 참석불가 (불가는 사유 필수)"],["grid","날짜마다 참석 / 참석불가 (불가는 사유 필수)"]].map(function(m){
             return '<option value="' + m[0] + '"' + ((p.mode || "single") === m[0] ? " selected" : "") + '>' + m[1] + '</option>'; }).join("") + '</select></label>' +
         '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">사유를 꼭 받을 선택지 <input class="adm-input" id="adm-p-reason" placeholder="예) 참석불가 (쉼표로 구분, 일반 투표용)" value="' + esc((p.reasonOptions || []).join(", ")) + '" style="flex:1 1 220px"></label>' +
         '</div>';
@@ -584,7 +586,7 @@
       return { done: done, total: Object.keys(teams).length, doing: doing, all: all };
     }
     function voteAnswer(p, v){
-      if(p.mode !== "grid") return v.d.choice || "";
+      if(p.mode !== "grid") return voteChoices(v).join(", ");
       var a = v.d.answers || {}; return (p.options || []).map(function(o){ return o + " " + (a[o] || "-"); }).join(" / ");
     }
     function voteReason(p, v){
@@ -611,7 +613,7 @@
         var cnt = {}, cntNo = {}; (p.options || []).forEach(function(o){ cnt[o] = 0; cntNo[o] = 0; });
         var orphan = 0;
         if(isGrid) votes.forEach(function(v){ var a = v.d.answers || {}; Object.keys(cnt).forEach(function(o){ if(a[o] === "참석") cnt[o]++; else if(a[o] === "참석불가") cntNo[o]++; }); });
-        else votes.forEach(function(v){ if(cnt[v.d.choice] != null) cnt[v.d.choice]++; else orphan++; });
+        else votes.forEach(function(v){ var hit = false; voteChoices(v).forEach(function(c){ if(cnt[c] != null){ cnt[c]++; hit = true; } }); if(!hit) orphan++; });
         var max = Math.max.apply(null, [1].concat(Object.keys(cnt).map(function(k){ return cnt[k]; })));
         return '<div class="adm-card" data-id="' + esc(x.id) + '">' +
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
@@ -1121,7 +1123,7 @@
         var pg = pc.d.mode === "grid", popts = pc.d.options || [];
         var head = ["단과대","팀","이름","역할"].concat(pg ? popts.reduce(function(acc, o){ return acc.concat([o, o + " 사유"]); }, []) : ["응답","사유"]).concat(["시각"]);
         downloadCsv((pc.d.title || "투표").replace(/[\\/:*?"<>|]/g, "") + ".csv", [head].concat(scoped("poll_votes").filter(function(v){ return v.d.pollId === id; }).map(function(v){
-          var mid = pg ? popts.reduce(function(acc, o){ return acc.concat([(v.d.answers || {})[o] || "", (v.d.reasons || {})[o] || ""]); }, []) : [v.d.choice || "", v.d.reason || ""];
+          var mid = pg ? popts.reduce(function(acc, o){ return acc.concat([(v.d.answers || {})[o] || "", (v.d.reasons || {})[o] || ""]); }, []) : [voteChoices(v).join(", "), v.d.reason || ""];
           var ts = v.d.updatedAt || v.d.createdAt;
           return [v.d.college || "", v.d.teamKey || v.d.team || "", v.d.name || "", v.d.role || ""].concat(mid).concat([ts ? new Date(ts).toLocaleString("ko-KR") : ""]);
         }))); return;
