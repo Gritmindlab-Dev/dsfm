@@ -2690,6 +2690,7 @@
         '<div class="notice-top">' + (n.pinned ? '<span class="notice-pin">📌 고정</span>' : "") +
           (n.college && n.college !== "전체" ? '<span class="notice-pin" style="background:var(--blush);color:var(--wine-deep)">' + esc(n.college) + '</span>' : "") + '<span class="notice-tag">' + esc(n.tag || "공지") + '</span><span class="notice-label">' + esc(n.label || "") + '</span></div>' +
         (n.detail ? '<div class="notice-detail" style="white-space:pre-wrap">' + esc(n.detail) + '</div>' : "") +
+        (noticeImg(n.image) ? '<img class="notice-img" src="' + esc(n.image) + '" alt="' + esc(n.label || "공지 이미지") + '" loading="lazy" data-zoom="1" style="display:block;width:100%;max-width:520px;margin-top:10px;border-radius:12px;border:1px solid var(--line);cursor:zoom-in">' : "") +
         '<div class="notice-foot">' +
           '<button type="button" class="notice-read-btn' + (read ? " done" : "") + '" data-action="ann-read">' + (read ? "✓ 확인했어요" : "확인했어요") + '</button>' +
           '<span class="notice-read-count">' + reads.length + '명 확인</span>' +
@@ -2699,7 +2700,19 @@
     }).join("");
   }
 
+  /* 공지 이미지: 사이트 안의 img/ 파일만 보여줘요. 누르면 크게 보기 */
+  function noticeImg(u){ return typeof u === "string" && /^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u); }
+  function zoomImg(src, alt){
+    var w = document.createElement("div");
+    w.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(20,12,16,.82);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out";
+    var im = document.createElement("img"); im.src = src; im.alt = alt || "";
+    im.style.cssText = "max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.4)";
+    w.appendChild(im); w.addEventListener("click", function(){ w.remove(); });
+    document.body.appendChild(w);
+  }
   document.getElementById("announce-list").addEventListener("click", function(e){
+    var zi = e.target.closest("img[data-zoom]");
+    if(zi){ zoomImg(zi.getAttribute("src"), zi.getAttribute("alt")); return; }
     var btn = e.target.closest('[data-action="ann-read"]');
     if(!btn) return;
     var item = btn.closest("[data-aid]");
