@@ -1747,6 +1747,8 @@
 
   /* ================= 로그인 팝업 공지 (운영진 페이지 '공지 관리'에서 '팝업으로 띄우기' 체크) ================= */
   var popupShown = {};
+  var POP_PAGES = ["announce", "mission", "verify"];
+  function popImgOk(u){ return typeof u === "string" && /^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u); }
   function todayKey(){ var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
   function maybePopup(docs){
     if(!state.name || document.getElementById("announce-popup")) return;
@@ -1767,8 +1769,10 @@
       '<div style="background:linear-gradient(160deg,var(--wine-deep),var(--wine));color:#fff;padding:20px 22px 18px;border-radius:20px 20px 0 0">' +
         '<div style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18)">' + esc(n.tag || "공지") + '</div>' +
         '<div style="font-size:19px;font-weight:800;margin-top:8px;line-height:1.35">' + esc(n.label || "") + '</div></div>' +
-      '<div style="padding:18px 22px;font-size:14.5px;line-height:1.75;color:var(--ink);white-space:pre-wrap">' + esc(n.detail || "") + '</div>' +
-      '<div style="display:flex;gap:8px;padding:0 22px 20px">' +
+      (popImgOk(n.image) ? '<div style="padding:14px 14px 4px"><img src="' + esc(n.image) + '" alt="' + esc(n.label || "") + '" style="display:block;width:100%;border-radius:12px;border:1px solid var(--line)"></div>' :
+        '<div style="padding:18px 22px;font-size:14.5px;line-height:1.75;color:var(--ink);white-space:pre-wrap">' + esc(n.detail || "") + '</div>') +
+      (POP_PAGES.indexOf(n.popupGoto) >= 0 ? '<div style="padding:10px 14px 0"><button type="button" data-pop="go" data-goto="' + esc(n.popupGoto) + '" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;text-align:center;padding:13px;border-radius:12px;background:#e8a33a;color:#fff;font-size:15px;font-weight:800">' + esc(n.popupBtn || "바로 가기") + ' →</button></div>' : '') +
+      '<div style="display:flex;gap:8px;padding:10px 14px 16px">' +
         '<button type="button" data-pop="today" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-size:13px;color:var(--ink-soft)">오늘 하루 보지 않기</button>' +
         '<button type="button" data-pop="close" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;padding:12px;border-radius:12px;background:var(--wine-deep);color:#fff;font-size:14px;font-weight:700">확인</button>' +
       '</div></div>';
