@@ -1764,12 +1764,12 @@
     popupShown[n.id] = true;
     var wrap = document.createElement("div");
     wrap.id = "announce-popup";
-    wrap.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(42,30,34,.55);display:flex;align-items:center;justify-content:center;padding:20px";
-    wrap.innerHTML = '<div style="width:100%;max-width:400px;max-height:85vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">' +
+    wrap.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(42,30,34,.55);display:flex;align-items:center;justify-content:center;padding:16px";
+    wrap.innerHTML = '<div style="width:100%;max-width:560px;max-height:90vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">' +
       '<div style="background:linear-gradient(160deg,var(--wine-deep),var(--wine));color:#fff;padding:20px 22px 18px;border-radius:20px 20px 0 0">' +
         '<div style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18)">' + esc(n.tag || "공지") + '</div>' +
-        '<div style="font-size:19px;font-weight:800;margin-top:8px;line-height:1.35">' + esc(n.label || "") + '</div></div>' +
-      (popImgOk(n.image) ? '<div style="padding:14px 14px 4px"><img src="' + esc(n.image) + '" alt="' + esc(n.label || "") + '" style="display:block;width:100%;border-radius:12px;border:1px solid var(--line)"></div>' :
+        '<div style="font-size:clamp(16px,4.8vw,20px);font-weight:800;margin-top:8px;line-height:1.35;word-break:keep-all">' + esc(n.label || "") + '</div></div>' +
+      (popImgOk(n.image) ? '<div style="padding:14px 14px 4px"><img src="' + esc(n.image) + '" alt="' + esc(n.label || "") + '" style="display:block;max-height:calc(90vh - 250px);width:auto;max-width:100%;margin:0 auto;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.12)"></div>' :
         '<div style="padding:18px 22px;font-size:14.5px;line-height:1.75;color:var(--ink);white-space:pre-wrap">' + esc(n.detail || "") + '</div>') +
       (POP_PAGES.indexOf(n.popupGoto) >= 0 ? '<div style="padding:10px 14px 0"><button type="button" data-pop="go" data-goto="' + esc(n.popupGoto) + '" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;text-align:center;padding:13px;border-radius:12px;background:#e8a33a;color:#fff;font-size:15px;font-weight:800">' + esc(n.popupBtn || "바로 가기") + ' →</button></div>' : '') +
       '<div style="display:flex;gap:8px;padding:10px 14px 16px">' +
