@@ -25,7 +25,7 @@
   };
   /* 건물별 미션 — QR을 찍어야만 보여요.
      type "text" : 각자 한 줄 → 공유공간 게시판에 그대로 올라가요 (자유게시판 / 운영진에게 건의)
-     type "photo": 팀에서 1명이 사진 1장 → 사진 게시판에 올라가고, 나머지 팀원은 같은 QR만 찍어도 스탬프 */
+     type "photo": 팀에서 1명이 사진 1장 → 사진 게시판에 올라가고, 팀원 모두에게 스탬프 */
   var MISSIONS = {
     b1: { type: "text", board: "private_posts", boardName: "자유게시판", t: "피크닉데이 한 줄 각오", d: "자유게시판에 오늘 피크닉데이\n나의 한 줄 각오를 남겨 주세요!", ph: "예) 오늘 스탬프 5개 다 모으고 라면 먹는다!", prefix: "[PICNIC DAY 각오] " },
     b2: { type: "photo", t: "강의동 거울샷", d: "강의동 거울 앞에서\n팀 전원이 다 나오게 거울샷 찰칵!" },
@@ -332,7 +332,7 @@
   function stampCard(u){
     var cfg = S.cfg, s = u.stamps || {}, n = stampCount(u), open = qrOpenNow(cfg);
     var html = '<div class="pk-card"><h3>피크닉미션 2 · 교내 QR을 모아라! ' + (n >= 5 ? '<span class="pk-tag ok">5/5 완료</span>' : '<span class="pk-tag">' + n + '/5</span>') + '</h3>' +
-      '<p class="d">교내 5개 건물에 붙은 QR을 <b>휴대폰 카메라</b>로 찍으면 <b>미션</b>이 열려요. 한 줄 쓰기 미션은 각자, 사진 미션은 팀에서 1명이 올리면 나머지 팀원은 같은 QR만 찍어도 스탬프가 쌓여요. 팀원 <b>전원</b>이 5개를 모으면 간식박스를 받을 수 있어요.' +
+      '<p class="d">교내 5개 건물에 붙은 QR을 <b>휴대폰 카메라</b>로 찍으면 <b>미션</b>이 열려요. 한 줄 쓰기 미션은 각자, 사진 미션은 팀에서 1명이 올리면 팀원 모두에게 스탬프가 찍혀요. 팀원 <b>전원</b>이 5개를 모으면 간식박스를 받을 수 있어요.' +
       (open ? "" : '<br><b style="color:#b23b3b">지금은 QR 인정 시간이 아니에요 (10:00~16:00).</b>') + '</p>' +
       '<div class="pk-stamps">' + POINT_KEYS.map(function(k){
         var tp = !s[k] && MISSIONS[k].type === "photo" && S.proofs[k];
@@ -419,6 +419,28 @@
     var cnt = stampCount(S.user) + 1;
     return db.collection("picnic_users").doc(S.me.rosterId).update(upd).then(function(){ return cnt; });
   }
+  /* 사진 미션: 1명이 올리면 팀원 모두에게 스탬프 */
+  function teamStamp(key){
+    try{
+      var now = Date.now(), b = db.batch(), n = 0;
+      (S.members || []).forEach(function(m){
+        if(m.id === S.me.rosterId || !m.d || !m.d.teamId || (m.d.stamps && m.d.stamps[key])) return;
+        var u = {}; u["stamps." + key] = now; b.update(db.collection("picnic_users").doc(m.id), u); n++;
+      });
+      if(n) b.commit().catch(function(e){ console.warn("팀원 스탬프", e); });
+    }catch(e){ console.warn(e); }
+  }
+  /* 팀원이 이미 올린 사진 미션은 내 스탬프도 자동으로 (늦게 합류한 팀원 등) */
+  var autoTried = {};
+  function autoTeamStamps(){
+    var u = S.user; if(!u || !u.teamId || !u.verifiedAt || !db) return;
+    POINT_KEYS.forEach(function(k){
+      if(MISSIONS[k].type !== "photo" || !S.proofs[k] || (u.stamps && u.stamps[k]) || autoTried[k]) return;
+      if(S.proofs[k].teamId !== u.teamId || S.proofs[k].byId === S.me.rosterId) return;
+      autoTried[k] = 1;
+      giveStamp(k).then(function(cnt){ showStampPop(k, cnt, (S.proofs[k].by || "팀원") + " 님이 팀 사진을 올려서 함께 적립됐어요"); }).catch(function(){ autoTried[k] = 0; });
+    });
+  }
   /* mode: "new"(미션 하기) | "team"(팀원이 이미 사진 인증 → 스탬프 적립됨) | "done"(다시 보기) */
   function showMission(key, mode, headline){
     var m = MISSIONS[key]; if(!m) return;
@@ -432,7 +454,7 @@
         body = '<div class="ans"><div class="l">' + esc(m.boardName) + '에 그대로 올라가요</div><textarea maxlength="300" placeholder="' + esc(m.ph) + '"></textarea></div>' +
           '<button type="button" data-mo="submit">올리고 스탬프 받기</button><button type="button" data-mo="close" class="sub">나중에 하기 (QR 다시 찍으면 돼요)</button>';
       } else if(mode === "new"){
-        body = '<div class="ans"><div class="l">팀에서 1명만 올리면 돼요 · 사진 게시판에 올라가요</div>' +
+        body = '<div class="ans"><div class="l">팀에서 1명만 올리면 팀원 모두 스탬프 · 사진 게시판에 올라가요</div>' +
           '<button type="button" data-mo="pick" class="alt">📷 사진 고르기</button><input type="file" accept="image/*" style="display:none">' +
           (file ? '<div class="pk-files" style="margin:8px 0;grid-template-columns:1fr"><img src="' + file + '" alt="" style="aspect-ratio:auto;max-height:240px;object-fit:contain"></div>' : "") + '</div>' +
           '<button type="button" data-mo="submit"' + (file ? "" : " disabled") + '>' + (file ? "사진 올리고 스탬프 받기" : "사진을 골라 주세요") + '</button>' +
@@ -477,7 +499,7 @@
           .then(function(){
             return db.collection("photo_posts").add({ type: "image", author: me.name || "참여자", title: "[PICNIC DAY] " + m.t + " · " + teamName, caption: pointName(S.cfg, key) + " 미션", image: file, college: me.college || "", picnic: key, createdAt: Date.now() }).catch(function(){});
           }, function(err){ return ref.get().then(function(sn){ if(!sn.exists) throw err; }); }) /* 팀원이 먼저 올렸으면 스탬프만 */
-          .then(function(){ return giveStamp(key); });
+          .then(function(){ teamStamp(key); return giveStamp(key); });
       }
       done.then(function(cnt){ w.remove(); showStampPop(key, cnt); })
         .catch(function(err){ b.disabled = false; b.textContent = "다시 시도"; toast("올리지 못했어요. 다시 시도해 주세요.", "bad"); console.warn(err); });
@@ -579,7 +601,7 @@
     S.team = null; S.members = []; S.proofs = {};
     if(!teamId) return;
     unsubProofs = db.collection("picnic_missions").where("teamId", "==", teamId).onSnapshot(function(s){
-      var m = {}; s.docs.forEach(function(d){ var x = d.data(); m[x.key] = x; }); S.proofs = m; render();
+      var m = {}; s.docs.forEach(function(d){ var x = d.data(); m[x.key] = x; }); S.proofs = m; render(); autoTeamStamps();
     }, function(){});
     unsubTeam = db.collection("picnic_teams").doc(teamId).onSnapshot(function(s){ S.team = s.exists ? s.data() : null; render(); }, function(){});
     unsubMembers = db.collection("picnic_users").where("teamId", "==", teamId).onSnapshot(function(s){
@@ -599,6 +621,7 @@
       S.user = s.exists ? s.data() : null;
       watchTeam(S.user && S.user.teamId ? S.user.teamId : null);
       render();
+      autoTeamStamps();
       if(!pendingTried){ pendingTried = true; setTimeout(processPending, 600); }
     }, function(err){ console.warn(err); S.user = null; render(); });
     db.collection("picnic_booth_logs").where("rosterId", "==", me.rosterId).onSnapshot(function(s){
