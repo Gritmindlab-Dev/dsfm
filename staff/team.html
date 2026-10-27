@@ -330,7 +330,7 @@
       render(); runAuto();
     }, fail);
     P.db.collection("picnic_config").doc("main").onSnapshot(function(s){ cfg = s.exists ? (s.data() || {}) : {}; render(); runAuto(); }, function(){});
-    P.db.collection("team_roster").get().then(function(s){ roster = s.docs.map(function(d){ return d.data(); }); render(); runAuto(); }).catch(fail);
+    P.db.collection("team_roster").onSnapshot(function(s){ roster = s.docs.map(function(d){ return d.data(); }); render(); runAuto(); }, fail);
     P.db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
   }});
 })();

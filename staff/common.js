@@ -121,6 +121,7 @@
 
     if(typeof firebase === "undefined"){ loginEl.style.display = "flex"; showErr("Firebase를 불러오지 못했어요. 인터넷 연결을 확인해 주세요."); return; }
     firebase.initializeApp(firebaseConfig);
+    try{ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(function(){}); }catch(e){}  /* 다시 열 때 바뀐 것만 읽기 */
     P.db = firebase.firestore();
 
     function login(){
