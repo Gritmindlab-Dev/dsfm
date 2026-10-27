@@ -110,7 +110,7 @@
     if(!autoOn() || !roster) return;
     var mk = mentorTeamKeys(), groups = {};
     users.forEach(function(u){
-      if(!u.d.attendAt || u.d.teamId || autoBusy[u.id]) return;
+      if(!u.d.attendAt || u.d.teamId || !u.d.verifiedAt || autoBusy[u.id]) return; /* 운영본부에서 [출석 확인]을 눌러야 자동 배정 */
       var k = u.d.team; if(!k || !mk[k]) return;
       (groups[k] = groups[k] || []).push(u.id);
     });
@@ -135,7 +135,7 @@
     el.className = "tm-auto" + (on ? " on" : "");
     el.innerHTML = '<button class="sw" type="button" data-act="auto-toggle" aria-label="자동 배정 켜고 끄기"></button>' +
       '<div><b>같은 조 자동 배정 ' + (on ? "켜짐" : "꺼짐") + '</b><br><span class="st-muted">' +
-      (on ? "멘토가 있는 기존 멘토링 조는 출석하면 그 조 이름의 팀으로 바로 들어가요. 멘토 없는 조만 아래에서 배정하면 돼요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요.") +
+      (on ? "학생 화면을 확인하고 <b>[출석 확인]</b>을 누르면, 멘토가 있는 기존 멘토링 조는 그 조 이름의 팀으로 바로 들어가요. 멘토 없는 조는 확인 후 아래에서 끌어다 배정해요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요.") +
       (roster ? "" : " · 명단 불러오는 중") + '</span></div>';
   }
 
@@ -144,7 +144,8 @@
     var att = users.filter(function(u){ return u.d.attendAt; });
     var wait = att.filter(function(u){ return !u.d.teamId; });
     document.getElementById("tm-stats").innerHTML =
-      stat("출석", att.length) + stat("미배정", wait.length, wait.length > 0) + stat("팀", teams.length) + stat("배정 완료", att.length - wait.length);
+      stat("출석", att.length) + stat("확인 대기", wait.filter(function(u){ return !u.d.verifiedAt; }).length, wait.some(function(u){ return !u.d.verifiedAt; })) +
+      stat("미배정", wait.length, wait.length > 0) + stat("배정 완료", att.length - wait.length);
     renderList(att);
     renderAction();
     renderTeams();
@@ -160,7 +161,9 @@
       var t = u.d.teamId ? teamOf(u.d.teamId) : null;
       return '<label class="tm-p' + (sel[u.id] ? " sel" : "") + '" draggable="true" data-drag="' + esc(u.id) + '"><input type="checkbox" data-sel="' + esc(u.id) + '"' + (sel[u.id] ? " checked" : "") + '>' +
         '<div style="min-width:0"><div class="nm">' + esc(u.d.name) + ' ' + (u.d.role === "멘토" ? '<span class="st-tag">멘토</span>' : '<span class="st-tag gray">멘티</span>') + '</div><div class="sb">' + esc(label(u)) + '</div></div>' +
-        '<div class="r">출석 ' + P.hhmm(u.d.attendAt) + '<br>' + (t ? '<span class="st-tag ok">' + esc(t.d.name) + '</span>' : '<span class="st-tag bad">미배정</span>') + '</div></label>';
+        '<div class="r">출석 ' + P.hhmm(u.d.attendAt) + '<br>' + (t ? '<span class="st-tag ok">' + esc(t.d.name) + '</span>' :
+          !u.d.verifiedAt ? '<button class="st-btn sm" type="button" data-verify="' + esc(u.id) + '" style="margin-top:4px">출석 확인</button>' :
+          '<span class="st-tag bad">미배정</span>') + '</div></label>';
     }).join("");
   }
 
@@ -215,7 +218,9 @@
     ids.forEach(function(id){
       var u = userOf(id); if(!u) return;
       if(u.d.teamId && u.d.teamId !== teamId && teamOf(u.d.teamId)) batch.update(db.collection("picnic_teams").doc(u.d.teamId), { members: FV.arrayRemove(id) });
-      batch.update(db.collection("picnic_users").doc(id), { teamId: teamId, assignedAt: Date.now(), assignedBy: P.admin.name || "" });
+      var up = { teamId: teamId, assignedAt: Date.now(), assignedBy: P.admin.name || "" };
+      if(!u.d.verifiedAt){ up.verifiedAt = Date.now(); up.verifiedBy = P.admin.name || ""; }
+      batch.update(db.collection("picnic_users").doc(id), up);
     });
     var upd = { members: FV.arrayUnion.apply(FV, ids) };
     if(ids.some(function(id){ var u = userOf(id); return u && u.d.role === "멘토"; })) upd.hasMentor = true; /* 멘토가 들어오면 '멘토 있음'으로 */
@@ -233,6 +238,15 @@
   document.addEventListener("click", function(e){
     var f = e.target.closest("[data-f]");
     if(f){ filter = f.dataset.f; document.querySelectorAll("#tm-filter button").forEach(function(b){ b.classList.toggle("on", b === f); }); render(); return; }
+    var vb = e.target.closest("[data-verify]");
+    if(vb){
+      e.preventDefault(); /* label 안 버튼 — 체크박스가 같이 눌리지 않게 */
+      var vu = userOf(vb.dataset.verify); if(!vu) return;
+      vb.disabled = true;
+      P.db.collection("picnic_users").doc(vu.id).update({ verifiedAt: Date.now(), verifiedBy: P.admin.name || "" })
+        .then(function(){ P.toast(vu.d.name + " 님 출석 확인", "ok"); }).catch(fail);
+      return;
+    }
     var a = e.target.closest("[data-act]");
     if(a){
       var act = a.dataset.act, ids2 = selected();
