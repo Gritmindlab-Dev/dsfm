@@ -39,6 +39,11 @@
   .tm-team.drop-on,.tm-new.drop-on{border-color:var(--wine-deep);background:#fbe9ee;box-shadow:0 0 0 3px rgba(124,31,61,.15)}
   .tm-new{border:2px dashed #d9c6cc;border-radius:14px;padding:16px;margin-bottom:10px;text-align:center;color:var(--ink-soft);font-weight:700;font-size:14px}
   .tm-hint{font-size:12.5px;color:var(--ink-soft);background:#fff8e6;border-radius:10px;padding:8px 10px;margin:-2px 0 10px;line-height:1.5}
+  .tm-auto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+  .tm-auto.on{border-color:#3f7a5c;background:#f3fbf6}
+  .tm-auto .sw{all:unset;cursor:pointer;flex:none;width:46px;height:26px;border-radius:99px;background:#d6c8cc;position:relative}
+  .tm-auto .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+  .tm-auto.on .sw{background:#3f7a5c}.tm-auto.on .sw::after{left:23px}
   .st-sel{border:1.5px solid var(--line);border-radius:10px;padding:10px;background:#fff;min-width:0;flex:1 1 160px}
 </style>
 </head>
@@ -50,6 +55,7 @@
     <button type="button" id="st-logout">로그아웃</button>
   </div>
   <div class="st-main">
+    <div class="tm-auto" id="tm-auto"></div>
     <div class="tm-stats" id="tm-stats"></div>
     <div class="tm-grid">
       <div>
@@ -84,13 +90,57 @@
   "use strict";
   var P = window.PK, esc = P.esc;
   var users = [], teams = [], sel = {}, filter = "wait", q = "", tq = "";
+  var cfg = {}, roster = null, autoBusy = {};
 
   function teamOf(id){ return teams.filter(function(t){ return t.id === id; })[0]; }
   function userOf(id){ return users.filter(function(u){ return u.id === id; })[0]; }
   function label(u){ return [u.d.college, u.d.teamName].filter(Boolean).join(" · "); }
   function match(u, s){ if(!s) return true; return [u.d.name, u.d.college, u.d.teamName, u.d.team].join(" ").toLowerCase().indexOf(s.toLowerCase()) >= 0; }
 
+  /* ---------- 같은 조 자동 배정 ----------
+     멘토가 있는 기존 멘토링 조(명단 기준)는 출석하면 그 조 이름의 팀으로 바로 들어가요.
+     멘토 없는 조(단과대별 멘티)는 지금처럼 현장에서 배정해요. 이 페이지가 열려 있는 동안 동작해요. */
+  function autoOn(){ return cfg.autoAssign !== false; }
+  function mentorTeamKeys(){
+    var m = {}; (roster || []).forEach(function(r){ if(r.role === "멘토") m[r.teamKey || ((r.college ? r.college + " " : "") + (r.team || ""))] = 1; });
+    return m;
+  }
+  function autoTeamId(key){ return "auto_" + String(key).replace(/[\/\s.#$\[\]]+/g, "_"); }
+  function runAuto(){
+    if(!autoOn() || !roster) return;
+    var mk = mentorTeamKeys(), groups = {};
+    users.forEach(function(u){
+      if(!u.d.attendAt || u.d.teamId || autoBusy[u.id]) return;
+      var k = u.d.team; if(!k || !mk[k]) return;
+      (groups[k] = groups[k] || []).push(u.id);
+    });
+    Object.keys(groups).forEach(function(k){
+      var ids = groups[k]; ids.forEach(function(id){ autoBusy[id] = 1; });
+      var tid = autoTeamId(k), db = P.db, FV = firebase.firestore.FieldValue;
+      var first = userOf(ids[0]);
+      db.collection("picnic_teams").doc(tid).set({ name: k, hasMentor: true, sourceTeam: k, auto: true, createdAt: Date.now(), createdBy: "자동 배정" }, { merge: true })
+        .then(function(){
+          var batch = db.batch();
+          ids.forEach(function(id){ batch.update(db.collection("picnic_users").doc(id), { teamId: tid, assignedAt: Date.now(), assignedBy: "자동 배정" }); });
+          batch.update(db.collection("picnic_teams").doc(tid), { members: FV.arrayUnion.apply(FV, ids) });
+          return batch.commit();
+        })
+        .then(function(){ P.toast("[" + k + "] 자동 배정 " + ids.length + "명" + (first ? " (" + first.d.name + (ids.length > 1 ? " 외" : "") + ")" : ""), "ok"); })
+        .catch(function(e){ ids.forEach(function(id){ delete autoBusy[id]; }); fail(e); });
+    });
+  }
+  function renderAuto(){
+    var el = document.getElementById("tm-auto"); if(!el) return;
+    var on = autoOn();
+    el.className = "tm-auto" + (on ? " on" : "");
+    el.innerHTML = '<button class="sw" type="button" data-act="auto-toggle" aria-label="자동 배정 켜고 끄기"></button>' +
+      '<div><b>같은 조 자동 배정 ' + (on ? "켜짐" : "꺼짐") + '</b><br><span class="st-muted">' +
+      (on ? "멘토가 있는 기존 멘토링 조는 출석하면 그 조 이름의 팀으로 바로 들어가요. 멘토 없는 조만 아래에서 배정하면 돼요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요.") +
+      (roster ? "" : " · 명단 불러오는 중") + '</span></div>';
+  }
+
   function render(){
+    renderAuto();
     var att = users.filter(function(u){ return u.d.attendAt; });
     var wait = att.filter(function(u){ return !u.d.teamId; });
     document.getElementById("tm-stats").innerHTML =
@@ -187,6 +237,7 @@
     if(a){
       var act = a.dataset.act, ids2 = selected();
       if(act === "clear"){ sel = {}; render(); return; }
+      if(act === "auto-toggle"){ P.db.collection("picnic_config").doc("main").set({ autoAssign: !autoOn() }, { merge: true }).catch(fail); return; }
       if(act === "new"){
         var name = (document.getElementById("tm-newname").value || "").trim();
         if(!name){ P.toast("새 팀 이름을 적어 주세요.", "bad"); return; }
@@ -261,8 +312,10 @@
     P.db.collection("picnic_users").onSnapshot(function(s){
       users = s.docs.map(function(d){ return { id: d.id, d: d.data() }; });
       Object.keys(sel).forEach(function(k){ var u = userOf(k); if(!u || (filter === "wait" && u.d.teamId)) delete sel[k]; });
-      render();
+      render(); runAuto();
     }, fail);
+    P.db.collection("picnic_config").doc("main").onSnapshot(function(s){ cfg = s.exists ? (s.data() || {}) : {}; render(); runAuto(); }, function(){});
+    P.db.collection("team_roster").get().then(function(s){ roster = s.docs.map(function(d){ return d.data(); }); render(); runAuto(); }).catch(fail);
     P.db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
   }});
 })();
