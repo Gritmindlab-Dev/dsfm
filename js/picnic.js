@@ -146,9 +146,28 @@
     ".pk-pass .tm{font-size:15px;font-weight:700;margin-top:10px;color:#2f6a4c}",
     ".pk-pass .live{font-size:12px;color:var(--ink-soft);margin-top:8px}",
     ".pk-stamps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:4px 0 6px}",
-    ".pk-stamp{min-height:72px;border-radius:14px;border:2.5px dashed #d9c6cc;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10px;color:var(--ink-soft);padding:4px;line-height:1.2;word-break:keep-all}",
-    ".pk-stamp.on{border:2.5px solid var(--wine);background:radial-gradient(circle,#fff 0,#fbe9ee 100%);color:var(--wine-deep);font-weight:700}",
-    ".pk-stamp.on::before{content:'✓';font-size:20px;font-weight:900;color:var(--wine);line-height:1}",
+    ".pk-stamp{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:10.5px;color:var(--ink-soft);line-height:1.2;word-break:keep-all;padding:6px 2px 4px;border-radius:14px;background:#f7f9f7}",
+    ".pk-stamp .ic{width:100%;max-width:58px;aspect-ratio:1/1;margin-bottom:5px}",
+    ".pk-stamp .ic svg{display:block;width:100%;height:100%}",
+    ".pk-stamp.on{background:#eef8f1;color:#1f6b3a;font-weight:700}",
+    ".pk-stamp.tp{background:#fff;outline:2px dashed #2f8a4c;outline-offset:-2px;color:#1f6b3a}",
+    ".pk-stamp .tm{font-weight:400;font-size:9.5px;margin-top:1px}",
+    ".pk-prog{display:flex;align-items:center;gap:10px;margin:8px 0 2px}",
+    ".pk-prog .bar{flex:1;height:10px;border-radius:99px;background:#e6eee8;overflow:hidden}",
+    ".pk-prog .bar i{display:block;height:100%;background:#2f8a4c;border-radius:99px;transition:width .6s}",
+    ".pk-prog .c{font-weight:900;font-size:14px;color:#1f6b3a;min-width:40px;text-align:right}",
+    ".pk-pop{position:fixed;inset:0;z-index:10001;background:rgba(30,40,34,.62);display:flex;align-items:center;justify-content:center;padding:20px}",
+    ".pk-pop .bx{width:100%;max-width:340px;background:#fff;border-radius:24px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:pkPopIn .25s ease-out}",
+    ".pk-pop .stp{position:relative;width:160px;height:160px;margin:18px auto 30px}",
+    ".pk-pop .stp svg.mk{position:absolute;inset:0;width:100%;height:100%;animation:pkStampIn .55s cubic-bezier(.2,1.4,.4,1) both .1s}",
+    ".pk-pop .stp svg.ray{position:absolute;inset:-26px;width:calc(100% + 52px);height:calc(100% + 52px);animation:pkRay .5s ease-out both .45s}",
+    ".pk-pop .t{font-size:22px;font-weight:900;color:#1d2a22;margin-top:6px}",
+    ".pk-pop .s{font-size:14.5px;color:#55625a;margin-top:6px;line-height:1.5}",
+    ".pk-pop .s b{color:#1f6b3a}",
+    ".pk-pop button{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:18px;padding:15px;border-radius:14px;background:#2f8a4c;color:#fff;font-weight:900;font-size:16px;cursor:pointer}",
+    "@keyframes pkStampIn{0%{transform:scale(2.6) rotate(-22deg);opacity:0}60%{transform:scale(.88) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}",
+    "@keyframes pkRay{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}",
+    "@keyframes pkPopIn{0%{transform:scale(.92);opacity:0}100%{transform:scale(1);opacity:1}}",
     ".pk-mem{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}",
     ".pk-mem:first-child{border-top:0}",
     ".pk-mem .bar{flex:1;height:8px;border-radius:99px;background:#f1e6e9;overflow:hidden}",
@@ -189,7 +208,7 @@
     ".pk-note{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:8px}",
     "#rail-nav button[data-page=picnic]{position:relative}",
     "#rail-nav button[data-page=picnic]:not(.active){color:#ffd76a;font-weight:700}",
-    "@media (max-width:760px){.pk-hero h2{font-size:23px}.pk-stamps{gap:5px}.pk-stamp{font-size:10px;padding:4px 2px}}"
+    "@media (max-width:760px){.pk-hero h2{font-size:23px}.pk-stamps{gap:5px}.pk-stamp{font-size:9.5px}}"
   ].join("\n");
   var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 
@@ -278,6 +297,38 @@
       '<div style="font-size:22px;font-weight:900;color:var(--wine-deep);margin:2px 0 4px">' + esc(t ? t.name : "팀 정보를 불러오는 중") + '</div>' +
       '<div class="d" style="margin:0">' + (t ? ((t.members || []).length + "명" + (t.hasMentor ? " · 멘토 포함" : " · 멘티 팀")) : "") + '</div></div>';
   }
+  /* 초록 도장 그림 (찍힌 것 / 빈 칸) */
+  function stampSvg(on, big){
+    var c = on ? "#2f8a4c" : "#c5cfc8", f = on ? "#fff" : "none", dash = on ? "" : ' stroke-dasharray="7 6"';
+    var icon = '<g fill="' + (on ? c : "none") + '" stroke="' + c + '" stroke-width="' + (on ? 0 : 4) + '" stroke-linejoin="round">' +
+      '<circle cx="60" cy="33" r="10"/><path d="M55 42h10l3 12H52z"/><rect x="40" y="54" width="40" height="11" rx="3"/></g>' +
+      (on ? '<rect x="44" y="68" width="32" height="3.5" rx="1.75" fill="' + c + '" opacity=".5"/>' : "");
+    return '<svg viewBox="0 0 120 120" aria-hidden="true">' +
+      '<circle cx="60" cy="60" r="55" fill="' + f + '" stroke="' + c + '" stroke-width="5"' + dash + '/>' +
+      (on ? '<circle cx="60" cy="60" r="46" fill="none" stroke="' + c + '" stroke-width="2" stroke-dasharray="4 4"/>' : "") +
+      icon +
+      (on ? '<text x="60" y="91" text-anchor="middle" font-size="' + (big ? 17 : 15) + '" font-weight="900" fill="' + c + '" font-family="Arial,sans-serif" letter-spacing="1">STAMP</text>' : "") +
+      '</svg>';
+  }
+  function showStampPop(key, cnt, sub){
+    try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){}
+    var rays = "", cols = ["#f5b82e","#e8546b","#3b82f6","#2f8a4c","#a855f7","#f97316","#14b8a6","#ec4899"];
+    for(var i = 0; i < 12; i++){
+      var a = i * 30 * Math.PI / 180, r1 = 92, r2 = 106;
+      rays += '<line x1="' + (111 + r1 * Math.cos(a)).toFixed(1) + '" y1="' + (111 + r1 * Math.sin(a)).toFixed(1) + '" x2="' + (111 + r2 * Math.cos(a)).toFixed(1) + '" y2="' + (111 + r2 * Math.sin(a)).toFixed(1) + '" stroke="' + cols[i % cols.length] + '" stroke-width="5" stroke-linecap="round"/>';
+    }
+    var nm = pointName(S.cfg, key);
+    var w = document.createElement("div"); w.className = "pk-pop";
+    w.innerHTML = '<div class="bx" role="dialog" aria-label="스탬프 적립">' +
+      '<div class="stp"><svg class="ray" viewBox="0 0 222 222" aria-hidden="true">' + rays + '</svg>' + stampSvg(true, true).replace("<svg ", '<svg class="mk" ') + '</div>' +
+      '<div class="t">스탬프가 찍혔어요!</div>' +
+      '<div class="s"><b>' + esc(nm) + '</b> 미션 완료 · <b>' + cnt + ' / 5</b>' + (sub ? '<br>' + esc(sub) : "") +
+      (cnt >= 5 ? '<br><b>5개 모두 모았어요!</b> 팀원 모두 모으면 간식박스를 받을 수 있어요.' : "") + '</div>' +
+      '<button type="button">확인</button></div>';
+    w.querySelector("button").addEventListener("click", function(){ w.remove(); });
+    w.addEventListener("click", function(e){ if(e.target === w) w.remove(); });
+    document.body.appendChild(w);
+  }
   function stampCard(u){
     var cfg = S.cfg, s = u.stamps || {}, n = stampCount(u), open = qrOpenNow(cfg);
     var html = '<div class="pk-card"><h3>피크닉미션 2 · 교내 QR을 모아라! ' + (n >= 5 ? '<span class="pk-tag ok">5/5 완료</span>' : '<span class="pk-tag">' + n + '/5</span>') + '</h3>' +
@@ -285,9 +336,11 @@
       (open ? "" : '<br><b style="color:#b23b3b">지금은 QR 인정 시간이 아니에요 (10:00~16:00).</b>') + '</p>' +
       '<div class="pk-stamps">' + POINT_KEYS.map(function(k){
         var tp = !s[k] && MISSIONS[k].type === "photo" && S.proofs[k];
-        return '<div class="pk-stamp' + (s[k] ? " on" : "") + '"' + (s[k] ? ' data-pk="mission" data-key="' + k + '"' : "") + (tp ? ' style="border-style:solid;border-color:#3f7a5c;color:#2f6a4c"' : "") + '>' + esc(pointName(cfg, k)) +
-          (s[k] ? '<span style="font-weight:400;font-size:9px">' + hhmm(s[k]) + '</span>' : tp ? '<span style="font-size:8.5px;font-weight:700">팀 인증 완료<br>QR 찍기!</span>' : "") + '</div>';
-      }).join("") + '</div>';
+        return '<div class="pk-stamp' + (s[k] ? " on" : tp ? " tp" : "") + '"' + (s[k] ? ' data-pk="mission" data-key="' + k + '"' : "") + '>' +
+          '<div class="ic">' + stampSvg(!!s[k]) + '</div>' + esc(pointName(cfg, k)) +
+          (s[k] ? '<span class="tm">' + hhmm(s[k]) + '</span>' : tp ? '<span class="tm" style="font-weight:700">팀 인증 완료<br>QR 찍기!</span>' : "") + '</div>';
+      }).join("") + '</div>' +
+      '<div class="pk-prog"><span class="bar"><i style="width:' + (n * 20) + '%"></i></span><span class="c">' + n + ' / 5</span></div>';
     /* 팀원 진행 현황 */
     var t = S.team;
     if(t){
@@ -426,7 +479,7 @@
           }, function(err){ return ref.get().then(function(sn){ if(!sn.exists) throw err; }); }) /* 팀원이 먼저 올렸으면 스탬프만 */
           .then(function(){ return giveStamp(key); });
       }
-      done.then(function(cnt){ w.remove(); toast("📍 [" + pointName(S.cfg, key) + "] 미션 완료 · 스탬프 적립! (" + cnt + "/5)", "ok"); })
+      done.then(function(cnt){ w.remove(); showStampPop(key, cnt); })
         .catch(function(err){ b.disabled = false; b.textContent = "다시 시도"; toast("올리지 못했어요. 다시 시도해 주세요.", "bad"); console.warn(err); });
     });
     draw();
@@ -446,7 +499,7 @@
       if(!u.teamId || !u.verifiedAt){ toast("운영본부에서 출석 확인을 받은 뒤에 QR을 찍어야 미션이 열려요.", "bad"); return; }
       if(u.stamps && u.stamps[key]){ showMission(key, "done", "이미 받은 스탬프예요"); return; }
       if(MISSIONS[key].type === "photo" && S.proofs[key]){
-        giveStamp(key).then(function(cnt){ showMission(key, "team", "📍 팀원이 이미 사진을 올렸어요! 스탬프 적립 (" + cnt + "/5)"); })
+        giveStamp(key).then(function(cnt){ showStampPop(key, cnt, "팀원이 이미 사진을 올려서 바로 적립됐어요"); })
           .catch(function(e){ toast("스탬프를 저장하지 못했어요. QR을 다시 찍어 주세요.", "bad"); console.warn(e); });
         return;
       }
