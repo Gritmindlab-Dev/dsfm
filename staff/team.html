@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PICNIC DAY 출석 확인·팀 배정</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<style>
+  .tm-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+  @media (max-width:820px){.tm-grid{grid-template-columns:1fr}}
+  .tm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .tm-stat{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .tm-stat .n{font-size:26px;font-weight:900;color:var(--wine-deep)}.tm-stat .l{font-size:12px;color:var(--ink-soft);font-weight:700}
+  .tm-stat.alert .n{color:var(--bad)}
+  .tm-search{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--cream);outline:0;margin-bottom:10px}
+  .tm-filter{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tm-filter button{all:unset;cursor:pointer;padding:7px 12px;border-radius:999px;background:var(--cream);font-size:13px;font-weight:700;color:var(--ink-soft)}
+  .tm-filter button.on{background:var(--wine-deep);color:#fff}
+  .tm-p{display:flex;align-items:center;gap:10px;padding:11px 8px;border-top:1px solid var(--line);cursor:pointer;border-radius:10px}
+  .tm-p:first-child{border-top:0}.tm-p:hover{background:#fdf7f8}
+  .tm-p.sel{background:#fbe9ee}
+  .tm-p input{width:20px;height:20px;accent-color:var(--wine-deep);flex:none}
+  .tm-p .nm{font-weight:700;font-size:15px}.tm-p .sb{font-size:12px;color:var(--ink-soft)}
+  .tm-p .r{margin-left:auto;text-align:right;font-size:12px;color:var(--ink-soft);white-space:nowrap}
+  .tm-group{border:1.5px dashed #e3cdd3;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tm-group .gn{font-weight:700}
+  .tm-sticky{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--wine-deep);padding:12px 14px;margin:12px -16px -16px;border-radius:0 0 14px 14px}
+  .tm-team{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+  .tm-team .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .tm-team .tn{font-size:16px;font-weight:900;color:var(--wine-deep)}
+  .tm-chip{display:inline-flex;align-items:center;gap:4px;margin:3px 4px 0 0;padding:4px 6px 4px 10px;border-radius:999px;background:var(--cream);font-size:13px}
+  .tm-chip button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;font-size:12px;color:var(--ink-soft)}
+  .tm-chip button:hover{background:#f1dde2;color:var(--bad)}
+  .st-sel{border:1.5px solid var(--line);border-radius:10px;padding:10px;background:#fff;min-width:0;flex:1 1 160px}
+</style>
+</head>
+<body>
+<div id="st-app" style="display:none">
+  <div class="st-top">
+    <div style="flex:1;min-width:0"><div class="b">출석 확인 · 팀 배정</div><div class="w" id="st-who"></div></div>
+    <a href="./">스태프 메인</a>
+    <button type="button" id="st-logout">로그아웃</button>
+  </div>
+  <div class="st-main">
+    <div class="tm-stats" id="tm-stats"></div>
+    <div class="tm-grid">
+      <div>
+        <div class="st-card">
+          <h3>출석한 학생</h3>
+          <div class="st-muted" style="margin:-4px 0 10px;line-height:1.55">학생 휴대폰의 <b>출석 완료 화면</b>(초록 체크 · 이름 · 출석 시각)을 확인하고, 아래 목록에서 같은 이름을 골라 팀에 배정해 주세요. 여러 명을 한 번에 고를 수 있어요.</div>
+          <input class="tm-search" id="tm-q" placeholder="이름·단과대·반으로 찾기">
+          <div class="tm-filter" id="tm-filter">
+            <button type="button" data-f="wait" class="on">미배정</button>
+            <button type="button" data-f="all">전체</button>
+            <button type="button" data-f="done">배정 완료</button>
+          </div>
+          <div id="tm-list"></div>
+          <div class="tm-sticky" id="tm-action"></div>
+        </div>
+      </div>
+      <div>
+        <div class="st-card">
+          <h3>팀 목록 <span class="st-muted" id="tm-teamcount"></span></h3>
+          <input class="tm-search" id="tm-tq" placeholder="팀 이름·팀원으로 찾기">
+          <div id="tm-teams"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="common.js?v=20261027"></script>
+<script>
+(function(){
+  "use strict";
+  var P = window.PK, esc = P.esc;
+  var users = [], teams = [], sel = {}, filter = "wait", q = "", tq = "";
+
+  function teamOf(id){ return teams.filter(function(t){ return t.id === id; })[0]; }
+  function userOf(id){ return users.filter(function(u){ return u.id === id; })[0]; }
+  function label(u){ return [u.d.college, u.d.teamName].filter(Boolean).join(" · "); }
+  function match(u, s){ if(!s) return true; return [u.d.name, u.d.college, u.d.teamName, u.d.team].join(" ").toLowerCase().indexOf(s.toLowerCase()) >= 0; }
+
+  function render(){
+    var att = users.filter(function(u){ return u.d.attendAt; });
+    var wait = att.filter(function(u){ return !u.d.teamId; });
+    document.getElementById("tm-stats").innerHTML =
+      stat("출석", att.length) + stat("미배정", wait.length, wait.length > 0) + stat("팀", teams.length) + stat("배정 완료", att.length - wait.length);
+    renderList(att);
+    renderAction();
+    renderTeams();
+  }
+  function stat(l, n, alert){ return '<div class="tm-stat' + (alert ? " alert" : "") + '"><div class="n">' + n + '</div><div class="l">' + l + '</div></div>'; }
+
+  function renderList(att){
+    var list = att.filter(function(u){ return (filter === "all" || (filter === "wait" ? !u.d.teamId : !!u.d.teamId)) && match(u, q); });
+    list.sort(function(a, b){ return (b.d.attendAt || 0) - (a.d.attendAt || 0); });
+    var el = document.getElementById("tm-list");
+    if(!list.length){ el.innerHTML = '<div class="st-muted" style="padding:14px 4px">' + (filter === "wait" && !q ? "배정을 기다리는 학생이 없어요." : "해당하는 학생이 없어요.") + '</div>'; return; }
+    el.innerHTML = list.map(function(u){
+      var t = u.d.teamId ? teamOf(u.d.teamId) : null;
+      return '<label class="tm-p' + (sel[u.id] ? " sel" : "") + '"><input type="checkbox" data-sel="' + esc(u.id) + '"' + (sel[u.id] ? " checked" : "") + '>' +
+        '<div style="min-width:0"><div class="nm">' + esc(u.d.name) + ' ' + (u.d.role === "멘토" ? '<span class="st-tag">멘토</span>' : '<span class="st-tag gray">멘티</span>') + '</div><div class="sb">' + esc(label(u)) + '</div></div>' +
+        '<div class="r">출석 ' + P.hhmm(u.d.attendAt) + '<br>' + (t ? '<span class="st-tag ok">' + esc(t.d.name) + '</span>' : '<span class="st-tag bad">미배정</span>') + '</div></label>';
+    }).join("");
+  }
+
+  function renderAction(){
+    var ids = Object.keys(sel).filter(function(k){ return sel[k]; });
+    var el = document.getElementById("tm-action");
+    if(!ids.length){ el.style.display = "none"; el.innerHTML = ""; return; }
+    var ae = document.activeElement; if(ae && el.contains(ae) && ae.tagName === "INPUT") return; /* 팀 이름 입력 중엔 다시 그리지 않아요 */
+    el.style.display = "block";
+    var first = userOf(ids[0]);
+    var prevM = document.getElementById("tm-mentor");
+    var mChecked = prevM ? prevM.checked : ids.some(function(id){ var u = userOf(id); return u && u.d.role === "멘토"; });
+    var prevName = document.getElementById("tm-newname");
+    var suggest = prevName ? prevName.value : (first ? (first.d.team || first.d.teamName || "") : "");
+    var opts = teams.slice().sort(function(a, b){ return String(a.d.name).localeCompare(String(b.d.name), "ko"); })
+      .map(function(t){ return '<option value="' + esc(t.id) + '">' + esc(t.d.name) + ' (' + (t.d.members || []).length + '명)</option>'; }).join("");
+    el.innerHTML = '<div style="font-weight:900;margin-bottom:8px">' + ids.length + '명 선택됨 <button class="st-btn ghost sm" type="button" data-act="clear" style="margin-left:6px">선택 해제</button></div>' +
+      '<div class="st-row" style="margin-bottom:8px"><input class="st-in" id="tm-newname" placeholder="새 팀 이름" value="' + esc(suggest) + '" style="margin:0;flex:1 1 160px">' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700"><input type="checkbox" id="tm-mentor"' + (mChecked ? " checked" : "") + ' style="width:20px;height:20px;accent-color:var(--wine-deep)"> 멘토 있음</label>' +
+      '<button class="st-btn" type="button" data-act="new">새 팀 만들기</button></div>' +
+      (teams.length ? '<div class="st-row"><select class="st-sel" id="tm-pick">' + opts + '</select><button class="st-btn ghost" type="button" data-act="join">이 팀에 넣기</button></div>' : "");
+  }
+
+  function renderTeams(){
+    var list = teams.filter(function(t){
+      if(!tq) return true;
+      var names = (t.d.members || []).map(function(id){ var u = userOf(id); return u ? u.d.name : ""; }).join(" ");
+      return (t.d.name + " " + names).toLowerCase().indexOf(tq.toLowerCase()) >= 0;
+    }).sort(function(a, b){ return (b.d.createdAt || 0) - (a.d.createdAt || 0); });
+    document.getElementById("tm-teamcount").textContent = teams.length + "팀";
+    var el = document.getElementById("tm-teams");
+    if(!list.length){ el.innerHTML = '<div class="st-muted">' + (teams.length ? "해당하는 팀이 없어요." : "아직 만든 팀이 없어요. 출석한 학생을 골라 팀을 만들어 주세요.") + '</div>'; return; }
+    el.innerHTML = list.map(function(t){
+      var ms = (t.d.members || []).map(userOf).filter(Boolean);
+      var done = ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length;
+      return '<div class="tm-team" data-team="' + esc(t.id) + '"><div class="hd"><span class="tn">' + esc(t.d.name) + '</span>' +
+        '<span class="st-tag ' + (t.d.hasMentor ? "" : "gray") + '">' + (t.d.hasMentor ? "멘토 있음" : "멘티 팀") + '</span>' +
+        '<span class="st-tag gray">' + ms.length + '명</span>' +
+        '<span class="st-tag ' + (ms.length && done === ms.length ? "ok" : "gray") + '">스탬프 완료 ' + done + '/' + ms.length + '</span>' +
+        (t.d.snackAt ? '<span class="st-tag ok">간식 ' + P.hhmm(t.d.snackAt) + '</span>' : "") +
+        (t.d.photoAt ? '<span class="st-tag ok">사진 인증</span>' : "") +
+        '</div>' +
+        '<div>' + ms.map(function(u){
+          return '<span class="tm-chip" style="padding-right:10px">' + esc(u.d.name) + (u.d.role === "멘토" ? " (멘토)" : "") + ' <span class="st-muted">' + P.stampCount(u.d) + '/5</span></span>';
+        }).join("") + '</div></div>';
+    }).join("");
+  }
+
+  /* ---------- 쓰기 ---------- */
+  function assign(ids, teamId){
+    var db = P.db, batch = db.batch(), FV = firebase.firestore.FieldValue;
+    ids.forEach(function(id){
+      var u = userOf(id); if(!u) return;
+      if(u.d.teamId && u.d.teamId !== teamId && teamOf(u.d.teamId)) batch.update(db.collection("picnic_teams").doc(u.d.teamId), { members: FV.arrayRemove(id) });
+      batch.update(db.collection("picnic_users").doc(id), { teamId: teamId, assignedAt: Date.now(), assignedBy: P.admin.name || "" });
+    });
+    batch.update(db.collection("picnic_teams").doc(teamId), { members: FV.arrayUnion.apply(FV, ids) });
+    return batch.commit();
+  }
+  function createTeam(name, ids, hasMentor){
+    var ref = P.db.collection("picnic_teams").doc();
+    return ref.set({ name: name, hasMentor: !!hasMentor, members: [], createdAt: Date.now(), createdBy: P.admin.name || "" })
+      .then(function(){ return assign(ids, ref.id); }).then(function(){ return ref.id; });
+  }
+  function selected(){ return Object.keys(sel).filter(function(k){ return sel[k]; }); }
+  function fail(e){ P.toast("저장하지 못했어요: " + (e && e.message ? e.message : e), "bad"); console.warn(e); }
+
+  document.addEventListener("click", function(e){
+    var f = e.target.closest("[data-f]");
+    if(f){ filter = f.dataset.f; document.querySelectorAll("#tm-filter button").forEach(function(b){ b.classList.toggle("on", b === f); }); render(); return; }
+    var a = e.target.closest("[data-act]");
+    if(a){
+      var act = a.dataset.act, ids2 = selected();
+      if(act === "clear"){ sel = {}; render(); return; }
+      if(act === "new"){
+        var name = (document.getElementById("tm-newname").value || "").trim();
+        if(!name){ P.toast("새 팀 이름을 적어 주세요.", "bad"); return; }
+        if(teams.some(function(t){ return t.d.name === name; }) && !confirm("[" + name + "] 이름의 팀이 이미 있어요. 그래도 새 팀을 만들까요?")) return;
+        a.disabled = true;
+        createTeam(name, ids2, (document.getElementById("tm-mentor") || {}).checked).then(function(){ sel = {}; P.toast("[" + name + "] 팀을 만들고 " + ids2.length + "명 배정했어요", "ok"); render(); }).catch(fail);
+        return;
+      }
+      if(act === "join"){
+        var tid = document.getElementById("tm-pick").value, t = teamOf(tid);
+        a.disabled = true;
+        assign(ids2, tid).then(function(){ sel = {}; P.toast("[" + (t ? t.d.name : "") + "] 팀에 " + ids2.length + "명 배정했어요", "ok"); render(); }).catch(fail);
+        return;
+      }
+    }
+  });
+  document.addEventListener("change", function(e){
+    var s = e.target.closest && e.target.closest("[data-sel]");
+    if(s){ sel[s.dataset.sel] = s.checked; renderList(users.filter(function(u){ return u.d.attendAt; })); renderAction(); }
+  });
+  document.addEventListener("input", function(e){
+    if(e.target.id === "tm-q"){ q = e.target.value.trim(); render(); }
+    if(e.target.id === "tm-tq"){ tq = e.target.value.trim(); renderTeams(); }
+  });
+
+  P.boot({ title: "PICNIC DAY 출석 확인·팀 배정", onReady: function(){
+    P.db.collection("picnic_users").onSnapshot(function(s){
+      users = s.docs.map(function(d){ return { id: d.id, d: d.data() }; });
+      Object.keys(sel).forEach(function(k){ var u = userOf(k); if(!u || (filter === "wait" && u.d.teamId)) delete sel[k]; });
+      render();
+    }, fail);
+    P.db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+  }});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PICNIC DAY 스태프</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<style>
+  .sx-tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:20}
+  .sx-tabs button{all:unset;cursor:pointer;white-space:nowrap;padding:9px 14px;border-radius:999px;background:var(--cream);font-size:14px;font-weight:700;color:var(--ink-soft)}
+  .sx-tabs button.on{background:var(--wine-deep);color:#fff}
+  .sx-tabs a{white-space:nowrap;padding:9px 14px;border-radius:999px;background:#fff1cc;color:#6b4a00;font-size:14px;font-weight:700;text-decoration:none}
+  .sx-big{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+  .sx-num{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:14px;text-align:center}
+  .sx-num .n{font-size:32px;font-weight:900;color:var(--wine-deep);line-height:1.1}.sx-num .l{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-top:4px}
+  .sx-num.hero{background:var(--wine-deep);border-color:var(--wine-deep)}.sx-num.hero .n{color:#fff;font-size:44px}.sx-num.hero .l{color:rgba(255,255,255,.8)}
+  .sx-num.warn .n{color:var(--bad)}
+  .sx-q{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;background:var(--cream);outline:0;margin-bottom:10px;font-size:16px}
+  .sx-team{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}
+  .sx-team.ready{border-color:#3f7a5c;background:#f6fbf8}
+  .sx-team .tn{font-size:17px;font-weight:900;color:var(--wine-deep)}
+  .sx-team .ms{font-size:12.5px;color:var(--ink-soft);margin:4px 0 8px;line-height:1.6}
+  .sx-rent{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);align-items:center;font-size:13px}
+  .sx-stu{border:2px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;background:#fff}
+  .sx-stu .nm{font-size:22px;font-weight:900}
+  .sx-warn{margin:10px 0;padding:11px 12px;border-radius:12px;background:#fbe8e8;color:var(--bad);font-weight:700;font-size:14px}
+  .sx-okk{margin:10px 0;padding:11px 12px;border-radius:12px;background:#e6f2ec;color:#2f6a4c;font-weight:700;font-size:14px}
+  .sx-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+  .sx-item:first-child{border-top:0}
+  .sx-item .nm{flex:1;font-weight:700;min-width:120px}
+  .sx-pick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .sx-pick button{all:unset;cursor:pointer;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13.5px}
+  .sx-pick button.on{background:var(--wine-deep);color:#fff;border-color:var(--wine-deep)}
+  .sx-res{border-top:1px solid var(--line);padding:10px 4px;display:flex;gap:8px;align-items:center;cursor:pointer}
+  .sx-res:hover{background:#fdf7f8}
+  .sx-f{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .sx-f label{font-size:13px;font-weight:700;min-width:90px}
+  .sx-f input,.sx-f select{border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;flex:1 1 160px;min-width:0}
+  table.sx{width:100%;border-collapse:collapse;font-size:13px}
+  table.sx th,table.sx td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+  table.sx th{color:var(--ink-soft);font-size:12px}
+</style>
+</head>
+<body>
+<div id="st-app" style="display:none">
+  <div class="st-top" style="min-height:52px">
+    <div style="flex:1;min-width:0"><div class="b">PICNIC DAY 스태프</div><div class="w" id="st-who"></div></div>
+    <button type="button" id="st-logout">로그아웃</button>
+  </div>
+  <nav class="sx-tabs" id="sx-tabs">
+    <button type="button" data-tab="dash" class="on">현황</button>
+    <a href="team.html">출석·팀 배정 ↗</a>
+    <button type="button" data-tab="mission">팀 미션 기록</button>
+    <button type="button" data-tab="snack">간식박스·돗자리</button>
+    <button type="button" data-tab="booth">체험부스</button>
+    <button type="button" data-tab="notice">공지·설정</button>
+    <button type="button" data-tab="export">기록 내려받기</button>
+  </nav>
+  <div class="st-main" id="sx-main"></div>
+</div>
+<script src="common.js?v=20261027"></script>
+<script>
+(function(){
+  "use strict";
+  var P = window.PK, esc = P.esc;
+  var users = [], teams = [], logs = [], proofs = [], cfg = {}, cfgLoaded = false, missionQ = "";
+  var tab = "dash", snackQ = "", boothQ = "", focusU = null;
+  var myBooth = null; try{ myBooth = localStorage.getItem("pk_staff_booth"); }catch(e){}
+  try{ var qu = new URL(location.href).searchParams.get("u"); if(qu){ focusU = qu; tab = "booth"; history.replaceState(null, "", location.pathname); } }catch(e){}
+
+  var main = document.getElementById("sx-main");
+  function userOf(id){ return users.filter(function(u){ return u.id === id; })[0]; }
+  function teamOf(id){ return teams.filter(function(t){ return t.id === id; })[0]; }
+  function members(t){ return (t.d.members || []).map(userOf).filter(Boolean); }
+  function teamDone(t){ var ms = members(t); return ms.length > 0 && ms.every(function(u){ return P.stampCount(u.d) >= 5; }); }
+  function snackTotal(){ return typeof cfg.snackTotal === "number" ? cfg.snackTotal : P.SNACK_TOTAL; }
+  function snackLeft(){ return snackTotal() - (cfg.snackUsed || 0); }
+  function fail(e){ P.toast(typeof e === "string" ? e : "처리하지 못했어요: " + (e && e.message ? e.message : e), "bad"); if(typeof e !== "string") console.warn(e); }
+  function cfgRef(){ return P.db.collection("picnic_config").doc("main"); }
+
+  function render(force){
+    var ae = document.activeElement;
+    if(!force && ae && main.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && ae.dataset.live !== "1") return;
+    document.querySelectorAll("#sx-tabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.tab === tab); });
+    ({ dash: vDash, mission: vMission, snack: vSnack, booth: vBooth, notice: vNotice, export: vExport })[tab]();
+    if(ae && ae.dataset && ae.dataset.live === "1"){ var again = document.getElementById(ae.id); if(again && again !== ae){ again.focus(); var v = again.value; again.value = ""; again.value = v; } }
+  }
+
+  /* ---------- 현황 ---------- */
+  function vDash(){
+    var att = users.filter(function(u){ return u.d.attendAt; });
+    var assigned = att.filter(function(u){ return u.d.teamId; });
+    var st5 = att.filter(function(u){ return P.stampCount(u.d) >= 5; });
+    var readyTeams = teams.filter(teamDone);
+    var snackTeams = teams.filter(function(t){ return t.d.snackAt; });
+    var photoTeams = teams.filter(function(t){ return t.d.photoAt; });
+    var boothPeople = {}; logs.forEach(function(l){ boothPeople[l.d.rosterId] = 1; });
+    main.innerHTML =
+      (cfgLoaded && !cfg.createdAt ? '<div class="sx-warn">행사 설정이 아직 없어요. <b>공지·설정</b> 탭에서 [기본 설정 만들기]를 눌러 주세요.</div>' : "") +
+      '<div class="sx-big">' +
+        num("간식박스 남은 수량", snackLeft() + '<span style="font-size:18px"> / ' + snackTotal() + '</span>', "hero") +
+        num("출석", att.length) + num("팀 배정 완료", assigned.length + '<span style="font-size:15px"> / ' + att.length + '</span>', att.length > assigned.length ? "warn" : "") +
+        num("팀 수", teams.length) + num("스탬프 5/5 학생", st5.length) + num("간식 수령 가능 팀", readyTeams.length) +
+        num("간식 수령 팀", snackTeams.length) + num("사진 인증 팀", photoTeams.length) +
+        num("부스 참여 학생", Object.keys(boothPeople).length) +
+      '</div>' +
+      '<div class="st-card"><h3>QR 스탬프 인정 ' + (P.qrOpenNow(cfg) ? '<span class="st-tag ok">지금 인정 중</span>' : '<span class="st-tag bad">지금 꺼짐</span>') + '</h3><div class="st-muted">설정: ' + ({ auto: "자동 (10/29 10:00~16:00)", on: "항상 켜기", off: "끄기" }[cfg.qrMode || "auto"]) + ' · 공지·설정 탭에서 바꿀 수 있어요.</div></div>' +
+      '<div class="st-card"><h3>체험부스 남은 수량</h3><table class="sx"><tr><th>부스</th><th>항목</th><th>참여</th><th>남은 수량</th></tr>' +
+      P.BOOTHS.map(function(b){
+        var t = P.boothTotal(cfg, b), u = P.boothUsed(cfg, b);
+        return '<tr><td>' + b.booth + '</td><td>' + esc(b.name) + '</td><td>' + u + '명</td><td>' + (t > 0 ? (t - u <= 0 ? '<span class="st-tag bad">마감</span>' : (t - u) + ' / ' + t) : "제한 없음") + '</td></tr>';
+      }).join("") + '</table></div>';
+  }
+  function num(l, n, cls){ return '<div class="sx-num ' + (cls || "") + '"><div class="n">' + n + '</div><div class="l">' + l + '</div></div>'; }
+
+  /* ---------- 팀 미션 기록 (건물별 인증샷) ---------- */
+  var TEXT_KEYS = ["b1","b3"]; /* 각자 한 줄 쓰기 미션 (자유게시판·건의함) — 나머지는 팀 사진 미션 */
+  function vMission(){
+    var list = teams.filter(function(t){
+      return !missionQ || (t.d.name + " " + members(t).map(function(u){ return u.d.name; }).join(" ")).indexOf(missionQ) >= 0;
+    }).sort(function(a, b){ return String(a.d.name).localeCompare(String(b.d.name), "ko"); });
+    main.innerHTML = '<div class="st-card"><h3>건물별 미션 기록 <span class="st-muted">한 줄 쓰기는 학생별 CSV에도 있어요</span> <button class="st-btn ghost sm" type="button" data-csv="missions" style="margin-left:6px">사진 미션 CSV</button></h3>' +
+      '<div class="st-muted" style="margin:-4px 0 10px">사진을 누르면 크게 볼 수 있어요 (길게 눌러 저장).</div>' +
+      '<div class="sx-big" style="margin-bottom:0">' + P.POINT_KEYS.map(function(k){
+        return TEXT_KEYS.indexOf(k) >= 0 ? num(P.pointName(cfg, k) + " (한 줄)", users.filter(function(u){ return u.d.missions && u.d.missions[k]; }).length + '<span style="font-size:15px"> 명</span>')
+          : num(P.pointName(cfg, k) + " (사진)", proofs.filter(function(p){ return p.d.key === k; }).length + '<span style="font-size:15px"> 팀</span>');
+      }).join("") + '</div></div>' +
+      '<input class="sx-q" id="sx-missionq" data-live="1" placeholder="팀 이름 또는 팀원 이름으로 찾기" value="' + esc(missionQ) + '">' +
+      (list.length ? list.map(function(t){
+        var ps = proofs.filter(function(p){ return p.d.teamId === t.id; });
+        var ms = members(t);
+        return '<div class="sx-team"><div class="st-row"><span class="tn">' + esc(t.d.name) + '</span><span class="st-tag gray">사진 ' + ps.length + '/3</span></div>' +
+          P.POINT_KEYS.map(function(k){
+            if(TEXT_KEYS.indexOf(k) >= 0){
+              var ans = ms.filter(function(u){ return u.d.missions && u.d.missions[k]; });
+              return '<div class="sx-item" style="align-items:flex-start"><div style="flex:1;min-width:0"><div class="nm">' + esc(P.pointName(cfg, k)) + ' · 한 줄 (' + ans.length + '/' + ms.length + '명)</div>' +
+                ans.map(function(u){ return '<div style="font-size:13.5px;margin-top:3px"><b>' + esc(u.d.name) + '</b> ' + esc(u.d.missions[k].a) + '</div>'; }).join("") + '</div></div>';
+            }
+            var p = ps.filter(function(x){ return x.d.key === k; })[0];
+            if(!p) return '<div class="sx-item"><span class="nm" style="color:var(--ink-soft)">' + esc(P.pointName(cfg, k)) + '</span><span class="st-tag gray">미완료</span></div>';
+            return '<div class="sx-item" style="align-items:flex-start"><div style="flex:1;min-width:0"><div class="nm">' + esc(P.pointName(cfg, k)) + ' · ' + esc(p.d.mission || "") + '</div>' +
+              '<div class="st-muted">' + esc(p.d.by || "") + ' · ' + P.hhmm(p.d.at) + '</div>' + (p.d.text ? '<div style="margin-top:4px;font-size:13.5px;white-space:pre-wrap">' + esc(p.d.text) + '</div>' : "") +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + (p.d.images || []).map(function(src){ return '<img src="' + src + '" data-zoom="1" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in">'; }).join("") + '</div></div></div>';
+          }).join("") + '</div>';
+      }).join("") : '<div class="st-muted">아직 팀이 없어요.</div>');
+  }
+
+  /* ---------- 간식박스 · 돗자리 · 담요 ---------- */
+  function vSnack(){
+    var list = teams.filter(function(t){
+      if(!snackQ) return true;
+      return (t.d.name + " " + members(t).map(function(u){ return u.d.name; }).join(" ")).indexOf(snackQ) >= 0;
+    }).sort(function(a, b){
+      var ra = (a.d.snackAt ? 2 : teamDone(a) ? 0 : 1), rb = (b.d.snackAt ? 2 : teamDone(b) ? 0 : 1);
+      return ra - rb || String(a.d.name).localeCompare(String(b.d.name), "ko");
+    });
+    var matOut = teams.filter(function(t){ return t.d.matOut && !t.d.matBack; }).length;
+    var blOut = teams.filter(function(t){ return t.d.blanketOut && !t.d.blanketBack; }).length;
+    main.innerHTML = '<div class="sx-big">' + num("간식박스 남은 수량 (명)", snackLeft() + '<span style="font-size:18px"> / ' + snackTotal() + '</span>', "hero" + (snackLeft() <= 10 ? " warn" : "")) +
+      num("수령 팀", teams.filter(function(t){ return t.d.snackAt; }).length) + num("돗자리 대여 중", matOut) + num("담요 대여 중", blOut) + '</div>' +
+      '<input class="sx-q" id="sx-snackq" data-live="1" placeholder="팀 이름 또는 팀원 이름으로 찾기" value="' + esc(snackQ) + '">' +
+      (list.length ? list.map(function(t){
+        var ms = members(t), done = ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length, ready = teamDone(t);
+        return '<div class="sx-team' + (ready && !t.d.snackAt ? " ready" : "") + '" data-team="' + esc(t.id) + '">' +
+          '<div class="st-row"><span class="tn">' + esc(t.d.name) + '</span><span class="st-tag gray">' + ms.length + '명</span>' +
+          '<span class="st-tag ' + (ready ? "ok" : "bad") + '">스탬프 ' + done + '/' + ms.length + ' 완료</span>' +
+          (t.d.snackAt ? '<span class="st-tag ok">수령 ' + P.hhmm(t.d.snackAt) + ' · ' + (t.d.snackCount || 0) + '명분</span>' : "") + '</div>' +
+          '<div class="ms">' + ms.map(function(u){ return esc(u.d.name) + " " + P.stampCount(u.d) + "/5"; }).join(" · ") + '</div>' +
+          (t.d.snackAt ? '' :
+            '<button class="st-btn big ' + (ready ? "good" : "") + '" type="button" data-act="snack"' + '>' + (ready ? "간식박스 수령 완료 (" + ms.length + "명분)" : "스탬프 미완료 — 수령 불가") + '</button>') +
+          '<div class="sx-rent"><b style="min-width:44px">돗자리</b>' + rent(t, "mat") + '<b style="min-width:34px;margin-left:10px">담요</b>' + rent(t, "blanket") + '</div></div>';
+      }).join("") : '<div class="st-muted">' + (teams.length ? "해당하는 팀이 없어요." : "아직 팀이 없어요.") + '</div>');
+  }
+  function rent(t, k){
+    var out = t.d[k + "Out"], back = t.d[k + "Back"];
+    if(!out) return '<button class="st-btn ghost sm" type="button" data-act="' + k + '-out">대여</button>';
+    if(!back) return '<span class="st-tag gold">대여 ' + P.hhmm(out) + '</span><button class="st-btn ghost sm" type="button" data-act="' + k + '-back">반납</button>';
+    return '<span class="st-tag ok">반납 ' + P.hhmm(back) + '</span>';
+  }
+  function giveSnack(t){
+    var db = P.db, tRef = db.collection("picnic_teams").doc(t.id);
+    if(!teamDone(t)) return fail("팀원 전원이 스탬프 5개를 모아야 받을 수 있어요.");
+    return db.runTransaction(function(tx){
+      return Promise.all([tx.get(cfgRef()), tx.get(tRef)]).then(function(r){
+        var c = r[0].exists ? r[0].data() : {}, td = r[1].data();
+        if(td.snackAt) throw new Error("이미 간식박스를 받은 팀이에요.");
+        var n = (td.members || []).length, used = c.snackUsed || 0, total = typeof c.snackTotal === "number" ? c.snackTotal : P.SNACK_TOTAL;
+        if(used + n > total) throw new Error("남은 간식박스가 부족해요 (남은 " + (total - used) + "명분, 필요 " + n + "명분).");
+        tx.update(tRef, { snackAt: Date.now(), snackCount: n, snackBy: P.admin.name || "" });
+        tx.set(cfgRef(), { snackUsed: used + n }, { merge: true });
+        return n;
+      });
+    }).then(function(n){ P.toast("[" + t.d.name + "] 간식박스 " + n + "명분 수령 완료", "ok"); }).catch(fail);
+  }
+  /* ---------- 체험부스 ---------- */
+  function boothItems(){ var b = P.BOOTHS.filter(function(x){ return String(x.booth) === String(myBooth); }); return b.length ? b : []; }
+  function vBooth(){
+    var html = '<div class="st-card"><h3>내가 맡은 부스</h3><div class="sx-pick">' + [1,2,3,4].map(function(n){
+      var names = P.BOOTHS.filter(function(b){ return b.booth === n; }).map(function(b){ return b.name; }).join(" / ");
+      return '<button type="button" data-booth="' + n + '" class="' + (String(myBooth) === String(n) ? "on" : "") + '">부스' + n + ' · ' + esc(names) + '</button>';
+    }).join("") + '</div>';
+    if(myBooth){
+      html += boothItems().map(function(b){
+        var t = P.boothTotal(cfg, b), u = P.boothUsed(cfg, b);
+        return '<div class="sx-item"><span class="nm">' + esc(b.name) + '</span><span class="st-tag gray">참여 ' + u + '명</span>' +
+          (t > 0 ? '<span class="st-tag ' + (t - u <= 0 ? "bad" : "") + '">남은 ' + Math.max(0, t - u) + '/' + t + '</span>' : '<span class="st-tag gray">수량 제한 없음</span>') +
+          (t > 0 && t - u <= 0 ? '<span class="st-tag bad">마감</span>' : "") + '</div>';
+      }).join("");
+    } else html += '<div class="st-muted">부스를 먼저 골라 주세요. 이 휴대폰에 기억돼요.</div>';
+    html += '</div>';
+    /* 학생 찾기 */
+    html += '<div class="st-card"><h3>참여 처리</h3><div class="st-muted" style="margin:-4px 0 10px">학생의 <b>내 QR</b>을 휴대폰 카메라로 찍거나, 이름으로 찾아 주세요.</div>' +
+      '<input class="sx-q" id="sx-boothq" data-live="1" placeholder="학생 이름 찾기" value="' + esc(boothQ) + '"><div id="sx-res">';
+    if(boothQ.length >= 1 && !focusU){
+      var res = users.filter(function(u){ return u.d.attendAt && String(u.d.name).indexOf(boothQ) >= 0; }).slice(0, 15);
+      html += res.length ? res.map(function(u){
+        var t = u.d.teamId ? teamOf(u.d.teamId) : null;
+        return '<div class="sx-res" data-u="' + esc(u.id) + '"><b>' + esc(u.d.name) + '</b><span class="st-muted">' + esc([u.d.college, u.d.teamName].filter(Boolean).join(" · ")) + '</span><span style="margin-left:auto">' +
+          (t && t.d.photoAt ? '<span class="st-tag ok">이용권</span>' : '<span class="st-tag bad">이용권 없음</span>') + '</span></div>';
+      }).join("") : '<div class="st-muted">출석한 학생 중에 없어요.</div>';
+    }
+    html += '</div>';
+    if(focusU) html += studentCard(focusU);
+    html += '</div>';
+    /* 참여 명단 */
+    if(myBooth){
+      var mine = logs.filter(function(l){ return boothItems().some(function(b){ return b.key === l.d.item; }); }).sort(function(a, b){ return (b.d.createdAt || 0) - (a.d.createdAt || 0); });
+      html += '<div class="st-card"><h3>부스' + esc(myBooth) + ' 참여자 ' + mine.length + '명 <button class="st-btn ghost sm" type="button" data-act="booth-csv" style="margin-left:6px">명단 CSV</button></h3>' +
+        '<div class="st-muted" style="margin:-4px 0 8px">종이 서명부 인원과 대조해 주세요.</div><table class="sx"><tr><th>#</th><th>이름</th><th>단과대·반</th><th>항목</th><th>시각</th></tr>' +
+        mine.map(function(l, i){ var b = P.BOOTHS.filter(function(x){ return x.key === l.d.item; })[0];
+          return '<tr><td>' + (mine.length - i) + '</td><td>' + esc(l.d.name) + '</td><td>' + esc([l.d.college, l.d.teamName].filter(Boolean).join(" ")) + '</td><td>' + esc(b ? b.name : l.d.item) + '</td><td>' + P.hhmm(l.d.createdAt) + '</td></tr>'; }).join("") + '</table></div>';
+    }
+    main.innerHTML = html;
+  }
+  function studentCard(id){
+    var u = userOf(id);
+    if(!u) return '<div class="sx-stu"><div class="sx-warn">이 QR의 학생을 찾지 못했어요. 출석체크를 하지 않은 학생일 수 있어요.</div><button class="st-btn ghost sm" type="button" data-act="unfocus">닫기</button></div>';
+    var t = u.d.teamId ? teamOf(u.d.teamId) : null, pass = !!(t && t.d.photoAt);
+    var done = {}; logs.forEach(function(l){ if(l.d.rosterId === id) done[l.d.item] = l.d; });
+    var html = '<div class="sx-stu"><div class="st-row"><span class="nm">' + esc(u.d.name) + '</span><span class="st-tag ' + (u.d.role === "멘토" ? "" : "gray") + '">' + esc(u.d.role || "멘티") + '</span><button class="st-btn ghost sm" type="button" data-act="unfocus" style="margin-left:auto">닫기</button></div>' +
+      '<div class="st-muted" style="margin-top:2px">' + esc([u.d.college, u.d.teamName].filter(Boolean).join(" · ")) + (t ? ' · 팀 ' + esc(t.d.name) : "") + '</div>' +
+      (pass ? '<div class="sx-okk">🎟️ 체험부스 이용권 있음</div>' : '<div class="sx-warn">⚠️ 이용권 없음 — 팀이 아직 미션 3(사진 인증)을 하지 않았어요.</div>');
+    var items = myBooth ? boothItems() : [];
+    if(!items.length) html += '<div class="st-muted">위에서 내가 맡은 부스를 먼저 골라 주세요.</div>';
+    items.forEach(function(b){
+      var tot = P.boothTotal(cfg, b), used = P.boothUsed(cfg, b);
+      html += '<div class="sx-item"><span class="nm">' + esc(b.name) + '</span>' +
+        (done[b.key] ? '<span class="st-tag ok">이미 참여 ' + P.hhmm(done[b.key].createdAt) + '</span>' :
+          (tot > 0 && used >= tot) ? '<span class="st-tag bad">수량 소진</span>' :
+          '<button class="st-btn big good" type="button" data-join="' + b.key + '" data-uid="' + esc(id) + '">참여 완료</button>') + '</div>';
+    });
+    var others = Object.keys(done).filter(function(k){ return !items.some(function(b){ return b.key === k; }); });
+    if(others.length) html += '<div class="st-muted" style="margin-top:8px">다른 부스 참여: ' + others.map(function(k){ var b = P.BOOTHS.filter(function(x){ return x.key === k; })[0]; return esc(b ? b.name : k); }).join(", ") + '</div>';
+    return html + '</div>';
+  }
+  function joinBooth(key, uid){
+    var u = userOf(uid), b = P.BOOTHS.filter(function(x){ return x.key === key; })[0];
+    if(!u || !b) return;
+    var t = u.d.teamId ? teamOf(u.d.teamId) : null;
+    if(!(t && t.d.photoAt) && !confirm("이용권이 없는 학생이에요 (미션 3 미완료). 그래도 참여 처리할까요?")) return;
+    if(b.booth === 3){
+      var other = key === "keycap" ? "pen" : "keycap";
+      if(logs.some(function(l){ return l.d.rosterId === uid && l.d.item === other; }) && !confirm("부스3은 키캡·볼꾸 중 하나만 고르는 부스예요. 이미 다른 항목에 참여했는데 그래도 처리할까요?")) return;
+    }
+    var db = P.db, lRef = db.collection("picnic_booth_logs").doc(key + "_" + uid);
+    db.runTransaction(function(tx){
+      return Promise.all([tx.get(cfgRef()), tx.get(lRef)]).then(function(r){
+        if(r[1].exists) throw new Error("이미 이 항목에 참여한 학생이에요.");
+        var c = r[0].exists ? r[0].data() : {}, bc = (c.booths && c.booths[key]) || {};
+        var tot = typeof bc.total === "number" ? bc.total : b.total, used = bc.used || 0;
+        if(tot > 0 && used >= tot) throw new Error("수량이 모두 소진됐어요.");
+        tx.set(lRef, { item: key, booth: b.booth, rosterId: uid, name: u.d.name || "", college: u.d.college || "", teamName: u.d.teamName || "", teamId: u.d.teamId || "", hadPass: !!(t && t.d.photoAt), staff: P.admin.name || "", createdAt: Date.now() });
+        var upd = { booths: {} }; upd.booths[key] = { used: used + 1 };
+        tx.set(cfgRef(), upd, { merge: true });
+      });
+    }).then(function(){ P.toast(u.d.name + " · " + b.name + " 참여 완료", "ok"); }).catch(fail);
+  }
+  /* ---------- 공지 · 설정 ---------- */
+  function vNotice(){
+    var setup = P.canSetup();
+    var html = '<div class="st-card"><h3>현장 공지 배너 ' + (cfg.bannerOn && cfg.banner ? '<span class="st-tag ok">학생 화면에 보이는 중</span>' : '<span class="st-tag gray">내려져 있음</span>') + '</h3>' +
+      '<div class="st-muted" style="margin:-4px 0 10px">학생 공유공간 모든 화면 맨 위에 바로 보여요. 예) 타로 부스 14:00~15:00 시간제 운영 / 키캡 꾸미기 마감</div>' +
+      '<textarea class="sx-q" id="sx-banner" rows="2" maxlength="200" placeholder="공지 내용">' + esc(cfg.banner || "") + '</textarea>' +
+      '<div class="st-row"><button class="st-btn" type="button" data-act="banner-on">공지 올리기</button><button class="st-btn ghost" type="button" data-act="banner-off">공지 내리기</button></div></div>';
+    if(!cfg.createdAt){
+      html += '<div class="st-card"><h3>기본 설정 만들기</h3><div class="st-muted" style="margin-bottom:10px">행사 설정(건물 이름, 간식박스 100명분, 부스 수량, QR 자동 인정 시간)을 처음 한 번 만들어요.</div>' +
+        (setup ? '<button class="st-btn" type="button" data-act="init">기본 설정 만들기</button>' : '<div class="st-muted">총괄·최고 관리자만 만들 수 있어요.</div>') + '</div>';
+    }
+    if(setup){
+      html += '<div class="st-card"><h3>QR 스탬프 인정</h3><div class="sx-f"><label>인정 방식</label><select id="sx-qrmode">' +
+        [["auto","자동 — 10/29(목) 10:00~16:00에만"],["on","항상 켜기 (테스트용)"],["off","끄기"]].map(function(o){ return '<option value="' + o[0] + '"' + ((cfg.qrMode || "auto") === o[0] ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") +
+        '</select><button class="st-btn sm" type="button" data-act="qrmode">저장</button></div>' +
+        '<div class="st-muted">지금: ' + (P.qrOpenNow(cfg) ? "인정 중" : "꺼짐") + '</div></div>' +
+        '<div class="st-card"><h3>QR 설치 건물 이름</h3><div class="st-muted" style="margin:-4px 0 10px">이름만 바꾸면 돼요. QR 코드는 다시 뽑지 않아도 돼요.</div>' +
+        P.POINT_KEYS.map(function(k, i){ return '<div class="sx-f"><label>QR ' + (i + 1) + '</label><input id="sx-pt-' + k + '" value="' + esc(P.pointName(cfg, k)) + '" maxlength="20"></div>'; }).join("") +
+        '<button class="st-btn sm" type="button" data-act="points">건물 이름 저장</button></div>';
+    }
+    main.innerHTML = html;
+  }
+
+  /* ---------- 기록 내려받기 ---------- */
+  function vExport(){
+    main.innerHTML = '<div class="st-card"><h3>기록 내려받기 (CSV · 엑셀에서 열려요)</h3><div class="st-muted" style="margin:-4px 0 12px">성과보고서에 쓰는 자료예요. 행사 종료 후 꼭 내려받아 두세요.</div><div class="st-row">' +
+      '<button class="st-btn" type="button" data-csv="users">학생별 (출석·팀·스탬프·부스)</button>' +
+      '<button class="st-btn" type="button" data-csv="teams">팀별 (간식박스·돗자리·담요·사진 인증)</button>' +
+      '<button class="st-btn" type="button" data-csv="booth">체험부스 참여 기록 (전체)</button>' +
+      '<button class="st-btn" type="button" data-csv="missions">팀 사진 미션 기록</button></div>' +
+      '<div class="st-row" style="margin-top:10px">' + P.BOOTHS.map(function(b){ return '<button class="st-btn ghost sm" type="button" data-csv="booth:' + b.key + '">' + esc(b.name) + ' 명단</button>'; }).join("") + '</div></div>';
+  }
+  function exportCsv(kind){
+    var day = "20261029";
+    if(kind === "users"){
+      var rows = [["이름","단과대","반","구분","출석시각","팀"].concat(P.POINT_KEYS.map(function(k){ return P.pointName(cfg, k); })).concat(["스탬프수"]).concat(TEXT_KEYS.map(function(k){ return P.pointName(cfg, k) + " 한 줄"; })).concat(["간식박스수령","사진인증(이용권)","부스참여"])];
+      users.slice().sort(function(a, b){ return (a.d.attendAt || 0) - (b.d.attendAt || 0); }).forEach(function(u){
+        var t = u.d.teamId ? teamOf(u.d.teamId) : null;
+        var bl = logs.filter(function(l){ return l.d.rosterId === u.id; }).map(function(l){ var b = P.BOOTHS.filter(function(x){ return x.key === l.d.item; })[0]; return b ? b.name : l.d.item; });
+        rows.push([u.d.name, u.d.college, u.d.teamName, u.d.role, P.full(u.d.attendAt), t ? t.d.name : ""]
+          .concat(P.POINT_KEYS.map(function(k){ return u.d.stamps && u.d.stamps[k] ? P.full(u.d.stamps[k]) : ""; }))
+          .concat([P.stampCount(u.d)]).concat(TEXT_KEYS.map(function(k){ return u.d.missions && u.d.missions[k] ? u.d.missions[k].a : ""; }))
+          .concat([t && t.d.snackAt ? P.full(t.d.snackAt) : "", t && t.d.photoAt ? P.full(t.d.photoAt) : "", bl.join(" / ")]));
+      });
+      return P.csv("피크닉데이_학생별_" + day + ".csv", rows);
+    }
+    if(kind === "teams"){
+      var r2 = [["팀","멘토유무","인원","팀원","스탬프완료","간식박스수령","수령인원","돗자리대여","돗자리반납","담요대여","담요반납","사진인증","인증자"]];
+      teams.forEach(function(t){
+        var ms = members(t);
+        r2.push([t.d.name, t.d.hasMentor ? "있음" : "없음", ms.length, ms.map(function(u){ return u.d.name + (u.d.role === "멘토" ? "(멘토)" : ""); }).join(" / "),
+          ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length + "/" + ms.length, P.full(t.d.snackAt), t.d.snackCount || "",
+          P.full(t.d.matOut), P.full(t.d.matBack), P.full(t.d.blanketOut), P.full(t.d.blanketBack), P.full(t.d.photoAt), t.d.photoBy || ""]);
+      });
+      return P.csv("피크닉데이_팀별_" + day + ".csv", r2);
+    }
+    if(kind === "missions"){
+      var r4 = [["팀","건물","미션","올린 사람","시각"]];
+      proofs.slice().sort(function(a, b){ return String(a.d.teamName).localeCompare(String(b.d.teamName), "ko") || (a.d.key > b.d.key ? 1 : -1); }).forEach(function(p){
+        var t = teamOf(p.d.teamId);
+        r4.push([t ? t.d.name : p.d.teamName, P.pointName(cfg, p.d.key), p.d.mission, p.d.by, P.full(p.d.at)]);
+      });
+      return P.csv("피크닉데이_팀미션_" + day + ".csv", r4);
+    }
+    var only = kind.indexOf("booth:") === 0 ? kind.slice(6) : null;
+    var r3 = [["연번","부스","항목","이름","단과대","반","팀","참여시각","이용권","처리스태프"]];
+    logs.filter(function(l){ return !only || l.d.item === only; }).sort(function(a, b){ return (a.d.item > b.d.item ? 1 : a.d.item < b.d.item ? -1 : 0) || (a.d.createdAt || 0) - (b.d.createdAt || 0); })
+      .forEach(function(l, i){
+        var b = P.BOOTHS.filter(function(x){ return x.key === l.d.item; })[0], t = l.d.teamId ? teamOf(l.d.teamId) : null;
+        r3.push([i + 1, "부스" + (b ? b.booth : ""), b ? b.name : l.d.item, l.d.name, l.d.college, l.d.teamName, t ? t.d.name : "", P.full(l.d.createdAt), l.d.hadPass ? "Y" : "N", l.d.staff]);
+      });
+    var bn = only ? (P.BOOTHS.filter(function(x){ return x.key === only; })[0] || {}).name : "전체";
+    P.csv("피크닉데이_체험부스_" + String(bn).replace(/[^\w가-힣]+/g, "") + "_" + day + ".csv", r3);
+  }
+
+  /* ---------- 이벤트 ---------- */
+  document.addEventListener("click", function(e){
+    var zi = e.target.closest("img[data-zoom]");
+    if(zi){ var zw = document.createElement("div"); zw.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(20,12,16,.85);display:flex;align-items:center;justify-content:center;padding:16px";
+      zw.innerHTML = '<img src="' + zi.getAttribute("src") + '" style="max-width:100%;max-height:100%;border-radius:12px">'; zw.onclick = function(){ zw.remove(); }; document.body.appendChild(zw); return; }
+    var tb = e.target.closest("#sx-tabs button[data-tab]");
+    if(tb){ tab = tb.dataset.tab; render(true); window.scrollTo(0, 0); return; }
+    var bo = e.target.closest("[data-booth]");
+    if(bo){ myBooth = bo.dataset.booth; try{ localStorage.setItem("pk_staff_booth", myBooth); }catch(x){} render(true); return; }
+    var ru = e.target.closest("[data-u]");
+    if(ru){ focusU = ru.dataset.u; boothQ = ""; render(true); return; }
+    var jn = e.target.closest("[data-join]");
+    if(jn){ joinBooth(jn.dataset.join, jn.dataset.uid); return; }
+    var cv = e.target.closest("[data-csv]");
+    if(cv){ exportCsv(cv.dataset.csv); return; }
+    var a = e.target.closest("[data-act]"); if(!a) return;
+    var act = a.dataset.act, box = a.closest("[data-team]"), t = box ? teamOf(box.dataset.team) : null;
+    if(act === "snack" && t){ if(!teamDone(t)) return fail("팀원 전원이 스탬프 5개를 모아야 받을 수 있어요."); a.disabled = true; giveSnack(t); return; }
+    var m = /^(mat|blanket)-(out|back)$/.exec(act);
+    if(m && t){
+      var u = {};
+      if(m[2] === "out") u[m[1] + "Out"] = Date.now();
+      if(m[2] === "back") u[m[1] + "Back"] = Date.now();
+      P.db.collection("picnic_teams").doc(t.id).update(u).catch(fail); return;
+    }
+    if(act === "unfocus"){ focusU = null; render(true); return; }
+    if(act === "booth-csv"){ var items = boothItems(); if(items.length === 1) exportCsv("booth:" + items[0].key); else items.forEach(function(b){ exportCsv("booth:" + b.key); }); return; }
+    if(act === "banner-on"){
+      var txt = document.getElementById("sx-banner").value.trim();
+      if(!txt) return fail("공지 내용을 적어 주세요.");
+      cfgRef().set({ banner: txt, bannerOn: true, bannerAt: Date.now() }, { merge: true }).then(function(){ P.toast("공지를 올렸어요", "ok"); render(true); }).catch(fail); return;
+    }
+    if(act === "banner-off"){ cfgRef().set({ bannerOn: false }, { merge: true }).then(function(){ P.toast("공지를 내렸어요"); render(true); }).catch(fail); return; }
+    if(act === "init"){
+      var booths = {}; P.BOOTHS.forEach(function(b){ booths[b.key] = { total: b.total, used: 0 }; });
+      cfgRef().set({ createdAt: Date.now(), qrMode: "auto", banner: "", bannerOn: false, points: P.DEFAULT_POINT_NAMES, snackTotal: P.SNACK_TOTAL, snackUsed: 0, booths: booths }, { merge: true })
+        .then(function(){ P.toast("기본 설정을 만들었어요", "ok"); render(true); }).catch(fail); return;
+    }
+    if(act === "qrmode"){ cfgRef().set({ qrMode: document.getElementById("sx-qrmode").value }, { merge: true }).then(function(){ P.toast("저장했어요", "ok"); render(true); }).catch(fail); return; }
+    if(act === "points"){
+      var pts = {}; P.POINT_KEYS.forEach(function(k){ pts[k] = (document.getElementById("sx-pt-" + k).value || "").trim() || P.DEFAULT_POINT_NAMES[k]; });
+      cfgRef().set({ points: pts }, { merge: true }).then(function(){ P.toast("건물 이름을 저장했어요", "ok"); render(true); }).catch(fail); return;
+    }
+  });
+  document.addEventListener("input", function(e){
+    if(e.target.id === "sx-missionq"){ missionQ = e.target.value.trim(); render(); }
+    if(e.target.id === "sx-snackq"){ snackQ = e.target.value.trim(); render(); }
+    if(e.target.id === "sx-boothq"){ boothQ = e.target.value.trim(); if(boothQ) focusU = null; render(); }
+  });
+
+  P.boot({ title: "PICNIC DAY 스태프", onReady: function(){
+    var db = P.db;
+    cfgRef().onSnapshot(function(s){ cfg = s.exists ? s.data() || {} : {}; cfgLoaded = true; render(); }, fail);
+    db.collection("picnic_users").onSnapshot(function(s){ users = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    db.collection("picnic_missions").onSnapshot(function(s){ proofs = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    db.collection("picnic_booth_logs").onSnapshot(function(s){ logs = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    render(true);
+  }});
+})();
+</script>
+</body>
+</html>
