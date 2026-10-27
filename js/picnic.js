@@ -39,7 +39,7 @@
     { key:"color",   booth:2, name:"퍼스널컬러 진단 + 화장법 상담", total:0 },
     { key:"keycap",  booth:3, name:"키캡 꾸미기",             total:80 },
     { key:"pen",     booth:3, name:"볼꾸 (볼펜 꾸미기)",       total:80 },
-    { key:"keyring", booth:4, name:"이니셜 키링 만들기",       total:150 }
+    { key:"keyring", booth:3, name:"이니셜 키링 만들기",       total:150 }
   ];
   var PENDING_KEY = "dsfm_pending_qr";
 
