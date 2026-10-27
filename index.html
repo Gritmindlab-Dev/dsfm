@@ -1196,6 +1196,8 @@
     btn.classList.add("active");
     document.querySelectorAll(".page").forEach(function(p){ p.style.display = "none"; });
     document.getElementById("page-" + pageName).style.display = "block";
+    if(pageName === "photo") watchPhotos();
+    if(pageName === "verify" || pageName === "mypage" || (pageName === "team" && state.role === "멘토")) watchVerify();
     if(pageName === "mypage") renderMyPage();
   }
   document.getElementById("rail-nav").addEventListener("click", function(e){
@@ -2063,11 +2065,30 @@
     }).join("");
   }
 
+  /* 사진이 든 게시판은 탭을 열 때만, 12개씩 불러와요 (동시 접속 시 데이터 사용량 절약) */
+  var lazyLim = { photo: 12, verify: 12 }, lazyUnsub = {};
+  function moreBtn(kind, gridId, size){
+    var grid = document.getElementById(gridId); if(!grid) return;
+    var b = document.getElementById("more-" + kind);
+    if(!b){
+      b = document.createElement("button");
+      b.id = "more-" + kind; b.type = "button"; b.textContent = "더 보기";
+      b.style.cssText = "display:block;margin:14px auto 4px;padding:10px 22px;border-radius:99px;border:1.5px solid #eadbd9;background:#fff;font-weight:700;color:#7c1f3d;cursor:pointer";
+      b.addEventListener("click", function(){
+        lazyLim[kind] += 12;
+        if(lazyUnsub[kind]){ lazyUnsub[kind](); lazyUnsub[kind] = null; }
+        if(kind === "photo") watchPhotos(); else watchVerify();
+      });
+      grid.parentNode.insertBefore(b, grid.nextSibling);
+    }
+    b.style.display = size >= lazyLim[kind] ? "block" : "none";
+  }
   function watchPhotos(){
-    if(!db) return;
-    db.collection("photo_posts").orderBy("createdAt","desc").limit(60).onSnapshot(function(snap){
+    if(!db || lazyUnsub.photo) return;
+    lazyUnsub.photo = db.collection("photo_posts").orderBy("createdAt","desc").limit(lazyLim.photo).onSnapshot(function(snap){
       renderPhotos(snap.docs);
       renderHomeWidgets();
+      moreBtn("photo", "photo-grid", snap.size);
     }, function(){
       document.getElementById("photo-grid").innerHTML =
         '<div class="offline-note" style="grid-column:1/-1">실시간 데이터를 불러오지 못했어요.</div>';
@@ -2383,6 +2404,7 @@
   /* ---------- 인증게시판 (db-backed) ---------- */
   function renderVerify(docs){
     verifyDocsCache = docs;
+    setTimeout(function(){ try{ if(typeof renderMissionStat === "function") renderMissionStat(); }catch(e){} }, 0);
     var el = document.getElementById("verify-grid");
     if(!docs.length){
       el.innerHTML = '<div class="card empty-state" style="grid-column:1/-1">아직 인증된 활동이 없어요. 미션 인증샷을 올려보세요!</div>';
@@ -2402,9 +2424,10 @@
   }
 
   function watchVerify(){
-    if(!db) return;
-    db.collection("verify_posts").orderBy("createdAt","desc").limit(60).onSnapshot(function(snap){
+    if(!db || lazyUnsub.verify) return;
+    lazyUnsub.verify = db.collection("verify_posts").orderBy("createdAt","desc").limit(lazyLim.verify).onSnapshot(function(snap){
       renderVerify(snap.docs);
+      moreBtn("verify", "verify-grid", snap.size);
     }, function(){
       document.getElementById("verify-grid").innerHTML =
         '<div class="offline-note" style="grid-column:1/-1">실시간 데이터를 불러오지 못했어요.</div>';
@@ -2524,8 +2547,7 @@
       watchNoticeComments();
       wireSocial("notice-posts", function(id){ return noticeDocsCache.filter(function(d){ return d.id === id; })[0]; }, "private_posts", "notice_comments");
       watchCollection("suggestion_posts","suggest-posts","아직 건의사항이 없어요.");
-      watchPhotos();
-      watchPhotoComments();
+      watchPhotoComments();   /* 사진 목록은 사진게시판 탭을 열 때 불러와요 */
       wireSocial("photo-grid", function(id){ return photoDocsCache.filter(function(d){ return d.id === id; })[0]; }, "photo_posts", "photo_comments");
       wirePostComposer();
       watchCalendar();
@@ -2536,8 +2558,7 @@
       wireRoster();
       watchRoster();
       wireVerifyUploader();
-      watchVerify();
-      wireVote();
+      wireVote();             /* 인증 목록은 인증게시판·마이페이지를 열 때 불러와요 */
       watchVote();
       watchMissions();
     }catch(e){
