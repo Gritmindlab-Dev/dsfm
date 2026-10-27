@@ -1077,10 +1077,13 @@
 
   /* ---------- login ---------- */
   var loggedIn = false, loggingIn = false;
+  /* 다시 접속할 때 바뀐 데이터만 읽도록 기기에 캐시 (무료 한도 절약) */
+  window.__dsfmPersist = window.__dsfmPersist || function(){ if(window.__dsfmPersistOn) return; window.__dsfmPersistOn = 1; try{ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(function(){}); }catch(e){} };
   function getLoginDb(cb){
     try{
       if(typeof firebase === "undefined") return cb(null);
       if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      window.__dsfmPersist();
       cb(firebase.firestore());
     }catch(e){ cb(null); }
   }
@@ -2540,6 +2543,7 @@
         return;
       }
       if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      if(window.__dsfmPersist) window.__dsfmPersist();
       db = withCollege(firebase.firestore());
       wireComposer("notice-input","notice-send","private_posts","notice-posts","아직 게시글이 없어요. 첫 이야기를 남겨보세요!");
       wireComposer("suggest-input","suggest-send","suggestion_posts","suggest-posts","아직 건의사항이 없어요.","suggest-anon");
