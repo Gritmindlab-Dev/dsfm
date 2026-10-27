@@ -692,6 +692,10 @@
         <div class="sub" id="user-team-display">멘토링 참여자</div>
       </div>
       <div class="rail-nav" id="rail-nav">
+        <button data-page="picnic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M12 3l9 9H3l9-9Z"/><path d="M12 12v9"/></svg>
+          PICNIC DAY
+        </button>
         <button data-page="announce" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           공지사항
@@ -737,6 +741,12 @@
 
     <main class="main">
       <div class="main-inner">
+        <div class="pk-banner" id="picnic-banner"></div>
+
+        <!-- PICNIC DAY (10/29) 미션 — js/picnic.js 가 그려요 -->
+        <section id="page-picnic" class="page" style="display:none">
+          <div id="picnic-root"></div>
+        </section>
 
         <!-- 공지사항 -->
         <section id="page-announce" class="page">
@@ -1018,6 +1028,7 @@
   "use strict";
 
   var state = { name: "", team: "", dbReady: false };
+  var cameFromQr = /[?&]qr=/.test(location.search);
   var db = null;
 
   /* ============================================================
@@ -1154,7 +1165,21 @@
     loadSheetRoster();
     initDb();
     window.scrollTo(0, 0);
+    /* 로그인 유지 — QR을 찍고 다시 들어와도 로그인 상태로 미션을 이어가요 ("로그아웃"을 누르면 지워져요) */
+    try{ localStorage.setItem("dsfm_login_v1", JSON.stringify({ m: m, at: Date.now() })); }catch(e){}
+    var me = { name: state.name, college: state.college, teamName: state.teamName, role: state.role, rosterId: state.rosterId, team: state.team };
+    window.DSFM = { me: me, goToPage: goToPage };
+    try{ window.dispatchEvent(new CustomEvent("dsfm:login", { detail: me })); }catch(e){}
+    if(cameFromQr || window.__dsfmPicnicFromQr) goToPage("picnic");
   }
+  function clearLogin(){ try{ localStorage.removeItem("dsfm_login_v1"); }catch(e){} }
+  (function restoreLogin(){
+    var saved = null;
+    try{ saved = JSON.parse(localStorage.getItem("dsfm_login_v1") || "null"); }catch(e){}
+    if(!saved || !saved.m || Date.now() - (saved.at || 0) > 7 * 24 * 3600 * 1000) return;
+    /* 아래쪽 코드까지 모두 준비된 뒤에 자동 로그인해요 */
+    setTimeout(function(){ getLoginDb(function(ldb){ if(ldb && !loggedIn) enterAs(saved.m); }); }, 0);
+  })();
   document.getElementById("login-form").addEventListener("submit", doLogin);
   document.getElementById("login-btn").addEventListener("click", doLogin);
   ["f-name","f-phone"].forEach(function(id){
@@ -1185,11 +1210,11 @@
   });
 
   var railLogoutBtn = document.getElementById("rail-logout");
-  if(railLogoutBtn) railLogoutBtn.addEventListener("click", function(){ location.reload(); });
+  if(railLogoutBtn) railLogoutBtn.addEventListener("click", function(){ clearLogin(); location.reload(); });
   var mypageLogoutBtn = document.getElementById("mypage-logout");
   if(mypageLogoutBtn){
     mypageLogoutBtn.addEventListener("click", function(){
-      location.reload();
+      clearLogin(); location.reload();
     });
   }
 
@@ -1206,7 +1231,13 @@
 
   /* ---------- 일정 캘린더 (db-backed) ---------- */
   var calView = { year: (new Date()).getFullYear(), month: (new Date()).getMonth() };
-  var calEventsCache = [];
+  /* 운영진 고정 일정 — 다가오는 일정·달력에 항상 보여요 */
+  var FIXED_EVENTS = [ { date: "2026-10-29", title: "PICNIC DAY 피크닉데이 (10:00~16:00 · 영근터)", college: "전체", fixed: true } ];
+  function withFixedEvents(list){
+    var extra = FIXED_EVENTS.filter(function(f){ return !list.some(function(e){ return e.date === f.date && /피크닉|PICNIC/i.test(e.title || ""); }); });
+    return list.concat(extra);
+  }
+  var calEventsCache = withFixedEvents([]);
   var calSelectedDate = null;
 
   function calPad2(n){ return (n < 10 ? "0" : "") + n; }
@@ -1299,7 +1330,7 @@
   function watchCalendar(){
     if(!db) return;
     db.collection("sched_events").orderBy("date","asc").limit(300).onSnapshot(function(snap){
-      calEventsCache = snap.docs.map(function(d){ return d.data(); });
+      calEventsCache = withFixedEvents(snap.docs.map(function(d){ return d.data(); }));
       renderCalendar();
       renderHomeWidgets();
     });
@@ -1555,7 +1586,7 @@
   function renderPolls(){
     var el = document.getElementById("poll-list");
     if(!el) return;
-    var list = visiblePolls();
+    var list = visiblePolls().filter(function(p){ return !pollClosed(p); }); /* 마감된 투표는 첫 화면에서 내려요 */
     if(!list.length){ el.innerHTML = ""; return; }
     /* 다시 그릴 때 쓰고 있던 사유가 지워지지 않게 */
     var focusedPid = null;
@@ -2764,5 +2795,7 @@
   var extTimer = setInterval(function(){ startExt(); if(extStarted) clearInterval(extTimer); }, 400);
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="js/picnic.js?v=20261027"></script>
 </body>
 </html>
