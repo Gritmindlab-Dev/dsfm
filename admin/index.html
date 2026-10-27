@@ -786,14 +786,14 @@
 
     function viewAccounts(){
       if(!opts.adminLogin) return viewAccountsEmail();
-      var RANK = {"최고":0, "총괄":1, "운영":2};
+      var RANK = {"최고":0, "총괄":1, "운영":2, "스태프":3};
       var list = S.admins.slice().sort(function(a,b){ return (RANK[a.d.role] || 3) - (RANK[b.d.role] || 3) || String(a.d.college || "").localeCompare(String(b.d.college || ""), "ko") || String(a.d.name || "").localeCompare(String(b.d.name || ""), "ko"); });
       mainEl.innerHTML = '<h2 class="adm-h">운영진 계정</h2>' +
         '<p class="adm-desc">운영진은 <b>이름 + 휴대폰 뒷자리 4자리 + 비밀번호</b>로 운영진 페이지에 로그인해요. <b>총괄 관리자</b>는 모든 단과대와 계정 관리를, <b>운영 관리자</b>는 담당 단과대의 공지·일정·인증·건의·게시물·명단만 관리해요.</p>' +
         '<div class="adm-card"><div class="adm-card-title">운영진 추가</div><div class="adm-form-row">' +
           '<input class="adm-input" id="adm-a-name" placeholder="이름" maxlength="20" style="flex:1 1 110px">' +
           '<input class="adm-input" id="adm-a-pin" placeholder="휴대폰 뒷자리 4자리" inputmode="numeric" maxlength="4" style="flex:1 1 140px">' +
-          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option></select>' +
+          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option><option value="스태프">행사 스태프 (피크닉데이)</option></select>' +
           '<select class="adm-select" id="adm-a-college" style="flex:1 1 170px">' + collegeOptions(COLLEGES[0], false) + '</select>' +
           '<input class="adm-input" id="adm-a-pw" placeholder="처음 비밀번호 (6자 이상)" autocomplete="new-password" style="flex:1 1 170px">' +
           '<button class="adm-btn" type="button" data-adm="account-add" style="flex:0 0 auto">추가</button>' +
@@ -809,7 +809,7 @@
         '<div class="adm-list">' + (list.length ? list.map(function(x){
           var isPin = !!x.d.loginKey;
           return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
-            '<span class="adm-tag' + (x.d.role === "최고" ? " green" : x.d.role === "총괄" ? "" : " gold") + '">' + (x.d.role === "최고" ? "최고 관리자" : x.d.role === "총괄" ? "총괄 관리자" : "운영 관리자") + '</span>' +
+            '<span class="adm-tag' + (x.d.role === "최고" ? " green" : x.d.role === "총괄" ? "" : " gold") + '">' + (x.d.role === "최고" ? "최고 관리자" : x.d.role === "총괄" ? "총괄 관리자" : x.d.role === "스태프" ? "행사 스태프" : "운영 관리자") + '</span>' +
             (x.d.role === "운영" ? '<span class="adm-tag gray">' + esc(x.d.college || "") + '</span>' : "") +
             '<span class="adm-item-title">' + esc(x.d.name || "") + '</span>' +
             '<span class="adm-item-meta" style="margin:0;flex:1">' + (isPin ? "이름 + 뒷자리 " + esc(x.d.pinHint || "") + " 로그인" : esc(x.id) + " · 이메일 로그인") + '</span>' +
@@ -835,7 +835,7 @@
         '<div class="adm-card"><div class="adm-card-title">운영진 추가</div><div class="adm-form-row">' +
           '<input class="adm-input" id="adm-a-email" type="email" placeholder="이메일 (로그인 아이디)" style="flex:2 1 220px">' +
           '<input class="adm-input" id="adm-a-name" placeholder="이름·소속 (예: 홍길동 조교)" maxlength="30">' +
-          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option></select>' +
+          '<select class="adm-select" id="adm-a-role" style="flex:0 1 130px"><option value="운영">운영 관리자</option><option value="총괄">총괄 관리자</option><option value="스태프">행사 스태프 (피크닉데이)</option></select>' +
           '<select class="adm-select" id="adm-a-college" style="flex:1 1 170px">' + collegeOptions(COLLEGES[0], false) + '</select>' +
           '<button class="adm-btn" type="button" data-adm="account-add" style="flex:0 0 auto">추가</button>' +
         '</div>' +
@@ -888,7 +888,7 @@
     root.addEventListener("change", function(e){
       if(e.target.id === "adm-scope-select"){ collegeFilter = e.target.value; render(true); }
       if(e.target.id === "adm-role-switch" && opts.onRoleChange){ opts.onRoleChange(e.target.value); }
-      if(e.target.id === "adm-a-role"){ var cs = root.querySelector("#adm-a-college"); if(cs) cs.disabled = e.target.value === "총괄"; }
+      if(e.target.id === "adm-a-role"){ var cs = root.querySelector("#adm-a-college"); if(cs) cs.disabled = e.target.value !== "운영"; }
     });
     root.addEventListener("click", function(e){
       var t = e.target.closest("[data-tab]");
@@ -1353,6 +1353,7 @@
         var email = String(user.email || "").toLowerCase();
         fdb.collection("admins").doc(email).get().then(function(snap){
           var a = snap.exists ? snap.data() : null;
+          if(a && a.role === "스태프"){ location.href = "../staff/"; return; }
           if(!a || (a.role !== "최고" && a.role !== "총괄" && a.role !== "운영") || (a.role === "운영" && COLLEGES.indexOf(a.college) < 0)){
             root.style.display = "none"; document.getElementById("login-screen").style.display = "flex";
             firebase.auth().signOut();
