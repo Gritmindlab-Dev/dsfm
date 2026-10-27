@@ -214,7 +214,7 @@
   function stage(){
     var u = S.user;
     if(!u || !u.attendAt) return 1;
-    if(!u.teamId) return 1;
+    if(!u.teamId || !u.verifiedAt) return 1;
     if(!S.team || !S.team.photoAt) return S.team && teamComplete() ? 3 : 2;
     return 4;
   }
@@ -247,14 +247,14 @@
     if(!u.attendAt){
       html += '<div class="pk-card"><h3>피크닉미션 1 · 출석체크</h3><p class="d">버튼을 누르면 출석 시각이 기록돼요. 출석 완료 화면을 <b>운영본부</b>에 보여주면 팀을 배정해 드려요.</p>' +
         '<button class="pk-big" type="button" data-pk="attend">출석체크 하기</button></div>';
-    } else if(!u.teamId){
-      html += '<div class="pk-card"><h3>피크닉미션 1 · 출석 완료 <span class="pk-tag ok">완료</span></h3><p class="d">이 화면을 <b>운영본부 스태프</b>에게 보여주세요. 팀이 배정되면 미션 2가 열려요.</p>' +
-        passHtml(u, "출석 " + hhmm(u.attendAt)) + '</div>' +
-        lockCard("피크닉미션 2 · 교내 QR을 모아라!", "팀 배정을 받으면 열려요.");
+    } else if(!u.teamId || !u.verifiedAt){
+      html += '<div class="pk-card"><h3>피크닉미션 1 · 출석 완료 <span class="pk-tag ok">완료</span></h3><p class="d">이 화면을 <b>운영본부 스태프</b>에게 보여주세요. 확인을 받으면 미션 2가 열려요.</p>' +
+        passHtml(u, "출석 " + hhmm(u.attendAt) + (u.teamId && S.team ? " · 팀 " + S.team.name : "")) + '</div>' +
+        lockCard("피크닉미션 2 · 교내 QR을 모아라!", "운영본부에서 출석 확인을 받으면 열려요.");
     } else {
       html += teamCard(u);
     }
-    if(u.teamId){
+    if(u.teamId && u.verifiedAt){
       html += stampCard(u);
       html += photoCard(u);
       html += boothCard(u);
@@ -263,7 +263,7 @@
     }
     html += '</div>';
     el.innerHTML = html;
-    if(u.teamId) drawMyQr();
+    if(u.teamId && u.verifiedAt) drawMyQr();
   }
   function lockCard(t, d){ return '<div class="pk-card lock"><h3>🔒 ' + esc(t) + '</h3><p class="d" style="margin:0">' + esc(d) + '</p></div>'; }
   function passHtml(u, line){
@@ -443,7 +443,7 @@
       var nm = pointName(S.cfg, key);
       if(!qrOpenNow(S.cfg)){ toast("지금은 QR 스탬프 인정 시간이 아니에요 (10:00~16:00).", "bad"); return; }
       if(!u || !u.attendAt){ toast("먼저 [출석체크]를 하고 운영본부에서 팀을 배정받아 주세요.", "bad"); return; }
-      if(!u.teamId){ toast("팀 배정을 받은 뒤에 QR을 찍어야 스탬프가 적립돼요.", "bad"); return; }
+      if(!u.teamId || !u.verifiedAt){ toast("운영본부에서 출석 확인을 받은 뒤에 QR을 찍어야 미션이 열려요.", "bad"); return; }
       if(u.stamps && u.stamps[key]){ showMission(key, "done", "이미 받은 스탬프예요"); return; }
       if(MISSIONS[key].type === "photo" && S.proofs[key]){
         giveStamp(key).then(function(cnt){ showMission(key, "team", "📍 팀원이 이미 사진을 올렸어요! 스탬프 적립 (" + cnt + "/5)"); })
