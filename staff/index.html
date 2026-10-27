@@ -198,7 +198,7 @@
   /* ---------- 체험부스 ---------- */
   function boothItems(){ var b = P.BOOTHS.filter(function(x){ return String(x.booth) === String(myBooth); }); return b.length ? b : []; }
   function vBooth(){
-    var html = '<div class="st-card"><h3>내가 맡은 부스</h3><div class="sx-pick">' + [1,2,3,4].map(function(n){
+    var html = '<div class="st-card"><h3>내가 맡은 부스</h3><div class="sx-pick">' + [1,2,3].map(function(n){
       var names = P.BOOTHS.filter(function(b){ return b.booth === n; }).map(function(b){ return b.name; }).join(" / ");
       return '<button type="button" data-booth="' + n + '" class="' + (String(myBooth) === String(n) ? "on" : "") + '">부스' + n + ' · ' + esc(names) + '</button>';
     }).join("") + '</div>';
@@ -261,7 +261,7 @@
     if(!u || !b) return;
     var t = u.d.teamId ? teamOf(u.d.teamId) : null;
     if(!(t && t.d.photoAt) && !confirm("이용권이 없는 학생이에요 (미션 3 미완료). 그래도 참여 처리할까요?")) return;
-    if(b.booth === 3){
+    if(key === "keycap" || key === "pen"){
       var other = key === "keycap" ? "pen" : "keycap";
       if(logs.some(function(l){ return l.d.rosterId === uid && l.d.item === other; }) && !confirm("부스3은 키캡·볼꾸 중 하나만 고르는 부스예요. 이미 다른 항목에 참여했는데 그래도 처리할까요?")) return;
     }

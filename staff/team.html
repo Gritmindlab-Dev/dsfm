@@ -34,6 +34,11 @@
   .tm-chip{display:inline-flex;align-items:center;gap:4px;margin:3px 4px 0 0;padding:4px 6px 4px 10px;border-radius:999px;background:var(--cream);font-size:13px}
   .tm-chip button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;font-size:12px;color:var(--ink-soft)}
   .tm-chip button:hover{background:#f1dde2;color:var(--bad)}
+  [data-drag]{cursor:grab}[data-drag]:active{cursor:grabbing}
+  .tm-dragging{opacity:.45}
+  .tm-team.drop-on,.tm-new.drop-on{border-color:var(--wine-deep);background:#fbe9ee;box-shadow:0 0 0 3px rgba(124,31,61,.15)}
+  .tm-new{border:2px dashed #d9c6cc;border-radius:14px;padding:16px;margin-bottom:10px;text-align:center;color:var(--ink-soft);font-weight:700;font-size:14px}
+  .tm-hint{font-size:12.5px;color:var(--ink-soft);background:#fff8e6;border-radius:10px;padding:8px 10px;margin:-2px 0 10px;line-height:1.5}
   .st-sel{border:1.5px solid var(--line);border-radius:10px;padding:10px;background:#fff;min-width:0;flex:1 1 160px}
 </style>
 </head>
@@ -64,6 +69,8 @@
       <div>
         <div class="st-card">
           <h3>팀 목록 <span class="st-muted" id="tm-teamcount"></span></h3>
+          <div class="tm-hint">🖱️ 왼쪽 학생을 <b>마우스로 끌어다 팀 카드에 놓으면</b> 바로 배정돼요. 체크한 여러 명을 한꺼번에 끌 수도 있고, 팀 카드 안의 이름을 다른 팀으로 끌면 팀이 옮겨져요.</div>
+          <div class="tm-new" data-drop="new">＋ 여기로 끌어 놓으면 새 팀 만들기</div>
           <input class="tm-search" id="tm-tq" placeholder="팀 이름·팀원으로 찾기">
           <div id="tm-teams"></div>
         </div>
@@ -101,7 +108,7 @@
     if(!list.length){ el.innerHTML = '<div class="st-muted" style="padding:14px 4px">' + (filter === "wait" && !q ? "배정을 기다리는 학생이 없어요." : "해당하는 학생이 없어요.") + '</div>'; return; }
     el.innerHTML = list.map(function(u){
       var t = u.d.teamId ? teamOf(u.d.teamId) : null;
-      return '<label class="tm-p' + (sel[u.id] ? " sel" : "") + '"><input type="checkbox" data-sel="' + esc(u.id) + '"' + (sel[u.id] ? " checked" : "") + '>' +
+      return '<label class="tm-p' + (sel[u.id] ? " sel" : "") + '" draggable="true" data-drag="' + esc(u.id) + '"><input type="checkbox" data-sel="' + esc(u.id) + '"' + (sel[u.id] ? " checked" : "") + '>' +
         '<div style="min-width:0"><div class="nm">' + esc(u.d.name) + ' ' + (u.d.role === "멘토" ? '<span class="st-tag">멘토</span>' : '<span class="st-tag gray">멘티</span>') + '</div><div class="sb">' + esc(label(u)) + '</div></div>' +
         '<div class="r">출석 ' + P.hhmm(u.d.attendAt) + '<br>' + (t ? '<span class="st-tag ok">' + esc(t.d.name) + '</span>' : '<span class="st-tag bad">미배정</span>') + '</div></label>';
     }).join("");
@@ -139,7 +146,7 @@
     el.innerHTML = list.map(function(t){
       var ms = (t.d.members || []).map(userOf).filter(Boolean);
       var done = ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length;
-      return '<div class="tm-team" data-team="' + esc(t.id) + '"><div class="hd"><span class="tn">' + esc(t.d.name) + '</span>' +
+      return '<div class="tm-team" data-team="' + esc(t.id) + '" data-drop="team"><div class="hd"><span class="tn">' + esc(t.d.name) + '</span>' +
         '<span class="st-tag ' + (t.d.hasMentor ? "" : "gray") + '">' + (t.d.hasMentor ? "멘토 있음" : "멘티 팀") + '</span>' +
         '<span class="st-tag gray">' + ms.length + '명</span>' +
         '<span class="st-tag ' + (ms.length && done === ms.length ? "ok" : "gray") + '">스탬프 완료 ' + done + '/' + ms.length + '</span>' +
@@ -147,7 +154,7 @@
         (t.d.photoAt ? '<span class="st-tag ok">사진 인증</span>' : "") +
         '</div>' +
         '<div>' + ms.map(function(u){
-          return '<span class="tm-chip" style="padding-right:10px">' + esc(u.d.name) + (u.d.role === "멘토" ? " (멘토)" : "") + ' <span class="st-muted">' + P.stampCount(u.d) + '/5</span></span>';
+          return '<span class="tm-chip" style="padding-right:10px" draggable="true" data-drag="' + esc(u.id) + '">' + esc(u.d.name) + (u.d.role === "멘토" ? " (멘토)" : "") + ' <span class="st-muted">' + P.stampCount(u.d) + '/5</span></span>';
         }).join("") + '</div></div>';
     }).join("");
   }
@@ -160,7 +167,9 @@
       if(u.d.teamId && u.d.teamId !== teamId && teamOf(u.d.teamId)) batch.update(db.collection("picnic_teams").doc(u.d.teamId), { members: FV.arrayRemove(id) });
       batch.update(db.collection("picnic_users").doc(id), { teamId: teamId, assignedAt: Date.now(), assignedBy: P.admin.name || "" });
     });
-    batch.update(db.collection("picnic_teams").doc(teamId), { members: FV.arrayUnion.apply(FV, ids) });
+    var upd = { members: FV.arrayUnion.apply(FV, ids) };
+    if(ids.some(function(id){ var u = userOf(id); return u && u.d.role === "멘토"; })) upd.hasMentor = true; /* 멘토가 들어오면 '멘토 있음'으로 */
+    batch.update(db.collection("picnic_teams").doc(teamId), upd);
     return batch.commit();
   }
   function createTeam(name, ids, hasMentor){
@@ -194,6 +203,51 @@
       }
     }
   });
+  /* ---------- 마우스로 끌어서 팀 배정 ---------- */
+  var dragIds = null;
+  document.addEventListener("dragstart", function(e){
+    var el = e.target.closest && e.target.closest("[data-drag]"); if(!el) return;
+    var id = el.dataset.drag;
+    var picked = selected();
+    dragIds = picked.indexOf(id) >= 0 ? picked : [id];   /* 체크한 학생을 끌면 체크한 사람 모두 */
+    try{ e.dataTransfer.setData("text/plain", dragIds.join(",")); e.dataTransfer.effectAllowed = "move"; }catch(x){}
+    el.classList.add("tm-dragging");
+  });
+  document.addEventListener("dragend", function(e){
+    document.querySelectorAll(".tm-dragging,.drop-on").forEach(function(x){ x.classList.remove("tm-dragging"); x.classList.remove("drop-on"); });
+  });
+  document.addEventListener("dragover", function(e){
+    var t = e.target.closest && e.target.closest("[data-drop]"); if(!t || !dragIds) return;
+    e.preventDefault(); try{ e.dataTransfer.dropEffect = "move"; }catch(x){}
+    document.querySelectorAll(".drop-on").forEach(function(x){ if(x !== t) x.classList.remove("drop-on"); });
+    t.classList.add("drop-on");
+  });
+  document.addEventListener("dragleave", function(e){
+    var t = e.target.closest && e.target.closest("[data-drop]");
+    if(t && !t.contains(e.relatedTarget)) t.classList.remove("drop-on");
+  });
+  document.addEventListener("drop", function(e){
+    var t = e.target.closest && e.target.closest("[data-drop]"); if(!t || !dragIds) return;
+    e.preventDefault();
+    t.classList.remove("drop-on");
+    var ids = dragIds.filter(function(id){ return !!userOf(id); }); dragIds = null;
+    if(!ids.length) return;
+    if(t.dataset.drop === "team"){
+      var team = teamOf(t.dataset.team); if(!team) return;
+      ids = ids.filter(function(id){ return userOf(id).d.teamId !== team.id; });
+      if(!ids.length) return;
+      assign(ids, team.id).then(function(){ ids.forEach(function(id){ delete sel[id]; }); P.toast("[" + team.d.name + "] 팀에 " + ids.length + "명 배정했어요", "ok"); render(); }).catch(fail);
+      return;
+    }
+    /* 새 팀 만들기 칸 */
+    var first = userOf(ids[0]);
+    var name = prompt("새 팀 이름 (" + ids.length + "명)", first ? (first.d.team || first.d.teamName || "") : "");
+    if(!name || !name.trim()) return;
+    name = name.trim();
+    var hasMentor = ids.some(function(id){ var u = userOf(id); return u && u.d.role === "멘토"; });
+    createTeam(name, ids, hasMentor).then(function(){ ids.forEach(function(id){ delete sel[id]; }); P.toast("[" + name + "] 팀을 만들고 " + ids.length + "명 배정했어요", "ok"); render(); }).catch(fail);
+  });
+
   document.addEventListener("change", function(e){
     var s = e.target.closest && e.target.closest("[data-sel]");
     if(s){ sel[s.dataset.sel] = s.checked; renderList(users.filter(function(u){ return u.d.attendAt; })); renderAction(); }
