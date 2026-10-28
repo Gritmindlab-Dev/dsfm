@@ -102,6 +102,18 @@
      멘토가 있는 기존 멘토링 조(명단 기준)는 출석하면 그 조 이름의 팀으로 바로 들어가요.
      멘토 없는 조(단과대별 멘티)는 지금처럼 현장에서 배정해요. 이 페이지가 열려 있는 동안 동작해요. */
   function autoOn(){ return cfg.autoAssign !== false; }
+  /* 어드바이저(교수님)가 함께 오는 반: 인원이 적어도 그 반끼리 한 팀 (윤기정 과장님 요청) */
+  var ADVISORS = {
+    "자유전공학부 자유 04반": { name: "박건영", major: "국제통상학", note: "12:00~13:00, 15:00~17:00 참석" },
+    "자유전공학부 자유 12반": { name: "경민정", major: "식품영양학", note: "12:00부터 잠깐 참석" },
+    "자유전공학부 자유 13반": { name: "이호림", major: "바이오공학", note: "13:20~14:00 참석" },
+    "글로벌융합대학 글융 2반": { name: "권은희", major: "스페인어전공", note: "" },
+    "글로벌융합대학 글융 8반": { name: "이문영", major: "회계학전공", note: "" },
+    "글로벌융합대학 글융 10반": { name: "남현정", major: "국제통상학전공", note: "" },
+    "글로벌융합대학 글융 18반": { name: "김도혜", major: "문화인류학전공", note: "" },
+    "과학기술대학 과기 7반": { name: "강지헌", major: "디지털소프트웨어공학", note: "" }
+  };
+  function advisorOf(t){ var k = t && t.d ? (t.d.sourceTeam || t.d.name) : ""; return ADVISORS[k] || null; }
   function mentorTeamKeys(){
     var m = {}; (roster || []).forEach(function(r){ if(r.role === "멘토") m[r.teamKey || ((r.college ? r.college + " " : "") + (r.team || ""))] = 1; });
     return m;
@@ -109,7 +121,9 @@
   function autoTeamId(key){ return "auto_" + String(key).replace(/[\/\s.#$\[\]]+/g, "_"); }
   function runAuto(){
     if(!autoOn() || !roster) return;
-    var mk = mentorTeamKeys(), groups = {};
+    var mentors = mentorTeamKeys(), mk = {}, groups = {};
+    Object.keys(mentors).forEach(function(k){ mk[k] = 1; });
+    Object.keys(ADVISORS).forEach(function(k){ mk[k] = 1; });
     users.forEach(function(u){
       if(!u.d.attendAt || u.d.teamId || autoBusy[u.id]) return;
       var k = u.d.team; if(!k || !mk[k]) return;
@@ -119,7 +133,10 @@
       var ids = groups[k]; ids.forEach(function(id){ autoBusy[id] = 1; });
       var tid = autoTeamId(k), db = P.db, FV = firebase.firestore.FieldValue;
       var first = userOf(ids[0]);
-      db.collection("picnic_teams").doc(tid).set({ name: k, hasMentor: true, sourceTeam: k, auto: true, createdAt: Date.now(), createdBy: "자동 배정" }, { merge: true })
+      var adv = ADVISORS[k];
+      var tdoc = { name: k, hasMentor: !!mentors[k], sourceTeam: k, auto: true, createdAt: Date.now(), createdBy: "자동 배정" };
+      if(adv) tdoc.advisor = adv.name;
+      db.collection("picnic_teams").doc(tid).set(tdoc, { merge: true })
         .then(function(){
           var batch = db.batch();
           ids.forEach(function(id){ batch.update(db.collection("picnic_users").doc(id), { teamId: tid, assignedAt: Date.now(), assignedBy: "자동 배정" }); });
@@ -132,12 +149,18 @@
   }
   function renderAuto(){
     var el = document.getElementById("tm-auto"); if(!el) return;
-    var on = autoOn();
+    var on = autoOn(), dOld = el.querySelector("details"), dOpen = dOld ? dOld.open : false;
     el.className = "tm-auto" + (on ? " on" : "");
     el.innerHTML = '<button class="sw" type="button" data-act="auto-toggle" aria-label="자동 배정 켜고 끄기"></button>' +
       '<div><b>같은 조 자동 배정 ' + (on ? "켜짐" : "꺼짐") + '</b><br><span class="st-muted">' +
-      (on ? "멘토가 있는 기존 멘토링 조는 출석하면 그 조 팀에 미리 들어가요. 미션은 운영본부에서 학생 화면을 보고 <b>[출석 확인]</b>을 눌러야 열려요. 멘토 없는 조는 확인 후 끌어다 배정해요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요. 미션은 [출석 확인]을 눌러야 열려요.") +
-      (roster ? "" : " · 명단 불러오는 중") + '</span></div>';
+      (on ? "멘토가 있는 기존 멘토링 조와 <b>어드바이저(교수님)가 오는 반</b>은 출석하면 그 반 팀에 미리 들어가요. 미션은 운영본부에서 학생 화면을 보고 <b>[출석 확인]</b>을 눌러야 열려요. 멘토 없는 조는 확인 후 끌어다 배정해요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요. 미션은 [출석 확인]을 눌러야 열려요.") +
+      (roster ? "" : " · 명단 불러오는 중") + '</span>' +
+      '<details style="margin-top:8px"' + (dOpen ? " open" : "") + '><summary style="cursor:pointer;font-weight:700;color:var(--wine-deep)">👩‍🏫 어드바이저(교수님) 참여 반 ' + Object.keys(ADVISORS).length + '개 — 인원이 적어도 그 반끼리 한 팀</summary>' +
+      '<div style="margin-top:6px;display:grid;gap:4px">' + Object.keys(ADVISORS).map(function(k){ var a = ADVISORS[k];
+        var t = teams.filter(function(x){ return (x.d.sourceTeam || x.d.name) === k; })[0];
+        return '<div style="font-size:13px"><b>' + esc(k.replace(/^\S+\s/, "")) + '</b> · ' + esc(a.name) + ' 교수님 (' + esc(a.major) + ')' + (a.note ? ' · <span style="color:#a0522d">' + esc(a.note) + '</span>' : '') +
+          ' · ' + (t ? '<span class="st-tag ok">' + (t.d.members || []).length + '명 출석</span>' : '<span class="st-tag gray">아직 없음</span>') + '</div>'; }).join("") + '</div></details>' +
+      '</div>';
   }
 
   function render(){
@@ -209,6 +232,7 @@
       var done = ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length;
       return '<div class="tm-team" data-team="' + esc(t.id) + '" data-drop="team"><div class="hd"><span class="tn">' + esc(t.d.name) + '</span>' +
         '<span class="st-tag ' + (t.d.hasMentor ? "" : "gray") + '">' + (t.d.hasMentor ? "멘토 있음" : "멘티 팀") + '</span>' +
+        (advisorOf(t) ? '<span class="st-tag gold" title="' + esc(advisorOf(t).note || "") + '">👩‍🏫 ' + esc(advisorOf(t).name) + ' 교수님' + (advisorOf(t).note ? ' · ' + esc(advisorOf(t).note) : '') + '</span>' : '') +
         '<span class="st-tag gray">' + ms.length + '명</span>' +
         '<span class="st-tag ' + (ms.length && done === ms.length ? "ok" : "gray") + '">스탬프 완료 ' + done + '/' + ms.length + '</span>' +
         (t.d.snackAt ? '<span class="st-tag ok">간식 ' + P.hhmm(t.d.snackAt) + '</span>' : "") +
