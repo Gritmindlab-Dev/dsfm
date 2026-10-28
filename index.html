@@ -1787,6 +1787,7 @@
   function popImgOk(u){ return typeof u === "string" && /^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u); }
   function todayKey(){ var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
   function maybePopup(docs){
+    return; /* 로그인 팝업 공지는 띄우지 않아요 (공지 목록에는 그대로 보여요) */
     if(!state.name || document.getElementById("announce-popup")) return;
     var list = (docs || []).map(function(d){ var o = d.data() || {}; o.id = d.id; return o; })
       .filter(function(n){ return n.popup && collegeVisible(n); })
@@ -2821,6 +2822,6 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="js/picnic.js?v=20261028h"></script>
+<script src="js/picnic.js?v=20261028i"></script>
 </body>
 </html>
