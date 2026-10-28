@@ -70,10 +70,7 @@
     }catch(e){ return null; }
   }
   /* 로그인 전이면 로그인 화면에 안내 문구를 보여줘요 */
-  if(window.__dsfmPicnicFromQr){
-    document.addEventListener("DOMContentLoaded", showQrLoginHint);
-    if(document.readyState !== "loading") showQrLoginHint();
-  }
+  /* (로그인 화면 QR 안내 문구는 표시하지 않아요) */
   function showQrLoginHint(){
     var card = document.querySelector("#login-screen .login-card");
     if(!card || document.getElementById("pk-qr-hint")) return;
