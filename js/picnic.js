@@ -80,7 +80,7 @@
     var d = document.createElement("div");
     d.id = "pk-qr-hint";
     d.style.cssText = "margin:0 0 14px;padding:11px 13px;border-radius:12px;background:#fff4d6;color:#6b4a00;font-size:13px;font-weight:700;line-height:1.5";
-    d.textContent = "📍 QR 스탬프를 찍었어요! 로그인하면 스탬프가 바로 적립돼요.";
+    d.textContent = "📍 QR을 인식했어요! 로그인하면 이 장소의 미션이 열려요. 미션을 완료해야 스탬프가 찍혀요.";
     var form = card.querySelector("form");
     card.insertBefore(d, form || card.firstChild);
   }
