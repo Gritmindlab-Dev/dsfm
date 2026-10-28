@@ -358,7 +358,7 @@
       var r2 = [["팀","멘토유무","인원","팀원","스탬프완료","간식박스수령","수령인원","돗자리대여","돗자리반납","담요대여","담요반납","사진인증","인증자"]];
       teams.forEach(function(t){
         var ms = members(t);
-        r2.push([t.d.name, t.d.hasMentor ? "있음" : "없음", ms.length, ms.map(function(u){ return u.d.name + (u.d.role === "멘토" ? "(멘토)" : ""); }).join(" / "),
+        r2.push([t.d.name, ms.some(function(u){ return u.d.role === "멘토"; }) ? "있음" : "없음", ms.length, ms.map(function(u){ return u.d.name + (u.d.role === "멘토" ? "(멘토)" : ""); }).join(" / "),
           ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length + "/" + ms.length, P.full(t.d.snackAt), t.d.snackCount || "",
           P.full(t.d.matOut), P.full(t.d.matBack), P.full(t.d.blanketOut), P.full(t.d.blanketBack), P.full(t.d.photoAt), t.d.photoBy || ""]);
       });

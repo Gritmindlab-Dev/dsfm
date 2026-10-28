@@ -256,7 +256,8 @@
       var ms = (t.d.members || []).map(userOf).filter(Boolean);
       var done = ms.filter(function(u){ return P.stampCount(u.d) >= 5; }).length;
       return '<div class="tm-team" data-team="' + esc(t.id) + '" data-drop="team"><div class="hd"><span class="tn">' + esc(t.d.name) + '</span>' +
-        '<span class="st-tag ' + (t.d.hasMentor ? "" : "gray") + '">' + (t.d.hasMentor ? "멘토 있음" : "멘티 팀") + '</span>' +
+        (function(){ var mp = ms.some(function(u){ return u.d.role === "멘토"; }); /* 실제로 출석해 팀에 들어온 멘토 기준 */
+          return '<span class="st-tag ' + (mp ? "" : "gray") + '">' + (mp ? "멘토 함께" : "멘토 없음") + '</span>'; })() +
         (advisorOf(t) ? '<span class="st-tag gold" title="' + esc(advisorOf(t).note || "") + '">👩‍🏫 ' + esc(advisorOf(t).name) + ' 교수님' + (advisorOf(t).note ? ' · ' + esc(advisorOf(t).note) : '') + '</span>' : '') +
         '<span class="st-tag gray">' + ms.length + '명</span>' +
         '<span class="st-tag ' + (ms.length && done === ms.length ? "ok" : "gray") + '">스탬프 완료 ' + done + '/' + ms.length + '</span>' +
