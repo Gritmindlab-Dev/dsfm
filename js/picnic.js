@@ -13,6 +13,8 @@
   "use strict";
 
   var EVENT_START = new Date("2026-10-29T10:00:00+09:00").getTime();
+  var ATTEND_OPEN = new Date("2026-10-29T09:00:00+09:00").getTime(); /* 출석체크 버튼은 행사 당일 09:00부터 */
+  function attendOpenNow(cfg){ return ((cfg && cfg.qrMode) === "on") || Date.now() >= ATTEND_OPEN; }
   var EVENT_END   = new Date("2026-10-29T16:00:00+09:00").getTime();
   var POINT_KEYS = ["b1","b2","b3","b4","b5"];
   /* QR 주소의 토큰은 sha256("dsfm-qr|토큰") 값으로만 비교해요 (토큰 원문은 코드에 없어요) */
@@ -266,7 +268,8 @@
     /* 미션 1 */
     if(!u.attendAt){
       html += '<div class="pk-card"><h3>피크닉미션 1 · 출석체크</h3><p class="d">버튼을 누르면 출석 시각이 기록돼요. 출석 완료 화면을 <b>운영본부</b>에 보여주면 팀을 배정해 드려요.</p>' +
-        '<button class="pk-big" type="button" data-pk="attend">출석체크 하기</button></div>';
+        (attendOpenNow(S.cfg) ? '<button class="pk-big" type="button" data-pk="attend">출석체크 하기</button>' :
+          '<button class="pk-big" type="button" disabled>10/29(목) 오전 9시부터 출석할 수 있어요</button>') + '</div>';
     } else if(!u.teamId || !u.verifiedAt){
       html += '<div class="pk-card"><h3>피크닉미션 1 · 출석 완료 <span class="pk-tag ok">완료</span></h3><p class="d">이 화면을 <b>운영본부 스태프</b>에게 보여주세요. 확인을 받으면 미션 2가 열려요.</p>' +
         passHtml(u, "출석 " + hhmm(u.attendAt) + (u.teamId && S.team ? " · 팀 " + S.team.name : "")) + '</div>' +
@@ -404,6 +407,7 @@
 
   /* ---------- 동작 ---------- */
   function attend(btn){
+    if(!attendOpenNow(S.cfg)){ toast("출석체크는 10/29(목) 오전 9시부터 할 수 있어요.", "bad"); render(); return; }
     if(!S.me.rosterId){ toast("명단 정보가 없어요. 로그아웃 후 다시 로그인해 주세요.", "bad"); return; }
     btn.disabled = true; btn.textContent = "기록 중...";
     var me = S.me;
