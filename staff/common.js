@@ -118,7 +118,7 @@
     (function(){
       var ins = loginEl.querySelectorAll("input");
       ins.forEach(function(i){ var on = function(){ i.removeAttribute("readonly"); }; i.addEventListener("focus", on); i.addEventListener("pointerdown", on); i.addEventListener("touchstart", on, { passive: true }); });
-      var touched = false; loginEl.addEventListener("keydown", function(){ touched = true; });
+      var touched = false; ["keydown", "input", "pointerdown", "focusin", "touchstart"].forEach(function(ev){ loginEl.addEventListener(ev, function(){ touched = true; }, { passive: true }); });
       [200, 800, 1600].forEach(function(t){ setTimeout(function(){ if(!touched) ins.forEach(function(i){ i.value = ""; }); }, t); });
     })();
     document.body.appendChild(loginEl);

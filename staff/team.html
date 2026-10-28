@@ -122,7 +122,10 @@
   function autoTeamId(key){ return "auto_" + String(key).replace(/[\/\s.#$\[\]]+/g, "_"); }
   function runAuto(){
     if(!autoOn() || !roster) return;
-    var mentors = mentorTeamKeys(), mk = {}, groups = {};
+    /* 자동 배정은 ① 그 반 멘토가 실제로 출석했을 때 ② 어드바이저(교수님) 참여 반일 때만.
+       멘토가 아직 안 온 반 학생은 '미배정'으로 기다리다가, 멘토가 출석하면 그때 같이 묶여요. */
+    var mentors = {}, mk = {}, groups = {};
+    users.forEach(function(u){ if(u.d.attendAt && u.d.role === "멘토" && u.d.team) mentors[u.d.team] = 1; });
     Object.keys(mentors).forEach(function(k){ mk[k] = 1; });
     Object.keys(ADVISORS).forEach(function(k){ mk[k] = 1; });
     users.forEach(function(u){
@@ -154,7 +157,7 @@
     el.className = "tm-auto" + (on ? " on" : "");
     el.innerHTML = '<button class="sw" type="button" data-act="auto-toggle" aria-label="자동 배정 켜고 끄기"></button>' +
       '<div><b>같은 조 자동 배정 ' + (on ? "켜짐" : "꺼짐") + '</b><br><span class="st-muted">' +
-      (on ? "멘토가 있는 기존 멘토링 조와 <b>어드바이저(교수님)가 오는 반</b>은 출석하면 그 반 팀에 미리 들어가요. 미션은 운영본부에서 학생 화면을 보고 <b>[출석 확인]</b>을 눌러야 열려요. 멘토 없는 조는 확인 후 끌어다 배정해요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요. 미션은 [출석 확인]을 눌러야 열려요.") +
+      (on ? "<b>그 반 멘토가 출석한 반</b>과 <b>어드바이저(교수님)가 오는 반</b>은 출석하면 그 반 팀에 미리 들어가요. 멘토가 아직 안 온 반 학생은 미배정으로 기다리다가 멘토가 오면 같이 묶여요. 미션은 운영본부에서 학생 화면을 보고 <b>[출석 확인]</b>을 눌러야 열려요. 멘토 없는 조는 확인 후 끌어다 배정해요. (이 페이지를 켜 둔 동안 동작)" : "모든 학생을 아래에서 직접 배정해요. 미션은 [출석 확인]을 눌러야 열려요.") +
       (roster ? "" : " · 명단 불러오는 중") + '</span>' +
       '<details style="margin-top:8px"' + (dOpen ? " open" : "") + '><summary style="cursor:pointer;font-weight:700;color:var(--wine-deep)">👩‍🏫 어드바이저(교수님) 참여 반 ' + Object.keys(ADVISORS).length + '개 — 인원이 적어도 그 반끼리 한 팀</summary>' +
       '<div style="margin-top:6px;display:grid;gap:4px">' + Object.keys(ADVISORS).map(function(k){ var a = ADVISORS[k];
