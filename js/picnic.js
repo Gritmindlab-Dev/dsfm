@@ -42,6 +42,7 @@
     { key:"keyring", booth:3, name:"이니셜 키링 만들기",       total:150 }
   ];
   var PENDING_KEY = "dsfm_pending_qr";
+  var OPEN_BOOTH = { tarot: 1, color: 1 }; /* 진로타로·퍼스널컬러: 미션 3 없이 누구나 */
 
   /* ---------- QR로 들어온 경우: 토큰을 기억해 두고 주소창에서는 지워요 ---------- */
   (function grabQr(){
@@ -380,14 +381,14 @@
     var t = S.team, cfg = S.cfg;
     var pass = !!(t && t.photoAt);
     var mine = {}; S.logs.forEach(function(l){ mine[l.item] = l; });
-    var html = '<div class="pk-card' + (pass ? "" : " lock") + '"><h3>' + (pass ? "🎟️" : "🔒") + ' 체험부스 · 13:00~16:00 ' + (pass ? '<span class="pk-tag ok">이용권 OK</span>' : '<span class="pk-tag lock">미션 3 후 오픈</span>') + '</h3>' +
-      '<p class="d">모두 무료·선착순이에요. 부스에서 서명부를 쓰고, 아래 <b>내 QR</b>을 스태프에게 보여주세요.</p><div>' +
+    var html = '<div class="pk-card"><h3>🎟️ 체험부스 · 13:00~16:00 ' + (pass ? '<span class="pk-tag ok">이용권 OK</span>' : '<span class="pk-tag lock">키캡·볼꾸·키링은 미션 3 후</span>') + '</h3>' +
+      '<p class="d">모두 무료·선착순이에요. <b>진로타로·퍼스널컬러는 누구나</b>, 키캡·볼꾸·키링은 <b>미션 3(사진 인증)</b>을 마친 팀만 참여할 수 있어요. 부스에서 서명부를 쓰고, 아래 <b>내 QR</b>을 스태프에게 보여주세요.</p><div>' +
       BOOTHS.map(function(b){
         var tot = boothTotal(cfg, b), used = boothUsed(cfg, b), closed = boothClosed(cfg, b);
         var rm = mine[b.key] ? '<span class="rm mine">✓ 참여 ' + hhmm(mine[b.key].createdAt) + '</span>' :
           closed ? '<span class="rm end">마감</span>' :
           tot > 0 ? '<span class="rm">남은 ' + Math.max(0, tot - used) + '개</span>' : '<span class="rm">선착순</span>';
-        return '<div class="pk-booth"><span class="no">' + b.booth + '</span><span class="nm">' + esc(b.name) + '</span>' + rm + '</div>';
+        return '<div class="pk-booth"><span class="no">' + b.booth + '</span><span class="nm">' + esc(b.name) + (OPEN_BOOTH[b.key] ? ' <span class="pk-tag ok" style="font-size:10.5px">누구나</span>' : '') + '</span>' + rm + '</div>';
       }).join("") + '</div>';
     html += '<div class="pk-myqr" style="margin-top:14px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">내 QR (부스 참여 확인용)</div><div class="box" id="pk-myqr"></div>' +
       '<div class="pk-note">' + esc(S.me.name) + ' · ' + esc(S.me.college || "") + '</div></div>';
