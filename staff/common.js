@@ -107,13 +107,20 @@
     var loginEl = document.createElement("div");
     loginEl.id = "st-login";
     loginEl.innerHTML = '<div class="st-lc"><h1>' + P.esc(opts.title) + '</h1><div class="sub">운영진·스태프 계정으로 로그인해 주세요.</div>' +
-      '<input class="st-in" id="st-name" placeholder="이름" autocomplete="name">' +
-      '<input class="st-in" id="st-pin" placeholder="휴대폰 뒷자리 4자리" inputmode="numeric" maxlength="4">' +
-      '<input class="st-in" id="st-pw" type="password" placeholder="비밀번호" autocomplete="current-password">' +
+      '<input class="st-in" id="st-name" name="pk-staff-name" placeholder="이름" autocomplete="off" autocapitalize="off" spellcheck="false" readonly>' +
+      '<input class="st-in" id="st-pin" name="pk-staff-pin" placeholder="휴대폰 뒷자리 4자리" inputmode="numeric" maxlength="4" autocomplete="off" readonly>' +
+      '<input class="st-in" id="st-pw" name="pk-staff-pw" type="password" placeholder="비밀번호" autocomplete="new-password" readonly>' +
       '<button class="st-btn block" id="st-go" type="button">로그인</button>' +
       '<div class="st-err" id="st-err"></div>' +
       '<div class="st-muted" style="margin-top:14px;line-height:1.6">최고 관리자(이메일 계정)는 <a href="../admin/" style="color:var(--wine-deep);font-weight:700">운영진 페이지</a>에서 먼저 로그인한 뒤 이 페이지를 열면 바로 들어와요.</div></div>';
     loginEl.style.display = "none";
+    /* 브라우저가 저장된 값을 자동으로 채우지 않게: 처음엔 읽기 전용, 누르면 입력 가능 + 자동 채움 지우기 */
+    (function(){
+      var ins = loginEl.querySelectorAll("input");
+      ins.forEach(function(i){ var on = function(){ i.removeAttribute("readonly"); }; i.addEventListener("focus", on); i.addEventListener("pointerdown", on); i.addEventListener("touchstart", on, { passive: true }); });
+      var touched = false; loginEl.addEventListener("keydown", function(){ touched = true; });
+      [200, 800, 1600].forEach(function(t){ setTimeout(function(){ if(!touched) ins.forEach(function(i){ i.value = ""; }); }, t); });
+    })();
     document.body.appendChild(loginEl);
     var app = document.getElementById("st-app");
     var err = loginEl.querySelector("#st-err");

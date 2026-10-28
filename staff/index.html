@@ -323,7 +323,10 @@
         '<div class="st-muted">지금: ' + (P.qrOpenNow(cfg) ? "인정 중" : "꺼짐") + '</div></div>' +
         '<div class="st-card"><h3>QR 설치 건물 이름</h3><div class="st-muted" style="margin:-4px 0 10px">이름만 바꾸면 돼요. QR 코드는 다시 뽑지 않아도 돼요.</div>' +
         P.POINT_KEYS.map(function(k, i){ return '<div class="sx-f"><label>QR ' + (i + 1) + '</label><input id="sx-pt-' + k + '" value="' + esc(P.pointName(cfg, k)) + '" maxlength="20"></div>'; }).join("") +
-        '<button class="st-btn sm" type="button" data-act="points">건물 이름 저장</button></div>';
+        '<button class="st-btn sm" type="button" data-act="points">건물 이름 저장</button></div>' +
+        '<div class="st-card" style="border:2px solid #f1c7c7"><h3>🧹 출석·팀 기록 초기화 <span class="st-tag bad">되돌릴 수 없음</span></h3>' +
+        '<div class="st-muted" style="margin:-4px 0 10px;line-height:1.6">행사 전 테스트·미리 출석한 기록을 지울 때만 써요. <b>출석 · 팀 · 스탬프 · 팀 사진 미션 · 간식박스 · 체험부스 기록</b>이 모두 지워지고 수량이 처음으로 돌아가요. (설정, 공지, 게시판 글은 그대로)<br>지금: 출석 ' + users.filter(function(u){ return u.d.attendAt; }).length + '명 · 팀 ' + teams.length + '개 · 부스 기록 ' + logs.length + '건</div>' +
+        '<button class="st-btn" type="button" data-act="wipe" style="background:var(--bad)">기록 초기화</button></div>';
     }
     main.innerHTML = html;
   }
@@ -419,6 +422,24 @@
       var booths = {}; P.BOOTHS.forEach(function(b){ booths[b.key] = { total: b.total, used: 0 }; });
       cfgRef().set({ createdAt: Date.now(), qrMode: "auto", banner: "", bannerOn: false, points: P.DEFAULT_POINT_NAMES, snackTotal: P.SNACK_TOTAL, snackUsed: 0, booths: booths }, { merge: true })
         .then(function(){ P.toast("기본 설정을 만들었어요", "ok"); render(true); }).catch(fail); return;
+    }
+    if(act === "wipe"){
+      if(!P.canSetup()) return fail("총괄·최고 관리자만 할 수 있어요.");
+      var typed = prompt("출석·팀·스탬프·미션·간식박스·부스 기록을 모두 지워요. 되돌릴 수 없어요.\n계속하려면 '초기화'라고 입력해 주세요.");
+      if(typed !== "초기화") return;
+      a.disabled = true; a.textContent = "지우는 중…";
+      var db = P.db, cols = ["picnic_users", "picnic_teams", "picnic_missions", "picnic_booth_logs"], total = 0;
+      Promise.all(cols.map(function(c){ return db.collection(c).get(); })).then(function(snaps){
+        var refs = []; snaps.forEach(function(s){ s.docs.forEach(function(d){ refs.push(d.ref); }); });
+        total = refs.length;
+        var chunks = []; for(var i = 0; i < refs.length; i += 400) chunks.push(refs.slice(i, i + 400));
+        return chunks.reduce(function(p, ch){ return p.then(function(){ var b = db.batch(); ch.forEach(function(r){ b.delete(r); }); return b.commit(); }); }, Promise.resolve());
+      }).then(function(){
+        var booths = {}; P.BOOTHS.forEach(function(b){ booths[b.key] = { used: 0 }; });
+        return cfgRef().set({ snackUsed: 0, booths: booths, wipedAt: Date.now(), wipedBy: P.admin.name || "" }, { merge: true });
+      }).then(function(){ P.toast("기록 " + total + "건을 지우고 수량을 처음으로 돌렸어요", "ok"); render(true); })
+        .catch(function(e){ a.disabled = false; a.textContent = "기록 초기화"; fail(e); });
+      return;
     }
     if(act === "qrmode"){ cfgRef().set({ qrMode: document.getElementById("sx-qrmode").value }, { merge: true }).then(function(){ P.toast("저장했어요", "ok"); render(true); }).catch(fail); return; }
     if(act === "points"){
