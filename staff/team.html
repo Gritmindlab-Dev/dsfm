@@ -57,6 +57,7 @@
   <div class="st-main">
     <div class="tm-auto" id="tm-auto"></div>
     <div class="tm-stats" id="tm-stats"></div>
+    <div id="tm-pre"></div>
     <div class="tm-grid">
       <div>
         <div class="st-card">
@@ -163,8 +164,32 @@
       '</div>';
   }
 
+  /* ---------- 사전 신청자 (사전 미션 '피크닉데이 참석 확인'에서 [참석]) ---------- */
+  var pre = null, preFilter = "absent";
+  function renderPre(){
+    var el = document.getElementById("tm-pre"); if(!el) return;
+    if(!pre){ el.innerHTML = ""; return; }
+    var dOld = el.querySelector("details"), dOpen = dOld ? dOld.open : false;
+    var byId = {}; users.forEach(function(u){ if(u.d.attendAt) byId[u.id] = u; });
+    var came = pre.filter(function(v){ return byId[v.rosterId]; }), absent = pre.filter(function(v){ return !byId[v.rosterId]; });
+    var list = preFilter === "absent" ? absent : preFilter === "came" ? came : pre;
+    var groups = {};
+    list.forEach(function(v){ var k = v.teamKey || v.team || "반 정보 없음"; (groups[k] = groups[k] || []).push(v); });
+    var keys = Object.keys(groups).sort(function(a, b){ return a.localeCompare(b, "ko", { numeric: true }); });
+    el.innerHTML = '<details class="st-card" style="margin-bottom:12px"' + (dOpen ? " open" : "") + '><summary style="cursor:pointer;font-weight:900;font-size:15px">📋 사전 신청자 ' + pre.length + '명 — 출석 <span style="color:#2f6a4c">' + came.length + '명</span> · 아직 안 옴 <span style="color:var(--bad)">' + absent.length + '명</span> <span class="st-muted" style="font-weight:400;font-size:12.5px">(눌러서 명단 보기)</span></summary>' +
+      '<div class="st-muted" style="margin:8px 0">사전 미션 "피크닉데이 참석 확인"에서 <b>[참석]</b>을 고른 학생이에요. 출석체크를 하면 자동으로 "출석"으로 넘어가요.</div>' +
+      '<div class="tm-filter" style="margin-bottom:10px">' + [["absent","아직 안 옴 " + absent.length],["came","출석 " + came.length],["all","전체 " + pre.length]].map(function(f){ return '<button type="button" data-pf="' + f[0] + '" class="' + (preFilter === f[0] ? "on" : "") + '">' + f[1] + '</button>'; }).join("") + '</div>' +
+      (keys.length ? keys.map(function(k){
+        return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-weight:800;font-size:13.5px;margin-bottom:5px">' + esc(k.replace(/^\S+\s/, "")) + ' <span class="st-muted" style="font-weight:400">· ' + esc(k.split(" ")[0]) + ' · ' + groups[k].length + '명</span></div><div>' +
+          groups[k].map(function(v){ var u = byId[v.rosterId];
+            return '<span class="tm-chip" style="padding-right:10px;' + (u ? "background:#e6f2ec;color:#2f6a4c" : "") + '">' + esc(v.name || "") + (v.role === "멘토" ? " (멘토)" : "") + (u ? ' <span style="font-size:11px">출석 ' + P.hhmm(u.d.attendAt) + '</span>' : "") + '</span>';
+          }).join("") + '</div></div>';
+      }).join("") : '<div class="st-muted" style="padding:10px 0">' + (preFilter === "absent" ? "사전 신청자가 모두 왔어요! 🎉" : "해당하는 학생이 없어요.") + '</div>') +
+      '</details>';
+  }
   function render(){
     renderAuto();
+    renderPre();
     var att = users.filter(function(u){ return u.d.attendAt; });
     var wait = att.filter(function(u){ return !u.d.teamId; });
     document.getElementById("tm-stats").innerHTML =
@@ -269,6 +294,8 @@
   function fail(e){ P.toast("저장하지 못했어요: " + (e && e.message ? e.message : e), "bad"); console.warn(e); }
 
   document.addEventListener("click", function(e){
+    var pf = e.target.closest("[data-pf]");
+    if(pf){ preFilter = pf.dataset.pf; renderPre(); return; }
     var f = e.target.closest("[data-f]");
     if(f){ filter = f.dataset.f; document.querySelectorAll("#tm-filter button").forEach(function(b){ b.classList.toggle("on", b === f); }); render(); return; }
     var vb = e.target.closest("[data-verify]");
@@ -375,6 +402,15 @@
     P.db.collection("picnic_config").doc("main").onSnapshot(function(s){ cfg = s.exists ? (s.data() || {}) : {}; render(); runAuto(); }, function(){});
     P.db.collection("team_roster").onSnapshot(function(s){ roster = s.docs.map(function(d){ return d.data(); }); render(); runAuto(); }, fail);
     P.db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    /* 사전 신청자: 투표 중 '피크닉데이 참석 확인' (참석/불참) */
+    P.db.collection("polls").get().then(function(ps){
+      var poll = ps.docs.filter(function(d){ var t = String(d.data().title || ""); return t.indexOf("피크닉") >= 0 && t.indexOf("참석") >= 0; })[0];
+      if(!poll) return;
+      P.db.collection("poll_votes").where("pollId", "==", poll.id).onSnapshot(function(s){
+        pre = s.docs.map(function(d){ return d.data(); }).filter(function(v){ return v.choice === "참석"; });
+        renderPre();
+      }, function(){});
+    }).catch(function(){});
   }});
 })();
 </script>
