@@ -196,6 +196,26 @@
     }).then(function(n){ P.toast("[" + t.d.name + "] 간식박스 " + n + "명분 수령 완료", "ok"); }).catch(fail);
   }
   /* ---------- 체험부스 ---------- */
+  var gName = "", gMajor = "";
+  document.addEventListener("input", function(e){ if(e.target.id === "sx-gname") gName = e.target.value; if(e.target.id === "sx-gmajor") gMajor = e.target.value; });
+  var OPEN_BOOTH = { tarot: 1, color: 1 }; /* 진로타로·퍼스널컬러: 미션 3 없이 누구나 (일반 학생 포함) */
+  function openOnly(){ var it = boothItems(); return it.length > 0 && it.every(function(b){ return OPEN_BOOTH[b.key]; }); }
+  function joinGuest(key){
+    var b = P.BOOTHS.filter(function(x){ return x.key === key; })[0]; if(!b) return;
+    var nm = (document.getElementById("sx-gname") || {}).value || "", mj = (document.getElementById("sx-gmajor") || {}).value || "";
+    nm = nm.trim(); mj = mj.trim();
+    var db = P.db, id = key + "_guest_" + Date.now(), lRef = db.collection("picnic_booth_logs").doc(id);
+    db.runTransaction(function(tx){
+      return tx.get(cfgRef()).then(function(r){
+        var c = r.exists ? r.data() : {}, bc = (c.booths && c.booths[key]) || {};
+        var tot = typeof bc.total === "number" ? bc.total : b.total, used = bc.used || 0;
+        if(tot > 0 && used >= tot) throw new Error("수량이 모두 소진됐어요.");
+        tx.set(lRef, { item: key, booth: b.booth, rosterId: "", guest: true, name: nm || "일반 학생", college: mj, teamName: "", teamId: "", hadPass: false, staff: P.admin.name || "", createdAt: Date.now() });
+        var upd = { booths: {} }; upd.booths[key] = { used: used + 1 };
+        tx.set(cfgRef(), upd, { merge: true });
+      });
+    }).then(function(){ P.toast((nm || "일반 학생") + " · " + b.name + " 참여 완료", "ok"); gName = ""; gMajor = ""; var g = document.getElementById("sx-gname"); if(g) g.value = ""; var m = document.getElementById("sx-gmajor"); if(m) m.value = ""; }).catch(fail);
+  }
   function boothItems(){ var b = P.BOOTHS.filter(function(x){ return String(x.booth) === String(myBooth); }); return b.length ? b : []; }
   function vBooth(){
     var html = '<div class="st-card"><h3>내가 맡은 부스</h3><div class="sx-pick">' + [1,2,3].map(function(n){
@@ -225,6 +245,13 @@
     html += '</div>';
     if(focusU) html += studentCard(focusU);
     html += '</div>';
+    /* 일반 학생 (공유공간 계정 없이) — 진로타로·퍼스널컬러 */
+    var openIt = boothItems().filter(function(b){ return OPEN_BOOTH[b.key]; });
+    if(openIt.length){
+      html += '<div class="st-card"><h3>일반 학생 참여 <span class="st-tag ok">누구나</span></h3><div class="st-muted" style="margin:-4px 0 10px">멘토링 참가자가 아니거나 공유공간 QR이 없는 학생이에요. 서명부를 받은 뒤 이름(선택)을 적고 눌러 주세요.</div>' +
+        '<div class="st-row" style="margin-bottom:8px"><input class="sx-q" id="sx-gname" placeholder="이름 (선택)" value="' + esc(gName) + '" style="flex:1 1 120px;margin:0"><input class="sx-q" id="sx-gmajor" placeholder="전공 (선택)" value="' + esc(gMajor) + '" style="flex:1 1 120px;margin:0"></div>' +
+        openIt.map(function(b){ return '<button class="st-btn big good" type="button" data-guest="' + b.key + '" style="margin:4px 0">' + esc(b.name) + ' · 일반 학생 참여 완료</button>'; }).join("") + '</div>';
+    }
     /* 참여 명단 */
     if(myBooth){
       var mine = logs.filter(function(l){ return boothItems().some(function(b){ return b.key === l.d.item; }); }).sort(function(a, b){ return (b.d.createdAt || 0) - (a.d.createdAt || 0); });
@@ -242,7 +269,7 @@
     var done = {}; logs.forEach(function(l){ if(l.d.rosterId === id) done[l.d.item] = l.d; });
     var html = '<div class="sx-stu"><div class="st-row"><span class="nm">' + esc(u.d.name) + '</span><span class="st-tag ' + (u.d.role === "멘토" ? "" : "gray") + '">' + esc(u.d.role || "멘티") + '</span><button class="st-btn ghost sm" type="button" data-act="unfocus" style="margin-left:auto">닫기</button></div>' +
       '<div class="st-muted" style="margin-top:2px">' + esc([u.d.college, u.d.teamName].filter(Boolean).join(" · ")) + (t ? ' · 팀 ' + esc(t.d.name) : "") + '</div>' +
-      (pass ? '<div class="sx-okk">🎟️ 체험부스 이용권 있음</div>' : '<div class="sx-warn">⚠️ 이용권 없음 — 팀이 아직 미션 3(사진 인증)을 하지 않았어요.</div>');
+      (pass ? '<div class="sx-okk">🎟️ 체험부스 이용권 있음</div>' : openOnly() ? '<div class="sx-okk">🙌 진로타로·퍼스널컬러는 누구나 참여할 수 있어요</div>' : '<div class="sx-warn">⚠️ 이용권 없음 — 팀이 아직 미션 3(사진 인증)을 하지 않았어요.</div>');
     var items = myBooth ? boothItems() : [];
     if(!items.length) html += '<div class="st-muted">위에서 내가 맡은 부스를 먼저 골라 주세요.</div>';
     items.forEach(function(b){
@@ -260,7 +287,7 @@
     var u = userOf(uid), b = P.BOOTHS.filter(function(x){ return x.key === key; })[0];
     if(!u || !b) return;
     var t = u.d.teamId ? teamOf(u.d.teamId) : null;
-    if(!(t && t.d.photoAt) && !confirm("이용권이 없는 학생이에요 (미션 3 미완료). 그래도 참여 처리할까요?")) return;
+    if(!OPEN_BOOTH[key] && !(t && t.d.photoAt) && !confirm("이용권이 없는 학생이에요 (미션 3 미완료). 그래도 참여 처리할까요?")) return;
     if(key === "keycap" || key === "pen"){
       var other = key === "keycap" ? "pen" : "keycap";
       if(logs.some(function(l){ return l.d.rosterId === uid && l.d.item === other; }) && !confirm("부스3은 키캡·볼꾸 중 하나만 고르는 부스예요. 이미 다른 항목에 참여했는데 그래도 처리할까요?")) return;
@@ -366,6 +393,8 @@
     if(ru){ focusU = ru.dataset.u; boothQ = ""; render(true); return; }
     var jn = e.target.closest("[data-join]");
     if(jn){ joinBooth(jn.dataset.join, jn.dataset.uid); return; }
+    var gu = e.target.closest("[data-guest]");
+    if(gu){ joinGuest(gu.dataset.guest); return; }
     var cv = e.target.closest("[data-csv]");
     if(cv){ exportCsv(cv.dataset.csv); return; }
     var a = e.target.closest("[data-act]"); if(!a) return;
