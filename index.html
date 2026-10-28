@@ -1173,7 +1173,9 @@
     var me = { name: state.name, college: state.college, teamName: state.teamName, role: state.role, rosterId: state.rosterId, team: state.team };
     window.DSFM = { me: me, goToPage: goToPage };
     try{ window.dispatchEvent(new CustomEvent("dsfm:login", { detail: me })); }catch(e){}
-    if(cameFromQr || window.__dsfmPicnicFromQr) goToPage("picnic");
+    /* 피크닉데이 당일(10/29)에는 로그인하면 바로 PICNIC DAY 화면으로 */
+    var nowT = Date.now(), isPicnicDay = nowT >= new Date("2026-10-29T00:00:00+09:00").getTime() && nowT < new Date("2026-10-30T00:00:00+09:00").getTime();
+    if(cameFromQr || window.__dsfmPicnicFromQr || isPicnicDay) goToPage("picnic");
   }
   function clearLogin(){ try{ localStorage.removeItem("dsfm_login_v1"); }catch(e){} }
   (function restoreLogin(){
