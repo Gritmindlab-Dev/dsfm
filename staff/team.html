@@ -157,8 +157,11 @@
     var list = att.filter(function(u){ return (filter === "all" || (filter === "check" ? !u.d.verifiedAt : filter === "wait" ? !u.d.teamId : !!u.d.teamId)) && match(u, q); });
     list.sort(function(a, b){ return (b.d.attendAt || 0) - (a.d.attendAt || 0); });
     var el = document.getElementById("tm-list");
+    lastList = list.map(function(u){ return u.id; });
     if(!list.length){ el.innerHTML = '<div class="st-muted" style="padding:14px 4px">' + (!q && filter === "check" ? "확인을 기다리는 학생이 없어요." : !q && filter === "wait" ? "배정을 기다리는 학생이 없어요." : "해당하는 학생이 없어요.") + '</div>'; return; }
-    el.innerHTML = list.map(function(u){
+    var unv = list.filter(function(u){ return u.d.teamId && !u.d.verifiedAt; }).length;
+    el.innerHTML = (list.length > 1 ? '<div class="st-row" style="margin:0 0 6px;gap:6px"><button class="st-btn ghost sm" type="button" data-act="sel-all">보이는 ' + list.length + '명 모두 선택</button>' +
+      (unv ? '<span class="st-muted" style="font-size:12.5px">체크한 뒤 아래 <b>[선택한 학생 출석 확인]</b>으로 한 번에 확인할 수 있어요.</span>' : '') + '</div>' : '') + list.map(function(u){
       var t = u.d.teamId ? teamOf(u.d.teamId) : null;
       return '<label class="tm-p' + (sel[u.id] ? " sel" : "") + '" draggable="true" data-drag="' + esc(u.id) + '"><input type="checkbox" data-sel="' + esc(u.id) + '"' + (sel[u.id] ? " checked" : "") + '>' +
         '<div style="min-width:0"><div class="nm">' + esc(u.d.name) + ' ' + (u.d.role === "멘토" ? '<span class="st-tag">멘토</span>' : '<span class="st-tag gray">멘티</span>') + '</div><div class="sb">' + esc(label(u)) + '</div></div>' +
@@ -181,7 +184,11 @@
     var suggest = prevName ? prevName.value : (first ? (first.d.team || first.d.teamName || "") : "");
     var opts = teams.slice().sort(function(a, b){ return String(a.d.name).localeCompare(String(b.d.name), "ko"); })
       .map(function(t){ return '<option value="' + esc(t.id) + '">' + esc(t.d.name) + ' (' + (t.d.members || []).length + '명)</option>'; }).join("");
+    var vOk = ids.filter(function(id){ var u = userOf(id); return u && u.d.teamId && !u.d.verifiedAt; }).length;
+    var vNo = ids.filter(function(id){ var u = userOf(id); return u && !u.d.teamId && !u.d.verifiedAt; }).length;
     el.innerHTML = '<div style="font-weight:900;margin-bottom:8px">' + ids.length + '명 선택됨 <button class="st-btn ghost sm" type="button" data-act="clear" style="margin-left:6px">선택 해제</button></div>' +
+      (vOk ? '<div class="st-row" style="margin-bottom:8px"><button class="st-btn good" type="button" data-act="verify-sel" style="background:#3f7a5c">선택한 학생 출석 확인 (' + vOk + '명)</button>' +
+        (vNo ? '<span class="st-muted" style="font-size:12.5px">팀이 없는 ' + vNo + '명은 팀에 넣으면 함께 확인돼요.</span>' : '') + '</div>' : '') +
       '<div class="st-row" style="margin-bottom:8px"><input class="st-in" id="tm-newname" placeholder="새 팀 이름" value="' + esc(suggest) + '" style="margin:0;flex:1 1 160px">' +
       '<label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700"><input type="checkbox" id="tm-mentor"' + (mChecked ? " checked" : "") + ' style="width:20px;height:20px;accent-color:var(--wine-deep)"> 멘토 있음</label>' +
       '<button class="st-btn" type="button" data-act="new">새 팀 만들기</button></div>' +
@@ -233,6 +240,7 @@
     return ref.set({ name: name, hasMentor: !!hasMentor, members: [], createdAt: Date.now(), createdBy: P.admin.name || "" })
       .then(function(){ return assign(ids, ref.id); }).then(function(){ return ref.id; });
   }
+  var lastList = [];
   function selected(){ return Object.keys(sel).filter(function(k){ return sel[k]; }); }
   function fail(e){ P.toast("저장하지 못했어요: " + (e && e.message ? e.message : e), "bad"); console.warn(e); }
 
@@ -252,6 +260,17 @@
     if(a){
       var act = a.dataset.act, ids2 = selected();
       if(act === "clear"){ sel = {}; render(); return; }
+      if(act === "sel-all"){ (lastList || []).forEach(function(id){ sel[id] = true; }); render(); return; }
+      if(act === "verify-sel"){
+        var vids = ids2.filter(function(id){ var u = userOf(id); return u && u.d.teamId && !u.d.verifiedAt; });
+        if(!vids.length) return;
+        if(vids.length > 1 && !confirm(vids.length + "명을 한 번에 출석 확인할까요? (학생 화면을 확인했는지 꼭 확인해 주세요)")) return;
+        a.disabled = true;
+        var vb2 = P.db.batch(), vnow = Date.now();
+        vids.forEach(function(id){ vb2.update(P.db.collection("picnic_users").doc(id), { verifiedAt: vnow, verifiedBy: P.admin.name || "" }); });
+        vb2.commit().then(function(){ vids.forEach(function(id){ delete sel[id]; }); P.toast(vids.length + "명 출석 확인 완료", "ok"); render(); }).catch(fail);
+        return;
+      }
       if(act === "auto-toggle"){ P.db.collection("picnic_config").doc("main").set({ autoAssign: !autoOn() }, { merge: true }).catch(fail); return; }
       if(act === "new"){
         var name = (document.getElementById("tm-newname").value || "").trim();
