@@ -345,10 +345,10 @@
       '<p class="d">교내 5개 건물에 붙은 QR을 <b>휴대폰 카메라</b>로 찍으면 <b>미션</b>이 열려요. 한 줄 쓰기·사진 미션 모두 <b>각자</b> 올려야 스탬프가 찍혀요. (함께 찍은 사진을 각자 올려도 OK) 팀원 <b>전원</b>이 5개를 모으면 간식박스를 받을 수 있어요.' +
       (open ? "" : '<br><b style="color:#b23b3b">지금은 QR 인정 시간이 아니에요 (10:00~16:00).</b>') + '</p>' +
       '<div class="pk-stamps">' + POINT_KEYS.map(function(k){
-        var tp = false;
+        var tp = !s[k] && !!getPend()[k];
         return '<div class="pk-stamp' + (s[k] ? " on" : tp ? " tp" : "") + '"' + (s[k] ? ' data-pk="mission" data-key="' + k + '"' : "") + '>' +
           '<div class="ic">' + stampSvg(!!s[k]) + '</div>' + esc(pointName(cfg, k)) +
-          (s[k] ? '<span class="tm">' + hhmm(s[k]) + '</span>' : tp ? '<span class="tm" style="font-weight:700">팀 인증 완료<br>QR 찍기!</span>' : "") + '</div>';
+          (s[k] ? '<span class="tm">' + hhmm(s[k]) + '</span>' : tp ? '<span class="tm" style="font-weight:700">미션 완료<br>팀 배정 후 적립</span>' : "") + '</div>';
       }).join("") + '</div>' +
       '<div class="pk-prog"><span class="bar"><i style="width:' + (n * 20) + '%"></i></span><span class="c">' + n + ' / 5</span></div>';
     /* 팀원 진행 현황 */
@@ -424,7 +424,22 @@
       .catch(function(e){ btn.disabled = false; btn.textContent = "출석체크 하기"; toast("저장하지 못했어요. 다시 눌러주세요.", "bad"); console.warn(e); });
   }
 
+  /* 팀 배정 전 학생: 스탬프는 저장 규칙상 팀이 있어야 해서, 기기에 보관했다가 팀 배정되면 자동 적립 */
+  function pendKey(){ return "dsfm_pk_pend_" + (S.me && S.me.rosterId || ""); }
+  function getPend(){ try{ return JSON.parse(localStorage.getItem(pendKey()) || "{}") || {}; }catch(e){ return {}; } }
+  function setPend(p){ try{ localStorage.setItem(pendKey(), JSON.stringify(p)); }catch(e){} }
+  var flushing = false;
+  function flushPending(){
+    var u = S.user; if(!u || !u.teamId || !u.verifiedAt || !db || flushing) return;
+    var p = getPend(), keys = Object.keys(p).filter(function(k){ return !(u.stamps && u.stamps[k]); });
+    if(!Object.keys(p).length) return;
+    if(!keys.length){ setPend({}); return; }
+    flushing = true;
+    var upd = {}; keys.forEach(function(k){ upd["stamps." + k] = p[k].at || Date.now(); if(p[k].extra) upd["missions." + k] = p[k].extra; });
+    db.collection("picnic_users").doc(S.me.rosterId).update(upd).then(function(){ setPend({}); flushing = false; toast("팀 배정 전에 한 미션 " + keys.length + "개가 스탬프로 적립됐어요!", "ok"); }, function(){ flushing = false; });
+  }
   function giveStamp(key, extra){
+    if(!S.user || !S.user.teamId){ var p = getPend(); p[key] = { at: Date.now(), extra: extra || null }; setPend(p); return Promise.resolve(-1); }
     var upd = {}; upd["stamps." + key] = Date.now();
     if(extra) upd["missions." + key] = extra;
     var cnt = stampCount(S.user) + 1;
@@ -503,6 +518,7 @@
         done = db.collection(m.board).add({ author: me.name || "참여자", text: m.prefix + text, team: me.team || "", college: me.college || "", picnic: key, createdAt: Date.now() })
           .then(function(){ return giveStamp(key, { a: text, at: Date.now() }); });
       } else {
+        if(!curTeamId){ toast("사진 미션은 팀이 배정된 뒤에 올릴 수 있어요.", "bad"); return; }
         if(!file){ toast("사진을 골라 주세요.", "bad"); return; }
         b.disabled = true; b.textContent = "올리는 중...";
         var mTeam = curTeamId || ("solo_" + me.rosterId);
@@ -514,7 +530,7 @@
           }, function(err){ return ref.get().then(function(sn){ if(!sn.exists) throw err; }); }) /* 팀원이 먼저 올렸으면 스탬프만 */
           .then(function(){ return giveStamp(key); }); /* 사진 미션도 올린 사람 본인만 적립 */
       }
-      done.then(function(cnt){ w.remove(); showStampPop(key, cnt); })
+      done.then(function(cnt){ w.remove(); if(cnt === -1){ toast("미션 완료! 팀이 배정되면 스탬프가 자동으로 찍혀요.", "ok"); render(); return; } showStampPop(key, cnt); })
         .catch(function(err){ b.disabled = false; b.textContent = "다시 시도"; toast("올리지 못했어요. 다시 시도해 주세요.", "bad"); console.warn(err); });
     });
     draw();
@@ -533,6 +549,7 @@
       if(!u || !u.attendAt){ toast("먼저 [출석체크]를 하고 운영본부에서 팀을 배정받아 주세요.", "bad"); return; }
       if(!u.verifiedAt){ toast("운영본부에서 출석 확인을 받은 뒤에 QR을 찍어야 미션이 열려요.", "bad"); return; }
       if(u.stamps && u.stamps[key]){ showMission(key, "done", "이미 받은 스탬프예요"); return; }
+      if(getPend()[key]){ toast("이미 한 미션이에요. 팀이 배정되면 스탬프가 자동으로 찍혀요.", "ok"); return; }
       if(false){
         giveStamp(key).then(function(cnt){ showStampPop(key, cnt, "팀원이 이미 사진을 올려서 바로 적립됐어요"); })
           .catch(function(e){ toast("스탬프를 저장하지 못했어요. QR을 다시 찍어 주세요.", "bad"); console.warn(e); });
@@ -635,6 +652,7 @@
       watchTeam(S.user && S.user.teamId ? S.user.teamId : null);
       render();
       autoTeamStamps();
+      flushPending();
       if(!pendingTried){ pendingTried = true; setTimeout(processPending, 600); }
     }, function(err){ console.warn(err); S.user = null; render(); });
     db.collection("picnic_booth_logs").where("rosterId", "==", me.rosterId).onSnapshot(function(s){
