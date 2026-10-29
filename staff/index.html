@@ -81,8 +81,10 @@
   function fail(e){ P.toast(typeof e === "string" ? e : "처리하지 못했어요: " + (e && e.message ? e.message : e), "bad"); if(typeof e !== "string") console.warn(e); }
   function cfgRef(){ return P.db.collection("picnic_config").doc("main"); }
 
-  var composing = false;
+  var composing = false, roster = [];
   function render(force){
+    var fa = document.activeElement;
+    if(composing && !(fa && fa.dataset && fa.dataset.live === "1")) composing = false;
     if(!force && composing) return;
     var ae = document.activeElement;
     if(!force && ae && main.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && ae.dataset.live !== "1") return;
@@ -242,7 +244,13 @@
         var t = u.d.teamId ? teamOf(u.d.teamId) : null;
         return '<div class="sx-res" data-u="' + esc(u.id) + '"><b>' + esc(u.d.name) + '</b><span class="st-muted">' + esc([u.d.college, u.d.teamName].filter(Boolean).join(" · ")) + '</span><span style="margin-left:auto">' +
           (t && t.d.photoAt ? '<span class="st-tag ok">이용권</span>' : '<span class="st-tag bad">이용권 없음</span>') + '</span></div>';
-      }).join("") : '<div class="st-muted">출석한 학생 중에 없어요.</div>';
+      }).join("") : "";
+      var seenU = {}; users.forEach(function(u){ if(u.d.attendAt) seenU[u.id] = 1; });
+      var extra = roster.filter(function(r){ return !seenU[r.id] && String(r.d.name || "").indexOf(boothQ) >= 0; }).slice(0, 10);
+      html += extra.map(function(r){
+        return '<div class="sx-res" data-ru="' + esc(r.id) + '"><b>' + esc(r.d.name) + '</b><span class="st-muted">' + esc([r.d.college, r.d.team].filter(Boolean).join(" · ")) + '</span><span style="margin-left:auto"><span class="st-tag gray">출석 전 · 눌러서 출석 처리</span></span></div>';
+      }).join("");
+      if(!res.length && !extra.length) html += '<div class="st-muted">명단에 없어요. 아래 일반 학생 참여로 처리해 주세요.</div>';
     }
     html += '</div>';
     if(focusU) html += studentCard(focusU);
@@ -394,6 +402,16 @@
     if(tb){ tab = tb.dataset.tab; render(true); window.scrollTo(0, 0); return; }
     var bo = e.target.closest("[data-booth]");
     if(bo){ myBooth = bo.dataset.booth; try{ localStorage.setItem("pk_staff_booth", myBooth); }catch(x){} render(true); return; }
+    var rr = e.target.closest("[data-ru]");
+    if(rr){
+      var r0 = roster.filter(function(x){ return x.id === rr.dataset.ru; })[0]; if(!r0) return;
+      if(!confirm(r0.d.name + " 학생을 출석 처리하고 부스 참여를 진행할까요?")) return;
+      var now = Date.now(), ex = userOf(r0.id);
+      var p = ex ? P.db.collection("picnic_users").doc(r0.id).update({ attendAt: now, attendBy: "스태프(부스)" })
+        : P.db.collection("picnic_users").doc(r0.id).set({ rosterId: r0.id, name: r0.d.name || "", college: r0.d.college || "", team: r0.d.teamKey || "", teamName: r0.d.team || "", role: r0.d.role || "멘티", attendAt: now, teamId: "", stamps: {}, createdAt: now, attendBy: "스태프(부스)" });
+      p.then(function(){ focusU = r0.id; boothQ = ""; P.toast(r0.d.name + " 출석 처리 완료", "ok"); render(true); }).catch(fail);
+      return;
+    }
     var ru = e.target.closest("[data-u]");
     if(ru){ focusU = ru.dataset.u; boothQ = ""; render(true); return; }
     var jn = e.target.closest("[data-join]");
@@ -454,6 +472,7 @@
     if(e.target.id === "sx-snackq"){ snackQ = e.target.value.trim(); }
     if(e.target.id === "sx-boothq"){ boothQ = e.target.value.trim(); if(boothQ) focusU = null; }
   }
+  document.addEventListener("focusout", function(e){ if(e.target && e.target.dataset && e.target.dataset.live === "1") composing = false; });
   document.addEventListener("compositionstart", function(e){ if(e.target && e.target.dataset && e.target.dataset.live === "1") composing = true; });
   document.addEventListener("compositionend", function(e){ composing = false; if(e.target && e.target.dataset && e.target.dataset.live === "1"){ liveQ(e); render(); } });
   document.addEventListener("input", function(e){
@@ -469,6 +488,7 @@
     db.collection("picnic_users").onSnapshot(function(s){ users = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
     db.collection("picnic_teams").onSnapshot(function(s){ teams = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
     db.collection("picnic_missions").onSnapshot(function(s){ proofs = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
+    db.collection("team_roster").get().then(function(s){ roster = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); }).catch(function(e){ console.warn("명단", e); });
     db.collection("picnic_booth_logs").onSnapshot(function(s){ logs = s.docs.map(function(d){ return { id: d.id, d: d.data() }; }); render(); }, fail);
     render(true);
   }});
