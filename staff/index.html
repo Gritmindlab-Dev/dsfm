@@ -81,7 +81,9 @@
   function fail(e){ P.toast(typeof e === "string" ? e : "처리하지 못했어요: " + (e && e.message ? e.message : e), "bad"); if(typeof e !== "string") console.warn(e); }
   function cfgRef(){ return P.db.collection("picnic_config").doc("main"); }
 
+  var composing = false;
   function render(force){
+    if(!force && composing) return;
     var ae = document.activeElement;
     if(!force && ae && main.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && ae.dataset.live !== "1") return;
     document.querySelectorAll("#sx-tabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.tab === tab); });
@@ -447,7 +449,15 @@
       cfgRef().set({ points: pts }, { merge: true }).then(function(){ P.toast("건물 이름을 저장했어요", "ok"); render(true); }).catch(fail); return;
     }
   });
+  function liveQ(e){
+    if(e.target.id === "sx-missionq"){ missionQ = e.target.value.trim(); }
+    if(e.target.id === "sx-snackq"){ snackQ = e.target.value.trim(); }
+    if(e.target.id === "sx-boothq"){ boothQ = e.target.value.trim(); if(boothQ) focusU = null; }
+  }
+  document.addEventListener("compositionstart", function(e){ if(e.target && e.target.dataset && e.target.dataset.live === "1") composing = true; });
+  document.addEventListener("compositionend", function(e){ composing = false; if(e.target && e.target.dataset && e.target.dataset.live === "1"){ liveQ(e); render(); } });
   document.addEventListener("input", function(e){
+    if(e.isComposing || composing){ if(e.target && e.target.dataset && e.target.dataset.live === "1") liveQ(e); return; }
     if(e.target.id === "sx-missionq"){ missionQ = e.target.value.trim(); render(); }
     if(e.target.id === "sx-snackq"){ snackQ = e.target.value.trim(); render(); }
     if(e.target.id === "sx-boothq"){ boothQ = e.target.value.trim(); if(boothQ) focusU = null; render(); }
