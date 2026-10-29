@@ -236,7 +236,8 @@
   function stage(){
     var u = S.user;
     if(!u || !u.attendAt) return 1;
-    if(!u.teamId || !u.verifiedAt) return 1;
+    if(!u.verifiedAt) return 1;
+    if(!u.teamId) return 2;
     if(!S.team || !S.team.photoAt) return S.team && teamComplete() ? 3 : 2;
     return 4;
   }
@@ -270,23 +271,28 @@
       html += '<div class="pk-card"><h3>피크닉미션 1 · 출석체크</h3><p class="d">버튼을 누르면 출석 시각이 기록돼요. 출석 완료 화면을 <b>운영본부</b>에 보여주면 팀을 배정해 드려요.</p>' +
         (attendOpenNow(S.cfg) ? '<button class="pk-big" type="button" data-pk="attend">출석체크 하기</button>' :
           '<button class="pk-big" type="button" disabled>10/29(목) 오전 9시 30분부터 출석할 수 있어요</button>') + '</div>';
-    } else if(!u.teamId || !u.verifiedAt){
+    } else if(!u.verifiedAt){
       html += '<div class="pk-card"><h3>피크닉미션 1 · 출석 완료 <span class="pk-tag ok">완료</span></h3><p class="d">이 화면을 <b>운영본부 스태프</b>에게 보여주세요. 확인을 받으면 미션 2가 열려요.</p>' +
         passHtml(u, "출석 " + hhmm(u.attendAt) + (u.teamId && S.team ? " · 팀 " + S.team.name : "")) + '</div>' +
         lockCard("피크닉미션 2 · 교내 QR을 모아라!", "운영본부에서 출석 확인을 받으면 열려요.");
-    } else {
+    } else if(u.teamId){
       html += teamCard(u);
+    } else {
+      html += '<div class="pk-card"><h3>피크닉미션 1 · 출석 완료 <span class="pk-tag ok">개인 참여</span></h3><p class="d">출석 확인이 끝났어요! 팀 배정 전이라도 <b>미션 2(교내 QR)</b>는 바로 할 수 있어요. 팀이 배정되면 사진 인증·간식박스·체험부스가 열려요.</p>' + passHtml(u, "출석 " + hhmm(u.attendAt) + " · 확인 완료") + '</div>';
     }
-    if(u.teamId && u.verifiedAt){
+    if(u.verifiedAt && u.teamId){
       html += stampCard(u);
       html += photoCard(u);
       html += boothCard(u);
+    } else if(u.verifiedAt){
+      html += stampCard(u);
+      html += lockCard("피크닉미션 3 · 피크닉 사진 인증", "팀이 배정되면 열려요.") + lockCard("체험부스 (13:00~16:00)", "팀 미션 3을 마치면 이용권이 열려요. (진로타로·퍼스널컬러는 이용권 없이 참여 가능)");
     } else if(u.attendAt){
       html += lockCard("피크닉미션 3 · 피크닉 사진 인증", "미션 2를 마치면 열려요.") + lockCard("체험부스 (13:00~16:00)", "미션 3을 마치면 이용권이 열려요.");
     }
     html += '</div>';
     el.innerHTML = html;
-    if(u.teamId && u.verifiedAt) drawMyQr();
+    if(u.verifiedAt) drawMyQr();
   }
   function lockCard(t, d){ return '<div class="pk-card lock"><h3>🔒 ' + esc(t) + '</h3><p class="d" style="margin:0">' + esc(d) + '</p></div>'; }
   function passHtml(u, line){
@@ -498,9 +504,10 @@
       } else {
         if(!file){ toast("사진을 골라 주세요.", "bad"); return; }
         b.disabled = true; b.textContent = "올리는 중...";
-        var ref = db.collection("picnic_missions").doc(curTeamId + "_" + key);
-        var teamName = (S.team && S.team.name) || "";
-        done = ref.set({ teamId: curTeamId, teamName: teamName, key: key, building: pointName(S.cfg, key), mission: m.t, images: [file], text: "", by: me.name, byId: me.rosterId, at: Date.now() })
+        var mTeam = curTeamId || ("solo_" + me.rosterId);
+        var ref = db.collection("picnic_missions").doc(mTeam + "_" + key);
+        var teamName = (S.team && S.team.name) || (me.name + " (개인)");
+        done = ref.set({ teamId: mTeam, teamName: teamName, key: key, building: pointName(S.cfg, key), mission: m.t, images: [file], text: "", by: me.name, byId: me.rosterId, at: Date.now() })
           .then(function(){
             return db.collection("photo_posts").add({ type: "image", author: me.name || "참여자", title: "[PICNIC DAY] " + m.t + " · " + teamName, caption: pointName(S.cfg, key) + " 미션", image: file, college: me.college || "", picnic: key, createdAt: Date.now() }).catch(function(){});
           }, function(err){ return ref.get().then(function(sn){ if(!sn.exists) throw err; }); }) /* 팀원이 먼저 올렸으면 스탬프만 */
@@ -523,7 +530,7 @@
       var nm = pointName(S.cfg, key);
       if(!qrOpenNow(S.cfg)){ toast("지금은 QR 스탬프 인정 시간이 아니에요 (10:00~16:00).", "bad"); return; }
       if(!u || !u.attendAt){ toast("먼저 [출석체크]를 하고 운영본부에서 팀을 배정받아 주세요.", "bad"); return; }
-      if(!u.teamId || !u.verifiedAt){ toast("운영본부에서 출석 확인을 받은 뒤에 QR을 찍어야 미션이 열려요.", "bad"); return; }
+      if(!u.verifiedAt){ toast("운영본부에서 출석 확인을 받은 뒤에 QR을 찍어야 미션이 열려요.", "bad"); return; }
       if(u.stamps && u.stamps[key]){ showMission(key, "done", "이미 받은 스탬프예요"); return; }
       if(MISSIONS[key].type === "photo" && S.proofs[key]){
         giveStamp(key).then(function(cnt){ showStampPop(key, cnt, "팀원이 이미 사진을 올려서 바로 적립됐어요"); })
