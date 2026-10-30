@@ -2053,7 +2053,8 @@
           '<span class="ph-file-size">' + humanSize(p.fileSize) + '</span></span></a>';
         capFallback = "파일";
       } else {
-        body = '<img class="ph-img" src="' + p.image + '" alt="">';
+        window.__PZ = window.__PZ || {}; window.__PZ[d.id] = (p.images && p.images.length) ? p.images : [p.image];
+        body = '<img class="ph-img" data-pz="' + d.id + '" src="' + p.image + '" alt="" style="cursor:zoom-in">' + ((p.images && p.images.length > 1) ? '<div style="font-size:12px;font-weight:700;color:#7c1f3d;padding:6px 12px 0">📷 사진 ' + p.images.length + '장 · 눌러서 넘겨보기</div>' : '');
         capFallback = "사진";
       }
       return '<div class="card photo-card" data-id="' + d.id + '">' + body +
@@ -2420,7 +2421,8 @@
       var p = d.data();
       var tag = p.demo ? '<span class="post-tag">예시</span>' : "";
       return '<div class="card photo-card">' +
-        '<img class="ph-img" src="' + p.image + '" alt="">' +
+        ((window.__PZ = window.__PZ || {})["v_" + d.id] = (p.images && p.images.length) ? p.images : [p.image], '') +
+        '<img class="ph-img" data-pz="v_' + d.id + '" src="' + p.image + '" alt="" style="cursor:zoom-in">' + ((p.images && p.images.length > 1) ? '<div style="font-size:12px;font-weight:700;color:#7c1f3d;padding:6px 12px 0">📷 사진 ' + p.images.length + '장 · 눌러서 넘겨보기</div>' : '') +
         '<div class="ph-body">' +
           '<div class="ph-cap"><span class="verify-tag">' + esc(p.category || "RANDOM") + '</span><span class="verify-status">' + esc(p.status || "확인중") + '</span>' + esc(p.caption || "") + '</div>' +
           '<div class="ph-meta"><span>' + esc(p.author || "참여자") + ' ' + tag + '</span><span class="ph-time">' + timeAgo(p.createdAt) + '</span></div>' +
@@ -2825,5 +2827,44 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="js/picnic.js?v=20261028i"></script>
+<script>
+/* 사진 크게 보기 (여러 장이면 넘겨보기) */
+(function(){
+  window.__PZ = window.__PZ || {};
+  function openPZ(list, i){
+    var w = document.createElement("div");
+    w.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,10,12,.92);display:flex;align-items:center;justify-content:center;padding:14px";
+    var btn = "position:absolute;border:0;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;";
+    w.innerHTML = '<img alt="" style="max-width:100%;max-height:calc(100% - 56px);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.5)">' +
+      '<div data-c style="position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#fff;font:600 14px sans-serif"></div>' +
+      '<button type="button" data-z="x" aria-label="닫기" style="' + btn + 'top:12px;right:12px;width:42px;height:42px;font-size:24px">×</button>' +
+      (list.length > 1 ? '<button type="button" data-z="p" aria-label="이전" style="' + btn + 'left:10px;top:50%;margin-top:-24px;width:48px;height:48px;font-size:28px">‹</button>' +
+        '<button type="button" data-z="n" aria-label="다음" style="' + btn + 'right:10px;top:50%;margin-top:-24px;width:48px;height:48px;font-size:28px">›</button>' : "");
+    var im = w.querySelector("img"), c = w.querySelector("[data-c]");
+    function show(){ im.src = list[i]; c.textContent = list.length > 1 ? (i + 1) + " / " + list.length : ""; }
+    function go(d){ i = (i + d + list.length) % list.length; show(); }
+    function close(){ w.remove(); document.removeEventListener("keydown", key); }
+    function key(e){ if(e.key === "Escape") close(); if(e.key === "ArrowRight") go(1); if(e.key === "ArrowLeft") go(-1); }
+    w.addEventListener("click", function(e){
+      var b = e.target.closest("[data-z]");
+      if(b){ if(b.dataset.z === "x") close(); else go(b.dataset.z === "n" ? 1 : -1); return; }
+      if(e.target === im && list.length > 1){ go(1); return; }
+      close();
+    });
+    var sx = null;
+    w.addEventListener("touchstart", function(e){ sx = e.touches[0].clientX; }, { passive: true });
+    w.addEventListener("touchend", function(e){ if(sx === null || list.length < 2) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if(Math.abs(dx) > 40){ go(dx < 0 ? 1 : -1); e.preventDefault(); } });
+    document.addEventListener("keydown", key);
+    show(); document.body.appendChild(w);
+  }
+  document.addEventListener("click", function(e){
+    var t = e.target && e.target.closest && e.target.closest("img[data-pz]");
+    if(!t) return;
+    e.preventDefault(); e.stopPropagation();
+    var l = window.__PZ[t.getAttribute("data-pz")] || [t.getAttribute("src")];
+    openPZ(l, 0);
+  }, true);
+})();
+</script>
 </body>
 </html>
