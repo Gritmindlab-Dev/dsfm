@@ -464,7 +464,7 @@
           var p = x.d, st = p.status || "확인중";
           var cls = st === "승인" ? "green" : st === "반려" ? "red" : "gold";
           return '<div class="adm-item" data-id="' + esc(x.id) + '">' +
-            (p.image ? '<img src="' + esc(p.image) + '" alt="">' : "") +
+            (p.image ? ((window.__PZ = window.__PZ || {})["a_" + x.id] = (p.images && p.images.length) ? p.images : [p.image], '<img src="' + esc(p.image) + '" data-pz="a_' + esc(x.id) + '" alt="" style="cursor:zoom-in">' + (p.images && p.images.length > 1 ? '<div style="font-size:11.5px;font-weight:700;color:#7c1f3d;padding:4px 10px 0">📷 ' + p.images.length + '장 · 눌러서 보기</div>' : '')) : "") +
             '<div class="adm-item-body"><div class="adm-item-top"><span class="adm-tag">' + esc(p.category || "기타") + '</span><span class="adm-tag ' + cls + '">' + esc(st) + '</span></div>' +
             (p.caption ? '<div class="adm-item-text">' + esc(p.caption) + '</div>' : "") +
             '<div class="adm-item-meta">' + esc(p.author || "참여자") + (p.team ? " · " + esc(p.team) : "") + ' · ' + fmtTime(p.createdAt) + '</div>' +
@@ -508,7 +508,7 @@
           var p = x.d;
           var body = p.title ? '<b>' + esc(p.title) + '</b>\n' + esc(p.caption || "") : esc(p.text || p.caption || (p.url ? "링크: " + p.url : p.fileName ? "파일: " + p.fileName : "(사진)"));
           return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;gap:12px;align-items:flex-start">' +
-            (p.image ? '<img src="' + esc(p.image) + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px;flex:none">' : "") +
+            (p.image ? ((window.__PZ = window.__PZ || {})["b_" + x.id] = (p.images && p.images.length) ? p.images : [p.image], '<img src="' + esc(p.image) + '" data-pz="b_' + esc(x.id) + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px;flex:none;cursor:zoom-in">') : "") +
             '<div style="flex:1;min-width:0"><div class="adm-item-meta" style="margin:0">' + esc(p.author || "참여자") + (p.team ? " · " + esc(p.team) : "") + ' · ' + fmtTime(p.createdAt) + (p.demo ? ' · <span class="adm-tag gray">예시</span>' : "") + '</div>' +
             '<div class="adm-item-text">' + body + '</div></div>' +
             '<button class="adm-btn bad small" type="button" data-adm="post-del" style="flex:none">삭제</button></div>';
@@ -1372,6 +1372,45 @@
       }
     });
   }
+})();
+</script>
+<script>
+/* 사진 크게 보기 (여러 장이면 넘겨보기) */
+(function(){
+  window.__PZ = window.__PZ || {};
+  function openPZ(list, i){
+    var w = document.createElement("div");
+    w.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,10,12,.92);display:flex;align-items:center;justify-content:center;padding:14px";
+    var btn = "position:absolute;border:0;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;";
+    w.innerHTML = '<img alt="" style="max-width:100%;max-height:calc(100% - 56px);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.5)">' +
+      '<div data-c style="position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#fff;font:600 14px sans-serif"></div>' +
+      '<button type="button" data-z="x" aria-label="닫기" style="' + btn + 'top:12px;right:12px;width:42px;height:42px;font-size:24px">×</button>' +
+      (list.length > 1 ? '<button type="button" data-z="p" aria-label="이전" style="' + btn + 'left:10px;top:50%;margin-top:-24px;width:48px;height:48px;font-size:28px">‹</button>' +
+        '<button type="button" data-z="n" aria-label="다음" style="' + btn + 'right:10px;top:50%;margin-top:-24px;width:48px;height:48px;font-size:28px">›</button>' : "");
+    var im = w.querySelector("img"), c = w.querySelector("[data-c]");
+    function show(){ im.src = list[i]; c.textContent = list.length > 1 ? (i + 1) + " / " + list.length : ""; }
+    function go(d){ i = (i + d + list.length) % list.length; show(); }
+    function close(){ w.remove(); document.removeEventListener("keydown", key); }
+    function key(e){ if(e.key === "Escape") close(); if(e.key === "ArrowRight") go(1); if(e.key === "ArrowLeft") go(-1); }
+    w.addEventListener("click", function(e){
+      var b = e.target.closest("[data-z]");
+      if(b){ if(b.dataset.z === "x") close(); else go(b.dataset.z === "n" ? 1 : -1); return; }
+      if(e.target === im && list.length > 1){ go(1); return; }
+      close();
+    });
+    var sx = null;
+    w.addEventListener("touchstart", function(e){ sx = e.touches[0].clientX; }, { passive: true });
+    w.addEventListener("touchend", function(e){ if(sx === null || list.length < 2) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if(Math.abs(dx) > 40){ go(dx < 0 ? 1 : -1); e.preventDefault(); } });
+    document.addEventListener("keydown", key);
+    show(); document.body.appendChild(w);
+  }
+  document.addEventListener("click", function(e){
+    var t = e.target && e.target.closest && e.target.closest("img[data-pz]");
+    if(!t) return;
+    e.preventDefault(); e.stopPropagation();
+    var l = window.__PZ[t.getAttribute("data-pz")] || [t.getAttribute("src")];
+    openPZ(l, 0);
+  }, true);
 })();
 </script>
 </body>
