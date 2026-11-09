@@ -150,6 +150,15 @@
 
   /* 설명 문구 줄이기 */
   .adm-h + .adm-desc, .adm-note{display:none !important;}
+  /* ===== 2026.11 디자인 개편: 캠퍼스 사진 ===== */
+  #login-screen{position:relative; background:#4c1226 url(../assets/bn_verify.jpg) center/cover no-repeat !important;}
+  #login-screen::before{content:""; position:absolute; inset:0; background:linear-gradient(120deg,rgba(76,18,38,.86) 0%,rgba(124,31,61,.55) 55%,rgba(124,31,61,.25) 100%);}
+  #login-screen .login-card{position:relative; z-index:1; box-shadow:0 24px 60px -12px rgba(30,6,16,.55);}
+  .adm-top{position:relative; background:#4c1226 url(../assets/bn_home.jpg) center 55%/cover no-repeat !important; padding:30px 26px 26px !important; min-height:120px; align-items:flex-end !important;}
+  .adm-top::before{content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(76,18,38,.88) 0%,rgba(124,31,61,.55) 55%,rgba(124,31,61,.2) 100%);}
+  .adm-top > *{position:relative;}
+  .adm-brand{font-size:19px !important; font-weight:800 !important; letter-spacing:-.4px;}
+  @media (max-width:640px){ .adm-top{padding:22px 16px 18px !important; min-height:104px;} .adm-brand{font-size:16px !important;} }
 </style>
 </head>
 <body>
@@ -1353,7 +1362,12 @@
         var email = String(user.email || "").toLowerCase();
         fdb.collection("admins").doc(email).get().then(function(snap){
           var a = snap.exists ? snap.data() : null;
-          if(a && a.role === "스태프"){ location.href = "../staff/"; return; }
+          if(a && a.role === "스태프"){
+            root.style.display = "none"; document.getElementById("login-screen").style.display = "flex";
+            firebase.auth().signOut();
+            showErr("행사(PICNIC DAY) 스태프 계정이에요. 행사 페이지는 운영진 페이지와 분리됐어요. 운영진 계정으로 다시 로그인해 주세요.");
+            return;
+          }
           if(!a || (a.role !== "최고" && a.role !== "총괄" && a.role !== "운영") || (a.role === "운영" && COLLEGES.indexOf(a.college) < 0)){
             root.style.display = "none"; document.getElementById("login-screen").style.display = "flex";
             firebase.auth().signOut();
