@@ -706,6 +706,9 @@
   .home-hero .hh-team{font-size:13.5px; opacity:.92;}
   .home-hero .hh-hi{font-family:"Noto Sans KR",sans-serif; font-size:30px; font-weight:800; letter-spacing:-1px; margin:4px 0 6px;}
   .home-hero .hh-msg{font-size:14.5px; opacity:.95;}
+  .home-hero > video.hh-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;}
+  .home-hero::before{z-index:1;}
+  .home-hero > *:not(video){z-index:2;}
   .home-hero{padding-bottom:84px !important;}
   .hh-chips{margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;}
   .hh-chip{display:inline-block; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.55); border-radius:99px; padding:5px 12px; font-size:12.5px;}
@@ -3101,6 +3104,13 @@
       hh.style.backgroundImage = "url(assets/bn_home.jpg)";
       hh.innerHTML = '<div class="hh-team" id="hh-team"></div><div class="hh-hi" id="hh-hi">안녕하세요!</div><div class="hh-msg">함께라서 든든한 첫 학기, 오늘도 공유공간에서 만나요.</div><div class="hh-chips" id="hh-chips"></div>';
       sec.insertBefore(hh, eb);
+      if(window.matchMedia && window.matchMedia("(min-width:821px)").matches){
+        var hv = document.createElement("video");
+        hv.className = "hh-video"; hv.muted = true; hv.loop = true; hv.autoplay = true; hv.playsInline = true;
+        hv.setAttribute("muted", ""); hv.setAttribute("playsinline", ""); hv.poster = "assets/bn_home.jpg"; hv.src = "assets/hero.mp4";
+        hh.insertBefore(hv, hh.firstChild);
+        var hp = hv.play && hv.play(); if(hp && hp.catch) hp.catch(function(){});
+      }
       buildHome(sec, hh);
       return;
     }
