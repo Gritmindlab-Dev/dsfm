@@ -2154,7 +2154,10 @@
       var cmts = photoComments[d.id] || [];
       var open = !!photoOpenThreads[d.id];
       var body, capFallback;
-      if(p.type === "link"){
+      if(p.type === "video" && /^assets\/[A-Za-z0-9_.-]+\.mp4$/.test(p.url || "")){
+        body = '<video class="ph-img" src="' + p.url + '" controls muted playsinline loop preload="metadata"' + (/^assets\/[A-Za-z0-9_.-]+\.jpg$/.test(p.poster || "") ? ' poster="' + p.poster + '"' : '') + ' style="display:block;width:100%;background:#000"></video>';
+        capFallback = "영상";
+      } else if(p.type === "link"){
         var host = p.url;
         try{ host = new URL(p.url).hostname.replace(/^www\./,""); }catch(e){}
         body = '<a class="ph-file" href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' +
