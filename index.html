@@ -974,7 +974,7 @@
         <section id="page-program" class="page" style="display:none">
           <div class="page-eyebrow">멘토 전용 · 비공개</div>
           <h2 class="page-title">멘토 프로그램</h2>
-          <p class="page-desc">멘티를 위한 교육 프로그램 계획서를 올리면 운영진이 검토 후 승인해요. 올린 글은 <b>본인과 운영진만</b> 볼 수 있어요. 승인된 프로그램은 운영 후 결과보고서를 제출해 주세요.</p>
+          <p class="page-desc">멘티를 위한 교육 프로그램 계획서를 올리면 <b>승인 대기</b> 상태가 되고, 운영진 확인 후 <b>승인 / 반려</b> 결과가 표시돼요. 올린 글은 <b>본인과 운영진만</b> 볼 수 있어요. 승인된 프로그램은 운영 후 결과보고서를 제출해 주세요.</p>
           <div class="card prg-form" id="prg-form">
             <div class="prg-h">📄 계획서 작성</div>
             <label>프로그램명<input id="prg-title" maxlength="80" placeholder="예) 멘티와 함께하는 드로잉 기초 클래스"></label>
@@ -2876,7 +2876,7 @@
       }).then(function(){
         ["prg-title","prg-when","prg-place","prg-target","prg-content","prg-budget"].forEach(function(id){ document.getElementById(id).value = ""; });
         document.getElementById("prg-file").value = "";
-        msg.textContent = "제출했어요! 운영진 검토 후 승인 결과가 아래에 표시돼요.";
+        msg.textContent = "제출 완료! 지금은 ‘승인 대기’ 상태예요. 운영진이 확인하면 아래에 승인/반려 결과가 표시돼요.";
       }).catch(function(e){ msg.textContent = (e && e.message) || "제출하지 못했어요. 다시 시도해 주세요."; })
         .finally(function(){ btn.disabled = false; });
     });
@@ -2906,7 +2906,7 @@
       var cls = st === "승인" ? "ok" : st === "반려" ? "no" : "";
       var rep = reports.filter(function(r){ return r.p.planId === x.id; })[0];
       var meta = [p.when && "일시 " + p.when, p.place && "장소 " + p.place, p.target && "대상 " + p.target].filter(Boolean).join(" · ");
-      var html = '<div class="card prg-item"><div class="prg-top"><span class="prg-st ' + cls + '">' + esc(st === "접수" ? "검토 중" : st) + '</span><b>' + esc(p.title || "") + '</b><span class="post-time">' + timeAgo(p.createdAt) + '</span></div>' +
+      var html = '<div class="card prg-item"><div class="prg-top"><span class="prg-st ' + cls + '">' + (st === "승인" ? "✅ 승인" : st === "반려" ? "❌ 반려" : "⏳ 승인 대기") + '</span><b>' + esc(p.title || "") + '</b><span class="post-time">' + timeAgo(p.createdAt) + '</span></div>' +
         (meta ? '<div class="prg-meta">' + esc(meta) + '</div>' : '') +
         '<div class="prg-meta">' + esc(p.content || "") + '</div>' +
         (p.budget ? '<div class="prg-meta"><b>예산</b> ' + esc(p.budget) + '</div>' : '') +
