@@ -232,6 +232,7 @@
     {key:"sched",   label:"일정 관리"},
     {key:"verify",  label:"인증 승인"},
     {key:"suggest", label:"건의함"},
+    {key:"program", label:"멘토 프로그램"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"투표"},
     {key:"missions",label:"월별 미션"},
@@ -311,13 +312,14 @@
     function counts(){
       return {
         verify: scoped("verify_posts").filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
-        suggest: scoped("suggestion_posts").filter(function(x){ return !x.d.status || x.d.status === "접수"; }).length
+        suggest: scoped("suggestion_posts").filter(function(x){ return !x.d.kind && (!x.d.status || x.d.status === "접수"); }).length,
+        program: scoped("suggestion_posts").filter(function(x){ return (x.d.kind === "program_plan" || x.d.kind === "program_report") && (!x.d.status || x.d.status === "접수"); }).length
       };
     }
     function renderTabs(){
       var c = counts();
       tabsEl.innerHTML = TABS.filter(function(t){ return (isSuper || !t.superOnly) && (isMaster || !t.masterOnly); }).map(function(t){
-        var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : 0;
+        var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : t.key === "program" ? c.program : 0;
         return '<button type="button" class="adm-tab' + (t.key === tab ? " active" : "") + '" data-tab="' + t.key + '">' +
           esc(t.label) + (n ? '<span class="adm-count">' + n + '</span>' : "") + '</button>';
       }).join("");
@@ -486,7 +488,7 @@
     }
 
     function viewSuggest(){
-      var list = scoped("suggestion_posts").sort(byNewest);
+      var list = scoped("suggestion_posts").filter(function(x){ return !x.d.kind; }).sort(byNewest);
       mainEl.innerHTML = '<h2 class="adm-h">건의함</h2>' +
         '<p class="adm-desc">처리 상태와 답변을 남기면 학생 화면 "운영진에게 건의"에 함께 표시돼요. 익명 건의는 작성자가 "익명"으로만 보여요.</p>' +
         '<div class="adm-actions" style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="csv-suggest">CSV로 내려받기</button></div>' +
@@ -503,6 +505,46 @@
               '<button class="adm-btn bad small" type="button" data-adm="s-del">삭제</button>' +
             '</div></div>';
         }).join("") : '<div class="adm-empty">아직 건의가 없어요.</div>') + '</div>';
+    }
+
+
+    function viewProgram(){
+      var all = scoped("suggestion_posts");
+      var plans = all.filter(function(x){ return x.d.kind === "program_plan"; }).sort(byNewest);
+      var reps = all.filter(function(x){ return x.d.kind === "program_report"; });
+      var fileLink = function(p, id){ return p.fileName ? '<a class="adm-btn ghost small" href="#" data-adm="prg-file" data-fid="' + esc(id) + '">📎 ' + esc(p.fileName) + '</a>' : ""; };
+      mainEl.innerHTML = '<h2 class="adm-h">멘토 프로그램</h2>' +
+        '<p class="adm-desc">멘토가 올린 교육 프로그램 계획서예요. 이 글은 올린 멘토 본인과 운영진만 볼 수 있어요. <b>식음료가 아닌 멘티 교육 목적</b>이면 문구비·운영비 지원을 검토해 승인해 주세요. 승인하면 멘토 화면에 결과보고서 제출 칸이 열려요.</p>' +
+        '<div class="adm-list">' + (plans.length ? plans.map(function(x){
+          var p = x.d, st = p.status || "접수";
+          var rep = reps.filter(function(r){ return r.d.planId === x.id; })[0];
+          var meta = [p.college, p.teamName || p.team, p.when && "일시 " + p.when, p.place && "장소 " + p.place, p.target && "대상 " + p.target].filter(Boolean).join(" · ");
+          var h = '<div class="adm-item" data-id="' + esc(x.id) + '">' +
+            '<div class="adm-item-top"><span class="adm-tag ' + (st === "승인" ? "green" : st === "반려" ? "gray" : "gold") + '">' + esc(st) + '</span>' +
+            '<b style="margin-left:6px">' + esc(p.title || "") + '</b><span class="adm-item-meta" style="margin:0 0 0 auto">' + esc(p.author || "멘토") + ' · ' + fmtTime(p.createdAt) + '</span></div>' +
+            (meta ? '<div class="adm-item-meta">' + esc(meta) + '</div>' : '') +
+            '<div class="adm-item-text"><b>교육 목적·내용</b>\n' + esc(p.content || "") + (p.budget ? '\n\n<b>필요 예산</b>\n' + esc(p.budget) : '') + '</div>' +
+            (p.fileName ? '<div style="margin:6px 0">' + fileLink(p, x.id) + '</div>' : '') +
+            '<div class="adm-reply">' +
+              '<select class="adm-select" data-field="status">' + ["접수","승인","반려"].map(function(s){ return '<option' + (s === st ? " selected" : "") + '>' + s + '</option>'; }).join("") + '</select>' +
+              '<input class="adm-input" data-field="amount" placeholder="지원 금액 (예: 50,000원)" maxlength="40" value="' + esc(p.amount || "") + '" style="max-width:180px">' +
+              '<input class="adm-input" data-field="reply" placeholder="멘토에게 보일 의견 (선택)" maxlength="500" value="' + esc(p.reply || "") + '">' +
+              '<button class="adm-btn small" type="button" data-adm="prg-save">저장</button>' +
+              '<button class="adm-btn bad small" type="button" data-adm="prg-del">삭제</button>' +
+            '</div>';
+          if(rep){
+            var r = rep.d;
+            h += '<div style="margin-top:12px;padding:12px;border-radius:10px;background:#f7f3f4" data-rid="' + esc(rep.id) + '">' +
+              '<div class="adm-item-top"><span class="adm-tag ' + (r.status === "확인완료" ? "green" : "gold") + '">결과보고서 ' + esc(r.status === "확인완료" ? "확인완료" : "제출") + '</span><span class="adm-item-meta" style="margin:0 0 0 auto">' + fmtTime(r.createdAt) + '</span></div>' +
+              '<div class="adm-item-text">' + esc(r.content || "") + (r.people ? '\n\n<b>참여 인원</b> ' + esc(r.people) : '') + (r.spent ? '\n<b>사용 내역</b>\n' + esc(r.spent) : '') + '</div>' +
+              (r.fileName ? '<div style="margin:6px 0">' + fileLink(r, rep.id) + '</div>' : '') +
+              (r.status === "확인완료" ? '' : '<button class="adm-btn small" type="button" data-adm="prg-rep-ok" data-rid="' + esc(rep.id) + '">결과보고서 확인완료</button>') +
+            '</div>';
+          } else if(st === "승인"){
+            h += '<div class="adm-item-meta" style="margin-top:8px">결과보고서 미제출</div>';
+          }
+          return h + '</div>';
+        }).join("") : '<div class="adm-empty">아직 제출된 계획서가 없어요.</div>') + '</div>';
     }
 
     function viewPosts(){
@@ -860,7 +902,7 @@
         }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, program:viewProgram, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
     function render(force){
       renderTabs();
       if(force){ VIEWS[tab](); return; }
@@ -952,6 +994,38 @@
         var st = item.querySelector('[data-field="status"]').value, rp = item.querySelector('[data-field="reply"]').value.trim();
         act(col("suggestion_posts").doc(id).update({ status: st, reply: rp, repliedAt: Date.now() }));
         b.textContent = "저장됨 ✓"; setTimeout(function(){ document.activeElement && document.activeElement.blur(); render(); }, 700); return;
+      }
+      if(a === "prg-save"){
+        var pst = item.querySelector('[data-field="status"]').value, prp = item.querySelector('[data-field="reply"]').value.trim(), pam = item.querySelector('[data-field="amount"]').value.trim();
+        act(col("suggestion_posts").doc(id).update({ status: pst, reply: prp, amount: pam, repliedAt: Date.now() }));
+        b.textContent = "저장됨 ✓"; setTimeout(function(){ document.activeElement && document.activeElement.blur(); render(); }, 700); return;
+      }
+      if(a === "prg-del"){ if(confirm("이 계획서를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
+      if(a === "prg-rep-ok"){ act(col("suggestion_posts").doc(b.getAttribute("data-rid")).update({ status: "확인완료" })); return; }
+      if(a === "prg-file"){
+        e.preventDefault();
+        var fid = b.getAttribute("data-fid"), fd = (S.suggestion_posts.filter(function(x){ return x.id === fid; })[0] || {}).d || {};
+        var getData = fd.fileData ? Promise.resolve(fd.fileData) : !fd.fileChunks ? Promise.resolve("") :
+          col("attendance_votes").where("parentId", "==", fid).get().then(function(snap){
+            var ch = snap.docs.map(function(x){ return x.data(); }).sort(function(p, q){ return p.idx - q.idx; });
+            if(ch.length < fd.fileChunks){ alert("첨부 파일이 아직 다 올라오지 않았어요 (" + ch.length + "/" + fd.fileChunks + "). 잠시 후 다시 눌러 주세요."); return ""; }
+            return ch.map(function(x){ return x.data || ""; }).join("");
+          });
+        b.textContent = "내려받는 중…";
+        getData.then(function(data){
+        b.textContent = "📎 " + (fd.fileName || "파일");
+        if(data){
+          try{
+            var m = data.match(/^data:([^;]*);base64,(.*)$/);
+            var bin = atob(m[2]), u8 = new Uint8Array(bin.length);
+            for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+            var url = URL.createObjectURL(new Blob([u8], { type: m[1] || "application/octet-stream" }));
+            var aa = document.createElement("a"); aa.href = url; aa.download = fd.fileName || "file"; document.body.appendChild(aa); aa.click(); aa.remove();
+            setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+          }catch(err){ alert("파일을 내려받지 못했어요."); }
+        }
+        }).catch(function(){ b.textContent = "📎 " + (fd.fileName || "파일"); alert("파일을 불러오지 못했어요."); });
+        return;
       }
       if(a === "s-del"){ if(confirm("이 건의를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
       if(a === "post-del"){ if(confirm("이 글을 삭제할까요? 되돌릴 수 없어요.")) act(col(postsBoard).doc(id).delete()); return; }
@@ -1149,7 +1223,7 @@
         }).map(function(x){ return [x.d.college || "", x.d.team || "", x.d.name || "", x.d.role || "", x.d.major || "", kd[x.id] ? "O" : "X"]; }))); return;
       }
       if(a === "csv-suggest"){
-        downloadCsv("건의함.csv", [["단과대","작성자","내용","상태","답변","작성시각"]].concat(scoped("suggestion_posts").sort(byNewest).map(function(x){
+        downloadCsv("건의함.csv", [["단과대","작성자","내용","상태","답변","작성시각"]].concat(scoped("suggestion_posts").filter(function(x){ return !x.d.kind; }).sort(byNewest).map(function(x){
           return [x.d.college || "", x.d.author, x.d.text, x.d.status || "접수", x.d.reply || "", x.d.createdAt ? new Date(x.d.createdAt).toLocaleString("ko-KR") : ""];
         }))); return;
       }
