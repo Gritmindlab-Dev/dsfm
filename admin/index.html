@@ -520,13 +520,13 @@
           var rep = reps.filter(function(r){ return r.d.planId === x.id; })[0];
           var meta = [p.college, p.teamName || p.team, p.when && "일시 " + p.when, p.place && "장소 " + p.place, p.target && "대상 " + p.target].filter(Boolean).join(" · ");
           var h = '<div class="adm-item" data-id="' + esc(x.id) + '">' +
-            '<div class="adm-item-top"><span class="adm-tag ' + (st === "승인" ? "green" : st === "반려" ? "gray" : "gold") + '">' + esc(st) + '</span>' +
+            '<div class="adm-item-top"><span class="adm-tag ' + (st === "승인" ? "green" : st === "반려" ? "gray" : "gold") + '">' + esc(st === "접수" ? "승인 대기" : st) + '</span>' +
             '<b style="margin-left:6px">' + esc(p.title || "") + '</b><span class="adm-item-meta" style="margin:0 0 0 auto">' + esc(p.author || "멘토") + ' · ' + fmtTime(p.createdAt) + '</span></div>' +
             (meta ? '<div class="adm-item-meta">' + esc(meta) + '</div>' : '') +
             '<div class="adm-item-text"><b>교육 목적·내용</b>\n' + esc(p.content || "") + (p.budget ? '\n\n<b>필요 예산</b>\n' + esc(p.budget) : '') + '</div>' +
             (p.fileName ? '<div style="margin:6px 0">' + fileLink(p, x.id) + '</div>' : '') +
             '<div class="adm-reply">' +
-              '<select class="adm-select" data-field="status">' + ["접수","승인","반려"].map(function(s){ return '<option' + (s === st ? " selected" : "") + '>' + s + '</option>'; }).join("") + '</select>' +
+              '<select class="adm-select" data-field="status">' + ["접수","승인","반려"].map(function(s){ return '<option value="' + s + '"' + (s === st ? " selected" : "") + '>' + (s === "접수" ? "승인 대기" : s) + '</option>'; }).join("") + '</select>' +
               '<input class="adm-input" data-field="amount" placeholder="지원 금액 (예: 50,000원)" maxlength="40" value="' + esc(p.amount || "") + '" style="max-width:180px">' +
               '<input class="adm-input" data-field="reply" placeholder="멘토에게 보일 의견 (선택)" maxlength="500" value="' + esc(p.reply || "") + '">' +
               '<button class="adm-btn small" type="button" data-adm="prg-save">저장</button>' +
