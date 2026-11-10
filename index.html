@@ -739,6 +739,22 @@
     .pg-hero{padding:22px 18px 18px; min-height:200px; margin:-24px 0 20px -18px;}
     .home-hero{min-height:210px;} .home-hero .hh-hi{font-size:23px;}
   }
+#page-program .prg-form{display:flex;flex-direction:column;gap:12px;padding:20px}
+#page-program .prg-h{font-weight:800;font-size:16px;color:var(--wine-deep)}
+#page-program label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--ink-soft)}
+#page-program input,#page-program textarea{font:inherit;font-weight:400;font-size:14px;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+#page-program textarea{min-height:90px;resize:vertical}
+#page-program .prg-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){#page-program .prg-2{grid-template-columns:1fr}}
+#page-program .composer-send{align-self:flex-end;padding:11px 24px;height:auto;min-height:0}
+#page-program .prg-note{font-size:13px;color:var(--wine)}
+.prg-item{padding:18px 20px;margin-bottom:12px}
+.prg-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.prg-st{font-size:12px;font-weight:800;padding:3px 10px;border-radius:10px;background:#fff4e2;color:#9a6a0c}
+.prg-st.ok{background:#e3f1e8;color:#2f7a4b}.prg-st.no{background:#f1e6e9;color:#8a737a}
+.prg-meta{font-size:12.5px;color:var(--ink-soft);margin-top:4px;white-space:pre-wrap;line-height:1.6}
+.prg-reply{margin-top:10px;background:var(--cream);border-radius:10px;padding:10px 12px;font-size:13.5px;white-space:pre-wrap}
+.prg-rep{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
 </style>
 </head>
 <body>
@@ -847,6 +863,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           마이페이지
         </button>
+        <button data-page="program" id="nav-program" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+          멘토 프로그램
+        </button>
         <button data-page="picnic" class="nav-past">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M12 3l9 9H3l9-9Z"/><path d="M12 12v9"/></svg>
           PICNIC DAY
@@ -948,6 +968,27 @@
             </label>
           </div>
           <div class="posts" id="suggest-posts"></div>
+        </section>
+
+        <!-- 멘토 프로그램 계획서 (비공개: 본인 + 운영진만) -->
+        <section id="page-program" class="page" style="display:none">
+          <div class="page-eyebrow">멘토 전용 · 비공개</div>
+          <h2 class="page-title">멘토 프로그램</h2>
+          <p class="page-desc">멘티를 위한 교육 프로그램 계획서를 올리면 운영진이 검토 후 승인해요. 올린 글은 <b>본인과 운영진만</b> 볼 수 있어요. 승인된 프로그램은 운영 후 결과보고서를 제출해 주세요.</p>
+          <div class="card prg-form" id="prg-form">
+            <div class="prg-h">📄 계획서 작성</div>
+            <label>프로그램명<input id="prg-title" maxlength="80" placeholder="예) 멘티와 함께하는 드로잉 기초 클래스"></label>
+            <div class="prg-2"><label>운영 일시<input id="prg-when" maxlength="80" placeholder="예) 11/20(금) 15:00~17:00"></label>
+            <label>장소<input id="prg-place" maxlength="80" placeholder="예) 예술관 ○○○호"></label></div>
+            <label>참여 대상·인원<input id="prg-target" maxlength="80" placeholder="예) 우리 팀 멘티 6명"></label>
+            <label>교육 목적·내용<textarea id="prg-content" maxlength="1200" placeholder="멘티에게 어떤 도움이 되는 교육인지, 진행 순서 등을 적어 주세요"></textarea></label>
+            <label>필요 예산 (문구비·운영비)<textarea id="prg-budget" maxlength="500" placeholder="예) 드로잉 스케치북 6권 30,000원 / 연필·지우개 세트 12,000원&#10;※ 식비·음료비는 지원되지 않아요"></textarea></label>
+            <label>계획서 파일 (선택 · 5MB 이하)<input type="file" id="prg-file" accept=".pdf,.hwp,.hwpx,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png"></label>
+            <button class="composer-send" id="prg-send" type="button">계획서 제출</button>
+            <div class="prg-note" id="prg-msg"></div>
+          </div>
+          <div class="prg-h" style="margin:22px 0 10px">내가 제출한 계획서</div>
+          <div id="prg-list"><div class="card empty-state">아직 제출한 계획서가 없어요.</div></div>
         </section>
 
         <!-- 스케줄 보드 -->
@@ -1323,6 +1364,7 @@
     if(pageName === "photo") watchPhotos();
     if(pageName === "verify" || pageName === "mypage" || (pageName === "team" && state.role === "멘토")) watchVerify();
     if(pageName === "mypage") renderMyPage();
+    if(pageName === "program") watchPrograms();
   }
   document.getElementById("rail-nav").addEventListener("click", function(e){
     var btn = e.target.closest("button[data-page]");
@@ -2020,6 +2062,7 @@
 
   /* ---------- db-backed boards ---------- */
   function renderPosts(containerId, docs, emptyMsg){
+    if(containerId === "suggest-posts") docs = (docs || []).filter(function(d){ var k = d.data().kind; return k !== "program_plan" && k !== "program_report" && k !== "program_chunk"; });
     postsCache[containerId] = docs;
     docs = docs.slice().sort(function(a,b){ return ((b.data().notice?1:0) - (a.data().notice?1:0)); });
     var el = document.getElementById(containerId);
@@ -2777,8 +2820,126 @@
     });
   }
 
+  /* ---------- 멘토 프로그램 계획서 (suggestion_posts · kind 구분, 화면상 본인+운영진만) ---------- */
+  var prgUnsub = null, prgWired = false;
+  function prgReadFile(input){
+    return new Promise(function(res, rej){
+      var f = input && input.files && input.files[0];
+      if(!f) return res(null);
+      if(f.size > 5 * 1024 * 1024) return rej(new Error("파일이 5MB를 넘어요. PDF로 줄여서 올려 주세요."));
+      var r = new FileReader();
+      r.onload = function(){ res({ fileName: f.name, fileData: r.result }); };
+      r.onerror = function(){ rej(new Error("파일을 읽지 못했어요.")); };
+      r.readAsDataURL(f);
+    });
+  }
+  /* 큰 파일(최대 5MB)은 700,000자 조각으로 나눠 저장 (문서 1개 최대 1MB 제한) */
+  var PRG_CHUNK = 700000;
+  function prgSave(d, file){
+    var raw = firebase.firestore().collection("suggestion_posts");
+    var ref = raw.doc();
+    d.college = d.college || state.college || "";
+    if(!file) return ref.set(d);
+    d.fileName = file.fileName;
+    if(file.fileData.length <= PRG_CHUNK){ d.fileData = file.fileData; return ref.set(d); }
+    var parts = [];
+    for(var i = 0; i < file.fileData.length; i += PRG_CHUNK) parts.push(file.fileData.slice(i, i + PRG_CHUNK));
+    d.fileChunks = parts.length;
+    var seq = Promise.resolve();
+    parts.forEach(function(part, idx){
+      seq = seq.then(function(){
+        /* 조각은 학생 화면이 불러오지 않는 별도 저장소에 보관 (게시판 로딩이 무거워지지 않게) */
+        return firebase.firestore().collection("attendance_votes").add({ choice: "attend", kind: "program_chunk", parentId: ref.id, idx: idx, total: parts.length, data: part, college: d.college, createdAt: Date.now() });
+      });
+    });
+    return seq.catch(function(){ throw new Error("큰 첨부 파일을 저장하지 못했어요. 파일 없이 내용만 먼저 제출하고 운영진에게 알려 주세요."); }).then(function(){ return ref.set(d); });
+  }
+  function prgMine(p){
+    if(!p) return false;
+    if(state.rosterId && p.rosterId) return p.rosterId === state.rosterId;
+    return p.author === state.name && (!p.college || p.college === state.college);
+  }
+  function wirePrograms(){
+    if(prgWired) return; prgWired = true;
+    var btn = document.getElementById("prg-send"), msg = document.getElementById("prg-msg");
+    btn.addEventListener("click", function(){
+      var v = function(id){ return (document.getElementById(id).value || "").trim(); };
+      var title = v("prg-title"), content = v("prg-content");
+      if(!title || !content){ msg.textContent = "프로그램명과 교육 목적·내용은 꼭 적어 주세요."; return; }
+      if(!db){ msg.textContent = "서버에 연결되지 않았어요."; return; }
+      btn.disabled = true; msg.textContent = "제출 중…";
+      prgReadFile(document.getElementById("prg-file")).then(function(file){
+        var d = { kind: "program_plan", author: state.name || "멘토", rosterId: state.rosterId || "", team: state.team || "", teamName: state.teamName || "", role: state.role || "",
+          title: title, when: v("prg-when"), place: v("prg-place"), target: v("prg-target"), content: content, budget: v("prg-budget"),
+          text: ("[멘토 프로그램 계획서] " + title + "\n" + content).slice(0, 1900), status: "접수", createdAt: Date.now() };
+        return prgSave(d, file);
+      }).then(function(){
+        ["prg-title","prg-when","prg-place","prg-target","prg-content","prg-budget"].forEach(function(id){ document.getElementById(id).value = ""; });
+        document.getElementById("prg-file").value = "";
+        msg.textContent = "제출했어요! 운영진 검토 후 승인 결과가 아래에 표시돼요.";
+      }).catch(function(e){ msg.textContent = (e && e.message) || "제출하지 못했어요. 다시 시도해 주세요."; })
+        .finally(function(){ btn.disabled = false; });
+    });
+    document.getElementById("prg-list").addEventListener("click", function(e){
+      var b = e.target.closest("[data-prg-report]"); if(!b) return;
+      var box = b.closest(".prg-item"), planId = b.getAttribute("data-prg-report");
+      var q = function(sel){ return box.querySelector(sel); };
+      var body = (q(".rep-body").value || "").trim();
+      if(!body){ alert("운영 결과를 적어 주세요."); return; }
+      b.disabled = true;
+      prgReadFile(q(".rep-file")).then(function(file){
+        var d = { kind: "program_report", planId: planId, author: state.name || "멘토", rosterId: state.rosterId || "", team: state.team || "", teamName: state.teamName || "",
+          title: q(".rep-title").textContent, content: body, people: (q(".rep-people").value || "").trim(), spent: (q(".rep-spent").value || "").trim(),
+          text: ("[멘토 프로그램 결과보고서] " + q(".rep-title").textContent + "\n" + body).slice(0, 1900), status: "접수", createdAt: Date.now() };
+        return prgSave(d, file);
+      }).catch(function(err){ alert((err && err.message) || "제출하지 못했어요."); b.disabled = false; });
+    });
+  }
+  function renderPrograms(docs){
+    var el = document.getElementById("prg-list");
+    var mine = docs.map(function(d){ return { id: d.id, p: d.data() }; }).filter(function(x){ return prgMine(x.p); });
+    var plans = mine.filter(function(x){ return x.p.kind === "program_plan"; }).sort(function(a,b){ return (b.p.createdAt||0) - (a.p.createdAt||0); });
+    var reports = mine.filter(function(x){ return x.p.kind === "program_report"; });
+    if(!plans.length){ el.innerHTML = '<div class="card empty-state">아직 제출한 계획서가 없어요.</div>'; return; }
+    el.innerHTML = plans.map(function(x){
+      var p = x.p, st = p.status || "접수";
+      var cls = st === "승인" ? "ok" : st === "반려" ? "no" : "";
+      var rep = reports.filter(function(r){ return r.p.planId === x.id; })[0];
+      var meta = [p.when && "일시 " + p.when, p.place && "장소 " + p.place, p.target && "대상 " + p.target].filter(Boolean).join(" · ");
+      var html = '<div class="card prg-item"><div class="prg-top"><span class="prg-st ' + cls + '">' + esc(st === "접수" ? "검토 중" : st) + '</span><b>' + esc(p.title || "") + '</b><span class="post-time">' + timeAgo(p.createdAt) + '</span></div>' +
+        (meta ? '<div class="prg-meta">' + esc(meta) + '</div>' : '') +
+        '<div class="prg-meta">' + esc(p.content || "") + '</div>' +
+        (p.budget ? '<div class="prg-meta"><b>예산</b> ' + esc(p.budget) + '</div>' : '') +
+        (p.fileName ? '<div class="prg-meta">📎 ' + esc(p.fileName) + '</div>' : '') +
+        (p.reply ? '<div class="prg-reply"><b>운영진 의견</b>\n' + esc(p.reply) + (p.amount ? '\n지원 금액: ' + esc(p.amount) : '') + '</div>' : '');
+      if(st === "승인"){
+        if(rep){
+          html += '<div class="prg-rep"><div><span class="prg-st ' + ((rep.p.status === "확인완료") ? "ok" : "") + '">결과보고서 ' + esc(rep.p.status === "확인완료" ? "확인 완료" : "제출 완료") + '</span></div><div class="prg-meta">' + esc(rep.p.content || "") + '</div></div>';
+        } else {
+          html += '<div class="prg-rep"><b style="color:var(--wine-deep)">📝 결과보고서 제출</b><span class="rep-title" style="display:none">' + esc(p.title || "") + '</span>' +
+            '<textarea class="rep-body" maxlength="1200" placeholder="운영 내용과 멘티 반응, 성과를 적어 주세요"></textarea>' +
+            '<input class="rep-people" maxlength="60" placeholder="실제 참여 인원 (예: 멘티 5명)">' +
+            '<textarea class="rep-spent" maxlength="500" placeholder="사용 내역 (품목·금액, 영수증은 파일로 첨부)"></textarea>' +
+            '<input type="file" class="rep-file" accept=".pdf,.hwp,.hwpx,.doc,.docx,.jpg,.jpeg,.png">' +
+            '<button class="composer-send" type="button" data-prg-report="' + esc(x.id) + '" style="align-self:flex-end">결과보고서 제출</button></div>';
+        }
+      }
+      return html + '</div>';
+    }).join("");
+  }
+  function watchPrograms(){
+    wirePrograms();
+    if(!db || prgUnsub) return;
+    var q = state.rosterId ? db.collection("suggestion_posts").where("rosterId", "==", state.rosterId) : db.collection("suggestion_posts").where("author", "==", state.name || "");
+    prgUnsub = q.onSnapshot(function(snap){ renderPrograms(snap.docs); }, function(){
+      document.getElementById("prg-list").innerHTML = '<div class="offline-note">불러오지 못했어요. 새로고침해 주세요.</div>';
+    });
+  }
+
   function applyRoleUI(){
     var isMentor = state.role === "멘토";
+    var np = document.getElementById("nav-program");
+    if(np) np.style.display = isMentor ? "" : "none";
     /* 팀 체크리스트: 멘토만 등록 */
     var cc = document.querySelector(".checklist-composer");
     if(cc) cc.style.display = isMentor ? "" : "none";
@@ -3083,7 +3244,7 @@
     if(d && d.style.display === "block"){ refreshStats(); if(window.DSFM) loadRecentPhotos(); }
   }, 1500);
   var BN = { announce:"bn_home", mission:"bn_mission", notice:"bn_notice", suggest:"bn_suggest", schedule:"bn_schedule",
-             photo:"bn_photo", team:"bn_team", verify:"bn_verify", mypage:"bn_mypage" };
+             photo:"bn_photo", team:"bn_team", verify:"bn_verify", mypage:"bn_mypage", program:"bn_schedule" };
   var TAG = {
     mission:"이달의 미션을 팀과 함께 하나씩 완성해 가요.",
     notice:"멘토·멘티만 보는 공간이에요. 오늘의 이야기를 편하게 남겨 주세요.",
@@ -3092,7 +3253,8 @@
     photo:"함께한 순간을 사진과 기록으로 차곡차곡 남겨요.",
     team:"우리 팀원끼리만 보는 이야기 공간이에요.",
     verify:"미션을 완료했다면 사진으로 인증해 주세요.",
-    mypage:"나의 멘토링 기록과 내가 쓴 글을 한곳에서 모아 봐요."
+    mypage:"나의 멘토링 기록과 내가 쓴 글을 한곳에서 모아 봐요.",
+    program:"멘티를 위한 교육 프로그램, 계획부터 결과보고까지 한곳에서."
   };
   Object.keys(BN).forEach(function(k){
     var sec = document.getElementById("page-" + k); if(!sec) return;
