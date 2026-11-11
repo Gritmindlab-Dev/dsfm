@@ -937,7 +937,7 @@
         <!-- 자유게시판 -->
         <section id="page-quest" class="page" style="display:none">
           <div class="page-eyebrow">11월 퀘스트 (멘토링 Mission Quest) · 11.12 ~ 11.20</div>
-          <h2 class="page-title">선배 전공 시간표 공개</h2>
+          <h2 class="page-title">선배 시간표 공개</h2>
         </section>
         <section id="page-mission" class="page" style="display:none">
           <div class="page-eyebrow">MONTHLY MISSION</div>
@@ -1410,7 +1410,7 @@
   var calView = { year: (new Date()).getFullYear(), month: (new Date()).getMonth() };
   /* 운영진 고정 일정 — 다가오는 일정·달력에 항상 보여요 */
   var FIXED_EVENTS = [ { date: "2026-10-29", title: "PICNIC DAY 피크닉데이 (10:00~16:00 · 영근터)", college: "전체", fixed: true },
-    { date: "2026-11-12", title: "11월 퀘스트 시작 (오전 9시 · 선배 전공 시간표 공개)", college: "전체", fixed: true },
+    { date: "2026-11-12", title: "11월 퀘스트 시작 (오전 9시 · 선배 시간표 공개)", college: "전체", fixed: true },
     { date: "2026-11-20", title: "11월 퀘스트 마감 (23:59 · 시간표 등록·♥·댓글)", college: "전체", fixed: true } ];
   function withFixedEvents(list){
     var extra = FIXED_EVENTS.filter(function(f){ return !list.some(function(e){ return e.date === f.date && /피크닉|PICNIC/i.test(e.title || ""); }); });
@@ -1952,8 +1952,8 @@
       /* 11월 퀘스트는 사이트에 기본으로 들어있는 미션 (운영진이 같은 달에 '퀘스트 하러 가기' 미션을 올리면 그걸 대신 보여줘요) */
       if(!missionsCache.some(function(m){ return m.month === "2026-11" && m.action === "quest"; })) missionsCache.push({
         id: "builtin-quest11", month: "2026-11", tag: "11월 퀘스트 (멘토링 Mission Quest)", order: -1, college: "전체", action: "quest",
-        title: "선배 전공 시간표 공개 「MY MAJOR TIMETABLE」",
-        desc: "퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션이에요.\n\n멘토 ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (몇 학년 몇 학기인지 선택)\n멘토 ② 내 시간표에 달린 멘티 질문에 답글 달기\n멘티 ① 관심 있는 선배 시간표에 ♥ 누르기\n멘티 ② 시간표에 궁금한 점 댓글 달기 (멘토가 대댓글로 답해 줘요)\n\n※ 참여 내용은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.",
+        title: "선배 시간표 공개",
+        desc: "퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션이에요.\n\n멘토 ① 보여주고 싶거나 자랑하고 싶은 내 시간표 업로드 (몇 학년 몇 학기인지 선택)\n멘토 ② 내 시간표에 달린 멘티 질문에 답글 달기\n멘티 ① 관심 있는 선배 시간표에 ♥ 누르기\n멘티 ② 시간표에 궁금한 점 댓글 달기 (멘토가 대댓글로 답해 줘요)\n\n※ 참여 내용은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.",
         startAt: new Date("2026-11-12T09:00:00+09:00").getTime(), endAt: new Date("2026-11-20T23:59:00+09:00").getTime(),
         reward: "총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)", howto: "공유공간 「11월 퀘스트」 메뉴에서 참여" });
       renderMissions();
@@ -3041,8 +3041,8 @@
     if(!(/[?&]quest=preview\b/.test(location.search) || (t >= open && t <= end))) return "";
     var closed = t > new Date("2026-11-20T23:59:59+09:00").getTime();
     return '<div class="notice-item pinned">' +
-      '<div class="notice-top"><span class="notice-pin">📌 고정</span><span class="notice-tag">11월 미션</span><span class="notice-label">' + (closed ? "11월 퀘스트 마감 — 결과 집계 중이에요" : "11월 퀘스트 「선배 전공 시간표 공개」 오픈!") + '</span></div>' +
-      '<div class="notice-detail" style="white-space:pre-wrap">' + esc("퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션(멘토링 Mission Quest)이에요. 11월 미션은 온라인 퀘스트로 진행돼요. 왼쪽 메뉴 「11월 퀘스트」에서 참여해 주세요.\n\n· 기간: 11/12(목) 오전 9시 ~ 11/20(금) 23:59\n· 멘토: ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (학년·학기 상관없이, 몇 학년 몇 학기인지 선택) ② 내 시간표에 달린 멘티 질문에 답글 달기\n· 멘티: ① 관심 있는 선배 시간표에 ♥ 누르기 ② 시간표에 궁금한 점 댓글 달기 (멘토가 대댓글로 답해 줘요)\n· 시상: 총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)\n\n※ 시간표 사진의 학번·이름 등 개인정보는 가리고, 수업 추천은 좋았던 점만 적어 주세요.\n※ 참여 내용(시간표·♥·댓글·답글)은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.") + '</div>' +
+      '<div class="notice-top"><span class="notice-pin">📌 고정</span><span class="notice-tag">11월 미션</span><span class="notice-label">' + (closed ? "11월 퀘스트 마감 — 결과 집계 중이에요" : "11월 퀘스트(멘토링 Mission Quest) 오픈! 미션하는 방법 안내") + '</span></div>' +
+      '<div class="notice-detail" style="white-space:pre-wrap">' + esc("퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션(멘토링 Mission Quest)이에요. 11월 퀘스트는 멘토(선배)가 자신의 시간표를 공개하고, 멘티(후배)가 ♥와 질문으로 함께하는 방식으로 진행돼요.\n\n■ 기간\n11/12(목) 오전 9시 ~ 11/20(금) 23:59\n(기간 안에만 시간표 등록, ♥, 댓글·답글을 남길 수 있어요)\n\n■ 참여 장소\n공유공간 로그인 → 메뉴의 「11월 퀘스트」 (PC는 왼쪽 메뉴, 휴대폰은 위쪽 메뉴)\n\n■ 멘토(2~4학년) 미션하는 방법\n[멘토 퀘스트 1] 시간표 캡처 업로드\n1. 에브리타임이나 포털에서 보여주고 싶거나 자랑하고 싶은 내 시간표 화면을 캡처해요. 학년·학기는 상관없어요.\n2. 캡처 사진의 학번·이름 등 개인정보는 꼭 가려 주세요.\n3. 「11월 퀘스트」 → [내 시간표] 탭에서 사진을 올리고, 단과대학·학과(전공)·몇 학년 몇 학기 시간표인지를 선택해요.\n4. 시간표 한 줄 소개, 이렇게 짠 이유, 추천 수업을 적고 [시간표 등록하기]를 누르면 완료!\n[멘토 퀘스트 2] 멘티 질문에 답글 달기\n1. 멘티가 내 시간표에 질문(댓글)을 남기면 [내 시간표] 탭의 '답변을 기다리는 질문'에 표시돼요.\n2. 질문을 누르면 내 시간표가 열려요. 질문 아래 '↳ 답글 달기'를 누르고 답을 적어 [답글 등록]을 누르면 완료!\n(답글은 질문 아래 대댓글로 달려야 퀘스트로 인정돼요)\n\n■ 멘티(1학년) 미션하는 방법\n[멘티 퀘스트 1] 관심 있는 시간표에 ♥ 누르기\n1. 「11월 퀘스트」 → '선배 시간표 둘러보기'에서 단과대학·태그로 골라 보거나 좋아요순·댓글순·최신순으로 정렬해요.\n2. 마음에 드는 시간표 카드를 누르고 [♥ 좋아요]를 누르면 완료! (시간표마다 1번, 다시 누르면 취소)\n[멘티 퀘스트 2] 시간표에 궁금한 점 댓글 달기\n1. 시간표 카드를 누르고 맨 아래 댓글 칸에 선배에게 궁금한 점을 적어 [등록]을 누르면 완료!\n2. 선배가 답글을 달면 내 질문 아래에 '멘토 답변'으로 표시돼요.\n\n■ 시상 (총 20명 커피 쿠폰)\n· 멘토 5명: 봄날의햇살상 3명(받은 ♥ 최다), 댓글부자상 1명(받은 댓글 최다), 소통이남다르상 2명(가장 성실한 답글)\n· 멘티 15명: 한국인의정성상 10명(♥ 가장 많이 누른 멘티), 어쩜이렇게잘하상 5명(가장 좋은 질문·댓글)\n· ♥·댓글·답글 수는 자동으로 집계되고, 일부 상은 운영진·멘토 투표로 정해요.\n\n※ 시간표 사진의 학번·이름 등 개인정보는 가리고, 수업 추천은 좋았던 점만 적어 주세요.\n※ 참여 내용(시간표·♥·댓글·답글)은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.\n※ 참여 중 궁금한 점은 [운영진에게 건의] 게시판에 남겨 주세요.") + '</div>' +
       (closed ? '' : '<div class="notice-foot"><button type="button" class="notice-read-btn" data-goto="quest">11월 퀘스트 하러 가기 →</button></div>') +
     '</div>';
   }
@@ -3129,7 +3129,8 @@
     extStarted = true;
     try{
       d.collection("announcements").onSnapshot(function(snap){
-        announceDocs = snap.docs;
+        /* 지난 행사(PICNIC DAY) 공지는 학생 화면에서 내려요 — 데이터는 운영진 페이지에 그대로 남아 있어요 */
+        announceDocs = snap.docs.filter(function(d){ var n = d.data() || {}; return !/PICNIC\s*DAY|피크닉/i.test((n.label || "") + " " + (n.tag || "")); });
         renderAnnouncements();
         try{ maybePopup(snap.docs); }catch(e){}
       }, function(){});
@@ -3286,7 +3287,7 @@
     verify:"미션을 완료했다면 사진으로 인증해 주세요.",
     mypage:"나의 멘토링 기록과 내가 쓴 글을 한곳에서 모아 봐요.",
     program:"멘티를 위한 교육 프로그램, 계획부터 결과보고까지 한곳에서.",
-    quest:"멘토링 Mission Quest · 선배는 전공 시간표를 공개하고, 후배는 ♥와 질문으로 함께해요."
+    quest:"멘토링 Mission Quest · 멘토는 시간표를 공개하고, 멘티는 ♥와 질문으로 함께해요."
   };
   Object.keys(BN).forEach(function(k){
     var sec = document.getElementById("page-" + k); if(!sec) return;
