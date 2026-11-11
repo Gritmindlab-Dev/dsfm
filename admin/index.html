@@ -562,7 +562,9 @@
       var lc = function(x){ return (x.d.likedBy || []).length; };
       function topN(arr, n, val){ arr = arr.slice().sort(function(a, b){ return val(b) - val(a); }); if(!arr.length) return []; var cut = arr.length >= n ? val(arr[n - 1]) : val(arr[arr.length - 1]); return arr.filter(function(a){ return val(a) >= cut && val(a) > 0; }); }
       /* 멘토 답변 수 */
-      var ans = {}; cm.forEach(function(c){ if(c.d.role !== "멘토") return; var k = c.d.author + " (" + (c.d.teamName || c.d.team || "") + ")"; if(!inScope({college: c.d.college})) return; ans[k] = (ans[k] || 0) + 1; });
+      var ans = {}; cm.forEach(function(c){ if(c.d.role !== "멘토" || !c.d.replyTo) return;
+        var q = cm.filter(function(y){ return y.id === c.d.replyTo; })[0]; if(!q || q.d.role === "멘토") return;
+        var pp = S.photo_posts.filter(function(y){ return y.id === c.d.postId; })[0]; if(!pp || (pp.d.rosterId ? pp.d.rosterId !== c.d.rosterId : pp.d.author !== c.d.author)) return; var k = c.d.author + " (" + (c.d.teamName || c.d.team || "") + ")"; if(!inScope({college: c.d.college})) return; ans[k] = (ans[k] || 0) + 1; });
       var ansArr = Object.keys(ans).map(function(k){ return { k: k, n: ans[k] }; });
       /* 멘티 좋아요 누른 수 (이름__팀) */
       var giv = {}; allLive.forEach(function(x){ (x.d.likedBy || []).forEach(function(k){ giv[k] = (giv[k] || 0) + 1; }); });
@@ -581,7 +583,7 @@
         '<div style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="quest-csv">집계 CSV 내려받기</button></div>' +
         '<div class="adm-card"><div class="adm-card-title">🏆 봄날의햇살상 (멘토 3명) — 받은 ♥ 최다</div>' + table(["멘토","단과대·팀","한 줄 소개","♥"], topN(cur, 3, lc).map(function(x){ return '<tr>' + tl(x) + '<td><b>' + lc(x) + '</b></td></tr>'; })) + '</div>' +
         '<div class="adm-card"><div class="adm-card-title">🏆 댓글부자상 (멘토 1명) — 받은 댓글 최다</div>' + table(["멘토","단과대·팀","한 줄 소개","댓글"], topN(cur, 1, function(x){ return cOf(x.id).length; }).map(function(x){ return '<tr>' + tl(x) + '<td><b>' + cOf(x.id).length + '</b></td></tr>'; })) + '</div>' +
-        '<div class="adm-card"><div class="adm-card-title">🏆 소통이남다르상 (멘토 2명) — 답글 수 (운영진 최종 확정)</div>' + table(["멘토 (팀)","답글 수"], ansArr.sort(function(a, b){ return b.n - a.n; }).slice(0, 10).map(function(a){ return '<tr><td>' + esc(a.k) + '</td><td><b>' + a.n + '</b></td></tr>'; })) + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 소통이남다르상 (멘토 2명) — 내 시간표 멘티 질문에 단 답글 수 (운영진 최종 확정)</div>' + table(["멘토 (팀)","답글 수"], ansArr.sort(function(a, b){ return b.n - a.n; }).slice(0, 10).map(function(a){ return '<tr><td>' + esc(a.k) + '</td><td><b>' + a.n + '</b></td></tr>'; })) + '</div>' +
         '<div class="adm-card"><div class="adm-card-title">🏆 한국인의정성상 (멘티 10명) — ♥ 누른 수 최다</div>' + table(["멘티 (팀)","♥ 누른 수"], topN(givArr, 10, function(g){ return g.n; }).map(function(g){ return '<tr><td>' + esc(g.k) + '</td><td><b>' + g.n + '</b></td></tr>'; })) + '</div>' +
         '<div class="adm-card"><div class="adm-card-title">🏆 어쩜이렇게잘하상 (멘티 5명) — 운영진·멘토 투표용 멘티 질문·댓글 ' + menteeC.length + '개</div>' +
           '<div class="adm-list">' + (menteeC.length ? menteeC.sort(function(a, b){ return (b.d.ts || 0) - (a.d.ts || 0); }).map(function(c){
@@ -600,7 +602,7 @@
       viewQuest.csv = function(){
         var rows = [["구분","이름","단과대·팀","내용","수치"]];
         cur.forEach(function(x){ rows.push(["시간표", x.d.author || "", [x.d.college, x.d.teamName].filter(Boolean).join(" "), x.d.intro || "", "♥" + lc(x) + " / 댓글" + cOf(x.id).length]); });
-        ansArr.forEach(function(a){ rows.push(["멘토 답글", a.k, "", "", a.n]); });
+        ansArr.forEach(function(a){ rows.push(["멘토 답글(퀘스트2)", a.k, "", "", a.n]); });
         givArr.forEach(function(g){ rows.push(["멘티 ♥ 누른 수", g.k, g.team, "", g.n]); });
         menteeC.forEach(function(c){ rows.push(["멘티 댓글", c.d.author || "", c.d.teamName || c.d.team || "", c.d.text || "", ""]); });
         downloadCsv("11월퀘스트_집계.csv", rows);
