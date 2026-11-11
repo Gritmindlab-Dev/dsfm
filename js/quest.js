@@ -16,6 +16,8 @@
   var END   = new Date("2026-11-20T23:59:59+09:00").getTime();
   var PREVIEW = /[?&]quest=preview\b/.test(location.search);
   var COLLEGES = ["글로벌융합대학","아트앤디자인대학","과학기술대학","자유전공학부"];
+  var SEMS = ["1학년 1학기","1학년 2학기","2학년 1학기","2학년 2학기","3학년 1학기","3학년 2학기","4학년 1학기","4학년 2학기"];
+  function metaLine(p){ return [p.college, p.major, p.sem ? p.sem + " 시간표" : ""].filter(Boolean).join(" · "); }
   var TAGS = ["#공강요일","#1교시없음","#전공필수먼저","#실습많음","#복수전공","#부전공","#교직이수","#알바병행","#대외활동병행","#팀플많음"];
 
   var S = { me: null, posts: [], cmts: [], started: false, unsubP: null, unsubC: null,
@@ -252,7 +254,7 @@
   function previewCard(d){
     return '<div class="qx-card" style="cursor:default;max-width:260px">' +
       '<div class="qx-th" style="' + (d.thumb ? "background-image:url(" + d.thumb + ")" : "") + '">' + (d.thumb ? "" : '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink-soft)">시간표 사진</div>') + '</div>' +
-      '<div class="qx-cb"><div class="qx-cm">' + esc([d.college, d.major].filter(Boolean).join(" · ") || "단과대학 · 전공·학년") + '</div>' +
+      '<div class="qx-cb"><div class="qx-cm">' + esc(metaLine(d) || "단과대학 · 전공 · 몇 학년 몇 학기 시간표") + '</div>' +
       '<div class="qx-ci">' + esc(d.intro || "한 줄 소개가 여기에 보여요") + '</div>' +
       '<div class="qx-ca">' + esc(S.me.name) + ' 멘토</div>' +
       '<div class="qx-cf"><span>♥ 0</span><span>💬 0</span></div></div></div>';
@@ -264,12 +266,13 @@
     return '<div class="card qx-form" id="qx-form">' +
       '<div class="qx-col">' +
         '<label>시간표 사진 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">학번·이름 등 개인정보는 가리고 캡처해 주세요</span>' +
-          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>2학년 1학기 시간표 캡처 1장 올리기</b><span>에브리타임·포털 지난 학기 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
+          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>전공 시간표 캡처 1장 올리기</b><span>에브리타임·포털 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
           '<input type="file" id="qx-file" accept="image/*" style="display:none"></label>' +
         '<div class="qx-2">' +
           '<label>단과대학<select id="qx-college"><option value="">선택</option>' + COLLEGES.map(function(c){ return '<option' + (d.college === c ? " selected" : "") + '>' + c + '</option>'; }).join("") + '</select></label>' +
-          '<label>전공 · 학년<input type="text" id="qx-major" maxlength="30" placeholder="예) 경영학전공 · 3학년" value="' + esc(d.major || "") + '"></label>' +
+          '<label>전공<input type="text" id="qx-major" maxlength="30" placeholder="예) 경영학전공" value="' + esc(d.major || "") + '"></label>' +
         '</div>' +
+        '<label>몇 학년 몇 학기 시간표인가요?<select id="qx-sem"><option value="">선택</option>' + SEMS.map(function(x){ return '<option' + (d.sem === x ? " selected" : "") + '>' + x + '</option>'; }).join("") + '</select></label>' +
         '<label>시간표 한 줄 소개 <span class="qx-cnt" id="qx-intro-c">' + (d.intro || "").length + '/40</span><input type="text" id="qx-intro" maxlength="40" placeholder="예) 공강 금요일 사수! 마케팅 집중 시간표" value="' + esc(d.intro || "") + '"></label>' +
         '<label>이렇게 짠 이유 <span class="qx-cnt" id="qx-reason-c">' + (d.reason || "").length + '/400</span><textarea id="qx-reason" maxlength="400" placeholder="예) 전공필수를 먼저 채우고, 실습 수업은 오후로 몰았어요. 1학년 때 이런 걸 알았으면 좋았을 것 같아요!">' + esc(d.reason || "") + '</textarea></label>' +
         '<label>추천 수업 · 교수님 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">좋았던 점만 적어 주세요</span><textarea id="qx-rec" maxlength="300" placeholder="예) 마케팅원론 — 실제 사례 위주라 1학년이 듣기에도 좋아요. 과제 피드백이 꼼꼼해요.">' + esc(d.rec || "") + '</textarea></label>' +
@@ -282,7 +285,7 @@
         '</div><div class="qx-msg" id="qx-msg"></div>' +
       '</div>' +
       '<div class="qx-col">' +
-        '<div class="qx-guide"><b>✍️ 이렇게 올려 주세요</b><br>1. 본인이 <b>2학년 1학기</b> 때 들은 전공 시간표를 캡처해요<br><span style=\'color:var(--ink-soft)\'>　(에브리타임·포털의 지난 학기 시간표 · 없으면 가장 가까운 학기)</span><br>2. 학번·이름 등 <b>개인정보는 가려요</b><br>3. \'이렇게 짠 이유\'와 추천 수업을 적어요<br>4. 내 시간표에 달린 멘티 질문에 <b>답글</b>로 답해요 (멘토 퀘스트 2)</div>' +
+        '<div class="qx-guide"><b>✍️ 이렇게 올려 주세요</b><br>1. <b>보여주고 싶거나 자랑하고 싶은</b> 내 전공 시간표를 캡처해요 (학년·학기 상관없어요)<br>2. 학번·이름 등 <b>개인정보는 가려요</b><br>3. <b>몇 학년 몇 학기</b> 시간표인지 고르고, \'이렇게 짠 이유\'와 추천 수업을 적어요<br>4. 내 시간표에 달린 멘티 질문에 <b>답글</b>로 답해요 (멘토 퀘스트 2)</div>' +
         '<div class="qx-pv-label">멘티에게 보이는 모습</div><div id="qx-preview">' + previewCard(d) + '</div>' +
       '</div>' +
     '</div>';
@@ -336,7 +339,7 @@
       var p = x.p, liked = (p.likedBy || []).indexOf(me) >= 0, lc = likeCount(p);
       return '<div class="qx-card' + (ownerKey(p) === mk ? " mine" : "") + '" data-qx-open="' + esc(x.id) + '">' +
         '<div class="qx-th" style="background-image:url(' + (/^data:image\//.test(p.thumb || "") ? p.thumb : "") + ')"></div>' +
-        '<div class="qx-cb"><div class="qx-cm">' + esc([p.college, p.major].filter(Boolean).join(" · ")) + '</div>' +
+        '<div class="qx-cb"><div class="qx-cm">' + esc(metaLine(p)) + '</div>' +
         '<div class="qx-ci">' + esc(p.intro || "") + (lc && lc === maxLike ? '<span class="qx-best">BEST</span>' : '') + '</div>' +
         '<div class="qx-ca">' + esc(p.author || "멘토") + ' 멘토</div>' +
         '<div class="qx-cf"><span class="' + (liked ? "liked" : "") + '">♥ ' + lc + '</span><span>💬 ' + cc(x) + '</span></div></div></div>';
@@ -360,7 +363,7 @@
     S.pending = false;
     var all = latestPosts(), totalLikes = 0;
     all.forEach(function(x){ totalLikes += likeCount(x.p); });
-    var h = '<div class="qx-banner"><div><b>🗓️ 11월 퀘스트 · 선배 전공 시간표 공개</b><div class="qx-b-sub">선배의 2학년 1학기 시간표 · 기간 11. 12.(목) ~ 11. 20.(금) · ' + (isClosed() ? "마감됐어요 — 결과를 집계하고 있어요" : (now() < START ? "11/12(목) 오전 9시 오픈 (미리보기)" : "지금 참여할 수 있어요")) + '</div></div>' +
+    var h = '<div class="qx-banner"><div><b>🗓️ 11월 퀘스트 · 선배 전공 시간표 공개</b><div class="qx-b-sub">기간 11. 12.(목) ~ 11. 20.(금) · ' + (isClosed() ? "마감됐어요 — 결과를 집계하고 있어요" : (now() < START ? "11/12(목) 오전 9시 오픈 (미리보기)" : "지금 참여할 수 있어요")) + '</div></div>' +
       '<div class="qx-b-right">등록 시간표 <b>' + all.length + '</b>개<br>누적 ♥ <b>' + totalLikes + '</b>개</div></div>';
     h += questCards();
     if(isMentor()){
@@ -370,13 +373,13 @@
       if(S.mtab === "browse"){
         h += '<div class="qx-h">선배 전공 시간표 둘러보기 <small>다른 멘토의 시간표를 볼 수 있어요 (♥는 멘티만)</small></div>' + browseList();
       } else if(!mp || S.editing){
-        h += '<div class="qx-h">나의 2학년 1학기 시간표 등록 <small>' + (mp ? "다시 올리면 새 시간표로 바뀌고, 이전 시간표의 ♥·댓글은 옮겨지지 않아요" : "멘토 퀘스트 1") + '</small></div>' + mentorForm();
+        h += '<div class="qx-h">나의 전공 시간표 등록 <small>' + (mp ? "다시 올리면 새 시간표로 바뀌고, 이전 시간표의 ♥·댓글은 옮겨지지 않아요" : "멘토 퀘스트 1") + '</small></div>' + mentorForm();
       } else {
         h += '<div class="qx-h">내 시간표 현황 <small>멘토 퀘스트 2 — 내 시간표에 달린 멘티 질문에 답글을 달아 주세요</small></div>' + myPostBox(mp);
       }
     } else {
       h += '<div class="qx-h">내 참여 현황</div>' + menteeStatus();
-      h += '<div class="qx-h">선배 2학년 1학기 시간표 둘러보기 <small>카드를 눌러 ♥와 댓글을 남겨 보세요</small></div>';
+      h += '<div class="qx-h">선배 전공 시간표 둘러보기 <small>카드를 눌러 ♥와 댓글을 남겨 보세요</small></div>';
       h += browseList();
     }
     h += '<div class="qx-h">시상 안내 <small>총 20명 · 커피 쿠폰</small></div>' + awardsBox();
@@ -424,7 +427,7 @@
     var isOwnerMe = owner === myOwnerKey();
     var likeDisabled = isMentor() || !isOpen();
     m.innerHTML = '<div class="qx-sheet"><button type="button" class="qx-x" data-qx-close>×</button>' +
-      '<div class="qx-dm">' + esc([p.college, p.major].filter(Boolean).join(" · ")) + '</div>' +
+      '<div class="qx-dm">' + esc(metaLine(p)) + '</div>' +
       '<div class="qx-dt">' + esc(p.intro || "") + '</div>' +
       '<div class="qx-da">' + esc(p.author || "멘토") + ' 멘토' + (p.teamName ? " · " + esc(p.teamName) : "") + ' · ' + ago(p.ts) + '</div>' +
       '<div class="qx-dimg" id="qx-dimg">' + (full ? '<img src="' + full + '" data-pz="qx_' + esc(x.id) + '" alt="시간표">' : (p.thumb ? '<img src="' + p.thumb + '" alt="시간표" style="filter:blur(1px);opacity:.7">' : "시간표 사진을 불러오는 중…")) + '</div>' +
@@ -485,7 +488,7 @@
   function readForm(){
     var d = S.draft;
     var g = function(id){ var el = $(id); return el ? el.value.trim() : ""; };
-    d.college = g("qx-college"); d.major = g("qx-major"); d.intro = g("qx-intro"); d.reason = g("qx-reason"); d.rec = g("qx-rec");
+    d.college = g("qx-college"); d.major = g("qx-major"); d.sem = g("qx-sem"); d.intro = g("qx-intro"); d.reason = g("qx-reason"); d.rec = g("qx-rec");
     var ag = $("qx-agree"); d.agree = !!(ag && ag.checked);
   }
   function submit(){
@@ -495,7 +498,8 @@
     if(!isOpen()) return fail("퀘스트 기간이 아니에요.");
     if(!d.full) return fail("시간표 사진을 올려 주세요.");
     if(!d.college) return fail("단과대학을 선택해 주세요.");
-    if(!d.major) return fail("전공·학년을 적어 주세요.");
+    if(!d.major) return fail("전공을 적어 주세요.");
+    if(!d.sem) return fail("몇 학년 몇 학기 시간표인지 골라 주세요.");
     if(!d.intro) return fail("시간표 한 줄 소개를 적어 주세요.");
     if(!d.reason) return fail("'이렇게 짠 이유'를 적어 주세요.");
     if(!d.agree) return fail("개인정보 가림·공개 동의에 체크해 주세요.");
@@ -504,7 +508,7 @@
     var base = { author: S.me.name || "멘토", rosterId: S.me.rosterId || "", role: "멘토", college: d.college, myCollege: S.me.college || "", team: S.me.team || "", teamName: S.me.teamName || "", ts: Date.now() };
     var col = db.collection("photo_posts");
     col.add(Object.assign({ type: "quest_tt_img", image: d.full }, base)).then(function(ref){
-      return col.add(Object.assign({ type: "quest_tt", imgId: ref.id, thumb: d.thumb, major: d.major, intro: d.intro, reason: d.reason, rec: d.rec, tags: d.tags.slice(0, 3), likedBy: [], agree: true }, base));
+      return col.add(Object.assign({ type: "quest_tt", imgId: ref.id, thumb: d.thumb, major: d.major, sem: d.sem, intro: d.intro, reason: d.reason, rec: d.rec, tags: d.tags.slice(0, 3), likedBy: [], agree: true }, base));
     }).then(function(){
       S.imgCache = S.imgCache || {};
       S.draft = { tags: [] }; S.editing = false;
@@ -552,7 +556,7 @@
     });
     body.addEventListener("change", function(e){
       if(e.target.id === "qx-file"){ onPick(e.target.files && e.target.files[0]); e.target.value = ""; }
-      if(e.target.id === "qx-college"){ readForm(); updatePreview(); }
+      if(e.target.id === "qx-college" || e.target.id === "qx-sem"){ readForm(); updatePreview(); }
     });
     body.addEventListener("input", function(e){
       if(!e.target.closest("#qx-form")) return;
