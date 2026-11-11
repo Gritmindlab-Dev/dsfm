@@ -55,6 +55,9 @@
     ".qx-q .qx-qn{font-size:11px;font-weight:800;color:var(--wine);letter-spacing:.04em}",
     ".qx-q .qx-qt{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px}",
     ".qx-q .qx-qs{font-size:12px;color:var(--ink-soft);margin-top:2px}",
+    ".qx-tabs{display:flex;gap:6px;margin-top:22px;border-bottom:2px solid var(--line)}",
+    ".qx-tabs button{border:0;background:none;padding:10px 16px;font-size:14.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:6px}",
+    ".qx-tabs button.on{color:var(--wine-deep);border-bottom-color:var(--wine)}",
     ".qx-h{font-size:16px;font-weight:800;color:var(--wine-deep);margin:26px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
     ".qx-h small{font-size:12px;font-weight:500;color:var(--ink-soft)}",
     ".qx-form{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;padding:20px}",
@@ -179,6 +182,17 @@
     Object.keys(counts).forEach(function(k){ if(counts[k] > mine) higher++; });
     return higher + 1;
   }
+  /* 멘토 퀘스트 2: 내 시간표에 달린 멘티 질문에 단 답글 */
+  function myAnswers(){
+    var mp = myPost(); if(!mp) return [];
+    var cs = cmtsOf(mp.id);
+    return cs.filter(function(c){
+      if(c.c.role !== "멘토" || !c.c.replyTo) return false;
+      if(c.c.rosterId ? c.c.rosterId !== S.me.rosterId : c.c.author !== S.me.name) return false;
+      var q = cs.filter(function(x){ return x.id === c.c.replyTo; })[0];
+      return !!(q && q.c.role !== "멘토");
+    });
+  }
   /* 내 시간표에 달린 멘티 질문 중 아직 멘토 답글이 없는 것 */
   function waitingQuestions(post){
     if(!post) return [];
@@ -218,10 +232,10 @@
     var mp = myPost();
     var items;
     if(isMentor()){
-      var ans = myComments().filter(function(c){ return c.c.role === "멘토"; }).length;
+      var ans = myAnswers().length;
       items = [
         { n: "멘토 퀘스트 1", t: "시간표 캡처 업로드", s: mp ? "등록 완료 · ♥ " + likeCount(mp.p) + " · 💬 " + cmtsOf(mp.id).length : "개인정보를 가리고 전공 시간표를 올려 주세요", done: !!mp },
-        { n: "멘토 퀘스트 2", t: "멘티 질문에 답글 달기", s: ans ? "답글 " + ans + "개 작성" + (mp && waitingQuestions(mp).length ? " · 답변 대기 " + waitingQuestions(mp).length + "개" : "") : "내 시간표에 달린 질문에 '답글'을 눌러 답해 주세요", done: ans > 0 }
+        { n: "멘토 퀘스트 2", t: "멘티 질문에 답글 달기", s: ans ? "답글 " + ans + "개 작성" + (mp && waitingQuestions(mp).length ? " · 답변 대기 " + waitingQuestions(mp).length + "개" : "") : (mp ? "내 시간표에 달린 멘티 질문에 '답글 달기'로 답해 주세요" : "시간표를 등록하면 멘티 질문에 답글을 달 수 있어요"), done: ans > 0 }
       ];
     } else {
       var lk = myLikesGiven(), cm = myComments().length;
@@ -250,7 +264,7 @@
     return '<div class="card qx-form" id="qx-form">' +
       '<div class="qx-col">' +
         '<label>시간표 사진 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">학번·이름 등 개인정보는 가리고 캡처해 주세요</span>' +
-          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>시간표 캡처 사진 1장 올리기</b><span>에브리타임·포털 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
+          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>2학년 1학기 시간표 캡처 1장 올리기</b><span>에브리타임·포털 지난 학기 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
           '<input type="file" id="qx-file" accept="image/*" style="display:none"></label>' +
         '<div class="qx-2">' +
           '<label>단과대학<select id="qx-college"><option value="">선택</option>' + COLLEGES.map(function(c){ return '<option' + (d.college === c ? " selected" : "") + '>' + c + '</option>'; }).join("") + '</select></label>' +
@@ -268,7 +282,7 @@
         '</div><div class="qx-msg" id="qx-msg"></div>' +
       '</div>' +
       '<div class="qx-col">' +
-        '<div class="qx-guide"><b>✍️ 이렇게 올려 주세요</b><br>1. 지난 학기 또는 이번 학기 <b>전공 시간표</b>를 캡처해요<br>2. 학번·이름 등 <b>개인정보는 가려요</b><br>3. \'이렇게 짠 이유\'와 추천 수업을 적어요<br>4. 등록 후 멘티 질문에 <b>답글</b>로 답해요 (멘토 퀘스트 2)</div>' +
+        '<div class="qx-guide"><b>✍️ 이렇게 올려 주세요</b><br>1. 본인이 <b>2학년 1학기</b> 때 들은 전공 시간표를 캡처해요<br><span style=\'color:var(--ink-soft)\'>　(에브리타임·포털의 지난 학기 시간표 · 없으면 가장 가까운 학기)</span><br>2. 학번·이름 등 <b>개인정보는 가려요</b><br>3. \'이렇게 짠 이유\'와 추천 수업을 적어요<br>4. 내 시간표에 달린 멘티 질문에 <b>답글</b>로 답해요 (멘토 퀘스트 2)</div>' +
         '<div class="qx-pv-label">멘티에게 보이는 모습</div><div id="qx-preview">' + previewCard(d) + '</div>' +
       '</div>' +
     '</div>';
@@ -279,7 +293,7 @@
     return '<div class="qx-stats">' +
         '<div class="qx-stat"><div class="l">내 시간표가 받은 ♥</div><div class="v">' + likeCount(mp.p) + '<small>개</small></div></div>' +
         '<div class="qx-stat"><div class="l">내 시간표 댓글</div><div class="v">' + cmtsOf(mp.id).length + '<small>개</small></div></div>' +
-        '<div class="qx-stat"><div class="l">내가 단 답글</div><div class="v">' + myComments().filter(function(c){ return c.c.role === "멘토"; }).length + '<small>개</small></div></div>' +
+        '<div class="qx-stat"><div class="l">내가 단 답글 (퀘스트 2)</div><div class="v">' + myAnswers().length + '<small>개</small></div></div>' +
       '</div>' +
       '<div class="qx-wait"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:13.5px;color:var(--wine-deep)">답변을 기다리는 질문</b><span class="qx-badge wait">' + wq.length + '개</span>' +
         '<span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="qx-btn ghost" style="padding:7px 12px;font-size:12.5px" data-qx-open="' + esc(mp.id) + '">내 시간표 보기</button>' +
@@ -346,22 +360,25 @@
     S.pending = false;
     var all = latestPosts(), totalLikes = 0;
     all.forEach(function(x){ totalLikes += likeCount(x.p); });
-    var h = '<div class="qx-banner"><div><b>🗓️ 11월 퀘스트 · 선배 전공 시간표 공개</b><div class="qx-b-sub">기간 11. 12.(목) ~ 11. 20.(금) · ' + (isClosed() ? "마감됐어요 — 결과를 집계하고 있어요" : (now() < START ? "11/12(목) 오전 9시 오픈 (미리보기)" : "지금 참여할 수 있어요")) + '</div></div>' +
+    var h = '<div class="qx-banner"><div><b>🗓️ 11월 퀘스트 · 선배 전공 시간표 공개</b><div class="qx-b-sub">선배의 2학년 1학기 시간표 · 기간 11. 12.(목) ~ 11. 20.(금) · ' + (isClosed() ? "마감됐어요 — 결과를 집계하고 있어요" : (now() < START ? "11/12(목) 오전 9시 오픈 (미리보기)" : "지금 참여할 수 있어요")) + '</div></div>' +
       '<div class="qx-b-right">등록 시간표 <b>' + all.length + '</b>개<br>누적 ♥ <b>' + totalLikes + '</b>개</div></div>';
     h += questCards();
     if(isMentor()){
-      var mp = myPost();
-      if(!mp || S.editing){
-        h += '<div class="qx-h">① 나의 전공 시간표 등록 <small>' + (mp ? "다시 올리면 새 시간표로 바뀌고, 이전 시간표의 ♥·댓글은 새 시간표로 옮겨지지 않아요" : "멘토 퀘스트 1") + '</small></div>' + mentorForm();
+      var mp = myPost(), wq = mp ? waitingQuestions(mp).length : 0;
+      h += '<div class="qx-tabs"><button type="button" class="' + (S.mtab !== "browse" ? "on" : "") + '" data-qx-mtab="mine">내 시간표' + (wq ? ' <span class="qx-badge wait">질문 ' + wq + '</span>' : '') + '</button>' +
+        '<button type="button" class="' + (S.mtab === "browse" ? "on" : "") + '" data-qx-mtab="browse">선배 시간표 둘러보기</button></div>';
+      if(S.mtab === "browse"){
+        h += '<div class="qx-h">선배 전공 시간표 둘러보기 <small>다른 멘토의 시간표를 볼 수 있어요 (♥는 멘티만)</small></div>' + browseList();
+      } else if(!mp || S.editing){
+        h += '<div class="qx-h">나의 2학년 1학기 시간표 등록 <small>' + (mp ? "다시 올리면 새 시간표로 바뀌고, 이전 시간표의 ♥·댓글은 옮겨지지 않아요" : "멘토 퀘스트 1") + '</small></div>' + mentorForm();
       } else {
-        h += '<div class="qx-h">① 내 시간표 현황 <small>멘토 퀘스트 2 — 질문에 답글을 달아 주세요</small></div>' + myPostBox(mp);
+        h += '<div class="qx-h">내 시간표 현황 <small>멘토 퀘스트 2 — 내 시간표에 달린 멘티 질문에 답글을 달아 주세요</small></div>' + myPostBox(mp);
       }
-      h += '<div class="qx-h">② 선배 전공 시간표 둘러보기 <small>다른 멘토의 시간표도 볼 수 있어요</small></div>';
     } else {
       h += '<div class="qx-h">내 참여 현황</div>' + menteeStatus();
-      h += '<div class="qx-h">선배 전공 시간표 둘러보기 <small>카드를 눌러 ♥와 댓글을 남겨 보세요</small></div>';
+      h += '<div class="qx-h">선배 2학년 1학기 시간표 둘러보기 <small>카드를 눌러 ♥와 댓글을 남겨 보세요</small></div>';
+      h += browseList();
     }
-    h += browseList();
     h += '<div class="qx-h">시상 안내 <small>총 20명 · 커피 쿠폰</small></div>' + awardsBox();
     body.innerHTML = h;
     if(S.openId) renderDetail();
@@ -391,7 +408,7 @@
     var cs = cmtsOf(x.id).sort(function(a, b){ return (a.c.ts || 0) - (b.c.ts || 0); });
     var top = cs.filter(function(c){ return !c.c.replyTo || !cs.some(function(y){ return y.id === c.c.replyTo; }); });
     var owner = ownerKey(p);
-    var canAnswer = isMentor() && isOpen();
+    var canAnswer = isMentor() && isOpen() && ownerKey(p) === myOwnerKey();
     function cHtml(c, isRep){
       var cc = c.c, mentor = cc.role === "멘토", isOwner = mentor && ((cc.rosterId && cc.rosterId === p.rosterId) || (!cc.rosterId && cc.author === p.author));
       return '<div class="qx-c' + (isRep ? " rep" : "") + '"><div class="who">' + esc(cc.author || "참여자") +
@@ -519,6 +536,7 @@
     body.addEventListener("click", function(e){
       var t;
       if((t = e.target.closest("[data-qx-open]"))){ S.openId = t.getAttribute("data-qx-open"); S.replyTo = null; renderDetail(); return; }
+      if((t = e.target.closest("[data-qx-mtab]"))){ S.mtab = t.getAttribute("data-qx-mtab"); render(); return; }
       if((t = e.target.closest("[data-qx-college]"))){ S.college = t.getAttribute("data-qx-college"); render(); return; }
       if((t = e.target.closest("[data-qx-tag]"))){ var tg = t.getAttribute("data-qx-tag"); S.tag = S.tag === tg ? "" : tg; render(); return; }
       if((t = e.target.closest("[data-qx-sort]"))){ S.sort = t.getAttribute("data-qx-sort"); render(); return; }
