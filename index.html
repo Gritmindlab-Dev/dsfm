@@ -1373,6 +1373,7 @@
     if(pageName === "verify" || pageName === "mypage" || (pageName === "team" && state.role === "멘토")) watchVerify();
     if(pageName === "mypage") renderMyPage();
     if(pageName === "program") watchPrograms();
+    if(pageName === "quest" && window.DSFMQuest) window.DSFMQuest.open();
   }
   document.getElementById("rail-nav").addEventListener("click", function(e){
     var btn = e.target.closest("button[data-page]");
@@ -1408,7 +1409,9 @@
   /* ---------- 일정 캘린더 (db-backed) ---------- */
   var calView = { year: (new Date()).getFullYear(), month: (new Date()).getMonth() };
   /* 운영진 고정 일정 — 다가오는 일정·달력에 항상 보여요 */
-  var FIXED_EVENTS = [ { date: "2026-10-29", title: "PICNIC DAY 피크닉데이 (10:00~16:00 · 영근터)", college: "전체", fixed: true } ];
+  var FIXED_EVENTS = [ { date: "2026-10-29", title: "PICNIC DAY 피크닉데이 (10:00~16:00 · 영근터)", college: "전체", fixed: true },
+    { date: "2026-11-12", title: "11월 퀘스트 시작 (오전 9시 · 선배 2학년 1학기 시간표 공개)", college: "전체", fixed: true },
+    { date: "2026-11-20", title: "11월 퀘스트 마감 (23:59 · 시간표 등록·♥·댓글)", college: "전체", fixed: true } ];
   function withFixedEvents(list){
     var extra = FIXED_EVENTS.filter(function(f){ return !list.some(function(e){ return e.date === f.date && /피크닉|PICNIC/i.test(e.title || ""); }); });
     return list.concat(extra);
@@ -1929,7 +1932,8 @@
             '<span class="mission-bar"><span style="width:' + Math.round(Math.min(n, total) / total * 100) + '%"></span></span></div>';
         }
         var go = m.action === "poll" ? '<button type="button" class="mission-go" data-goto="announce">투표하러 가기 →</button>' :
-                 m.action === "verify" ? '<button type="button" class="mission-go" data-goto="verify">인증하러 가기 →</button>' : '';
+                 m.action === "verify" ? '<button type="button" class="mission-go" data-goto="verify">인증하러 가기 →</button>' :
+                 (m.action === "quest" && started) ? '<button type="button" class="mission-go" data-goto="quest">퀘스트 하러 가기 →</button>' : '';
         return '<div class="card mission-card">' +
           '<div class="mission-top">' + (m.tag ? '<span class="vote-tag">' + esc(m.tag) + '</span>' : '') + status + '</div>' +
           '<div class="vote-title">' + esc(m.title || "") + '</div>' +
@@ -1945,6 +1949,13 @@
     if(!db) return;
     db.collection("missions").onSnapshot(function(snap){
       missionsCache = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+      /* 11월 퀘스트는 사이트에 기본으로 들어있는 미션 (운영진이 같은 달에 '퀘스트 하러 가기' 미션을 올리면 그걸 대신 보여줘요) */
+      if(!missionsCache.some(function(m){ return m.month === "2026-11" && m.action === "quest"; })) missionsCache.push({
+        id: "builtin-quest11", month: "2026-11", tag: "11월 퀘스트", order: -1, college: "전체", action: "quest",
+        title: "선배 2학년 1학기 시간표 공개 「MY MAJOR TIMETABLE」",
+        desc: "멘토 ① 본인의 2학년 1학기 전공 시간표 캡처 업로드\n멘토 ② 내 시간표에 달린 멘티 질문에 답글 달기\n멘티 ① 관심 있는 선배 시간표에 ♥ 누르기\n멘티 ② 시간표에 궁금한 점 댓글 달기",
+        startAt: new Date("2026-11-12T09:00:00+09:00").getTime(), endAt: new Date("2026-11-20T23:59:00+09:00").getTime(),
+        reward: "총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)", howto: "공유공간 「11월 퀘스트」 메뉴에서 참여" });
       renderMissions();
     }, function(){ var el = document.getElementById("mission-list"); if(el) el.innerHTML = '<div class="offline-note">미션을 불러오지 못했어요. 새로고침해 주세요.</div>'; });
     var tabs = document.getElementById("mission-tabs");
@@ -3024,12 +3035,23 @@
       (p.reply ? '<div class="sug-reply"><b>운영진 답변</b>' + esc(p.reply) + '</div>' : "") + '</div>';
   }
 
+  /* 11월 미션(11월 퀘스트) 오픈 공지 — 11/12 09:00부터 공지 맨 위에 고정 (미리보기 주소에서는 바로 보여요) */
+  function questNoticeHtml(){
+    var t = Date.now(), open = new Date("2026-11-12T09:00:00+09:00").getTime(), end = new Date("2026-11-30T23:59:59+09:00").getTime();
+    if(!(/[?&]quest=preview\b/.test(location.search) || (t >= open && t <= end))) return "";
+    var closed = t > new Date("2026-11-20T23:59:59+09:00").getTime();
+    return '<div class="notice-item pinned">' +
+      '<div class="notice-top"><span class="notice-pin">📌 고정</span><span class="notice-tag">11월 미션</span><span class="notice-label">' + (closed ? "11월 퀘스트 마감 — 결과 집계 중이에요" : "11월 퀘스트 「선배 2학년 1학기 시간표 공개」 오픈!") + '</span></div>' +
+      '<div class="notice-detail" style="white-space:pre-wrap">' + esc("11월 미션은 온라인 퀘스트로 진행돼요. 왼쪽 메뉴 「11월 퀘스트」에서 참여해 주세요.\n\n· 기간: 11/12(목) 오전 9시 ~ 11/20(금) 23:59\n· 멘토: ① 본인의 2학년 1학기 전공 시간표 캡처 업로드 ② 내 시간표에 달린 멘티 질문에 답글 달기\n· 멘티: ① 관심 있는 선배 시간표에 ♥ 누르기 ② 시간표에 궁금한 점 댓글 달기\n· 시상: 총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)\n\n※ 시간표 사진의 학번·이름 등 개인정보는 가리고, 수업 추천은 좋았던 점만 적어 주세요.") + '</div>' +
+      (closed ? '' : '<div class="notice-foot"><button type="button" class="notice-read-btn" data-goto="quest">11월 퀘스트 하러 가기 →</button></div>') +
+    '</div>';
+  }
   function renderAnnouncements(){
     var el = document.getElementById("announce-list");
     var sub = document.getElementById("announce-updated");
     var visibleCount = (announceDocs || []).filter(function(d){ return collegeVisible(d.data() || {}); }).length;
     if(!announceDocs || !visibleCount){
-      el.innerHTML = defaultAnnounceHtml;
+      el.innerHTML = questNoticeHtml() + defaultAnnounceHtml;
       sub.textContent = defaultAnnounceSub;
       return;
     }
@@ -3040,7 +3062,7 @@
       return (b.n.createdAt || 0) - (a.n.createdAt || 0);
     });
     sub.textContent = "운영진이 올린 공지 " + list.length + "개";
-    el.innerHTML = list.map(function(x){
+    el.innerHTML = questNoticeHtml() + list.map(function(x){
       var n = x.n, reads = n.readBy || [], read = reads.indexOf(me) >= 0;
       return '<div class="notice-item' + (n.pinned ? " pinned" : "") + '" data-aid="' + esc(x.id) + '">' +
         '<div class="notice-top">' + (n.pinned ? '<span class="notice-pin">📌 고정</span>' : "") +
