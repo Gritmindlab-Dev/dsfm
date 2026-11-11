@@ -831,6 +831,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           공지사항
         </button>
+        <button data-page="quest" id="nav-quest" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h3M13 14h3M8 18h3"/></svg>
+          11월 퀘스트<span class="qx-new">NEW</span>
+        </button>
         <button data-page="mission" id="nav-mission">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>
           월별 미션
@@ -931,6 +935,10 @@
         </section>
 
         <!-- 자유게시판 -->
+        <section id="page-quest" class="page" style="display:none">
+          <div class="page-eyebrow">11월 퀘스트 · 11.12 ~ 11.20</div>
+          <h2 class="page-title">선배 전공 시간표 공개</h2>
+        </section>
         <section id="page-mission" class="page" style="display:none">
           <div class="page-eyebrow">MONTHLY MISSION</div>
           <h2 class="page-title">월별 미션</h2>
@@ -3129,6 +3137,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="js/picnic.js?v=20261028i"></script>
+<script src="js/quest.js?v=20261111a"></script>
 <script>
 /* 사진 크게 보기 (여러 장이면 넘겨보기) */
 (function(){
@@ -3244,7 +3253,7 @@
     if(d && d.style.display === "block"){ refreshStats(); if(window.DSFM) loadRecentPhotos(); }
   }, 1500);
   var BN = { announce:"bn_home", mission:"bn_mission", notice:"bn_notice", suggest:"bn_suggest", schedule:"bn_schedule",
-             photo:"bn_photo", team:"bn_team", verify:"bn_verify", mypage:"bn_mypage", program:"bn_schedule" };
+             photo:"bn_photo", team:"bn_team", verify:"bn_verify", mypage:"bn_mypage", program:"bn_schedule", quest:"bn_mission" };
   var TAG = {
     mission:"이달의 미션을 팀과 함께 하나씩 완성해 가요.",
     notice:"멘토·멘티만 보는 공간이에요. 오늘의 이야기를 편하게 남겨 주세요.",
@@ -3254,7 +3263,8 @@
     team:"우리 팀원끼리만 보는 이야기 공간이에요.",
     verify:"미션을 완료했다면 사진으로 인증해 주세요.",
     mypage:"나의 멘토링 기록과 내가 쓴 글을 한곳에서 모아 봐요.",
-    program:"멘티를 위한 교육 프로그램, 계획부터 결과보고까지 한곳에서."
+    program:"멘티를 위한 교육 프로그램, 계획부터 결과보고까지 한곳에서.",
+    quest:"「MY MAJOR TIMETABLE」 선배의 진짜 전공 시간표와 \'왜 이렇게 짰는지\'를 만나 보세요."
   };
   Object.keys(BN).forEach(function(k){
     var sec = document.getElementById("page-" + k); if(!sec) return;
