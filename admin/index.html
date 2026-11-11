@@ -233,6 +233,7 @@
     {key:"verify",  label:"인증 승인"},
     {key:"suggest", label:"건의함"},
     {key:"program", label:"멘토 프로그램"},
+    {key:"quest",   label:"11월 퀘스트"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"투표"},
     {key:"missions",label:"월별 미션"},
@@ -240,7 +241,7 @@
     {key:"accounts",label:"운영진 계정", masterOnly:true},
     {key:"logs",    label:"로그인 기록", masterOnly:true}
   ];
-  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","polls","poll_votes","missions","team_roster","login_keys"];
+  var COLLS = ["announcements","sched_events","verify_posts","suggestion_posts","private_posts","photo_posts","team_posts","polls","poll_votes","missions","team_roster","login_keys","photo_comments"];
   var DEFAULT_COLLEGES = ["글로벌융합대학","아트앤디자인대학","과학기술대학","자유전공학부"];
   function keyFor(name, pin){
     var text = "dsfm|" + String(name).replace(/\s+/g, "") + "|" + String(pin).replace(/\D/g, "");
@@ -345,7 +346,7 @@
           stat("suggest", "새 건의", c.suggest, "건", c.suggest > 0) +
           stat("vote", "진행 중인 투표", openPolls, "개", false, "참여 " + Object.keys(voters).length + "명") +
           stat("posts", "자유게시판 글", scoped("private_posts").length, "개") +
-          stat("posts", "사진 게시판", scoped("photo_posts").length, "개") +
+          stat("posts", "사진 게시판", scoped("photo_posts").filter(function(x){ return !/^quest_/.test(x.d.type || ""); }).length, "개") +
           stat("roster", "명단 인원", scoped("team_roster").length, "명") +
         '</div>' +
         dashPolls() +
@@ -547,9 +548,68 @@
         }).join("") : '<div class="adm-empty">아직 제출된 계획서가 없어요.</div>') + '</div>';
     }
 
+    /* ---------- 11월 퀘스트 (선배 전공 시간표 공개) 집계 ---------- */
+    function viewQuest(){
+      var posts = S.photo_posts.filter(function(x){ return x.d.type === "quest_tt" && inScope(x.d); });
+      /* 같은 멘토가 다시 올리면 최신 것만 */
+      var by = {};
+      S.photo_posts.forEach(function(x){ if(x.d.type !== "quest_tt") return; var k = x.d.rosterId || (x.d.author + "__" + x.d.team); if(!by[k] || (x.d.ts || 0) > (by[k].d.ts || 0)) by[k] = x; });
+      var live = {}; Object.keys(by).forEach(function(k){ live[by[k].id] = 1; });
+      var cur = posts.filter(function(x){ return live[x.id]; });
+      var allLive = Object.keys(by).map(function(k){ return by[k]; });
+      var cm = S.photo_comments.filter(function(c){ return c.d.kind === "quest" && live[c.d.postId]; });
+      var cOf = function(id){ return cm.filter(function(c){ return c.d.postId === id; }); };
+      var lc = function(x){ return (x.d.likedBy || []).length; };
+      function topN(arr, n, val){ arr = arr.slice().sort(function(a, b){ return val(b) - val(a); }); if(!arr.length) return []; var cut = arr.length >= n ? val(arr[n - 1]) : val(arr[arr.length - 1]); return arr.filter(function(a){ return val(a) >= cut && val(a) > 0; }); }
+      /* 멘토 답변 수 */
+      var ans = {}; cm.forEach(function(c){ if(c.d.role !== "멘토") return; var k = c.d.author + " (" + (c.d.teamName || c.d.team || "") + ")"; if(!inScope({college: c.d.college})) return; ans[k] = (ans[k] || 0) + 1; });
+      var ansArr = Object.keys(ans).map(function(k){ return { k: k, n: ans[k] }; });
+      /* 멘티 좋아요 누른 수 (이름__팀) */
+      var giv = {}; allLive.forEach(function(x){ (x.d.likedBy || []).forEach(function(k){ giv[k] = (giv[k] || 0) + 1; }); });
+      var givArr = Object.keys(giv).map(function(k){ var p = k.split("__"); return { k: p[0] + " (" + (p[1] || "") + ")", team: p[1] || "", n: giv[k] }; }).filter(function(g){ return isSuper && collegeFilter === "전체" ? true : g.team.indexOf(isSuper ? collegeFilter : myCollege) === 0; });
+      var menteeC = cm.filter(function(c){ return c.d.role !== "멘토" && inScope({college: c.d.college}); });
+      function table(head, rows){ return '<div class="adm-table-wrap"><table class="adm-table"><thead><tr>' + head.map(function(h){ return '<th>' + h + '</th>'; }).join("") + '</tr></thead><tbody>' + (rows.length ? rows.join("") : '<tr><td colspan="' + head.length + '" style="text-align:center;color:var(--ink-soft)">아직 없어요</td></tr>') + '</tbody></table></div>'; }
+      var tl = function(x){ return '<td>' + esc(x.d.author || "") + '</td><td>' + esc([x.d.college, x.d.teamName].filter(Boolean).join(" ")) + '</td><td>' + esc(x.d.intro || "") + '</td>'; };
+      var h = '<h2 class="adm-h">11월 퀘스트 · 선배 전공 시간표 공개</h2>' +
+        '<p class="adm-desc">기간 11/12(목) 09:00 ~ 11/20(금) 23:59. 멘토는 시간표 등록·질문 답글, 멘티는 ♥·댓글로 참여해요. 순위는 실시간 자동 집계이며, 동점자는 모두 표시돼요. 같은 멘토가 다시 올린 경우 최신 시간표만 집계해요.</p>' +
+        '<div class="adm-stats">' +
+          stat("quest", "등록 시간표", cur.length, "개") +
+          stat("quest", "누적 ♥", cur.reduce(function(a, x){ return a + lc(x); }, 0), "개") +
+          stat("quest", "댓글·답글", cm.filter(function(c){ return inScope({college: c.d.college}); }).length, "개") +
+          stat("quest", "참여 멘티(♥)", givArr.length, "명") +
+        '</div>' +
+        '<div style="margin-top:12px"><button class="adm-btn ghost small" type="button" data-adm="quest-csv">집계 CSV 내려받기</button></div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 봄날의햇살상 (멘토 3명) — 받은 ♥ 최다</div>' + table(["멘토","단과대·팀","한 줄 소개","♥"], topN(cur, 3, lc).map(function(x){ return '<tr>' + tl(x) + '<td><b>' + lc(x) + '</b></td></tr>'; })) + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 댓글부자상 (멘토 1명) — 받은 댓글 최다</div>' + table(["멘토","단과대·팀","한 줄 소개","댓글"], topN(cur, 1, function(x){ return cOf(x.id).length; }).map(function(x){ return '<tr>' + tl(x) + '<td><b>' + cOf(x.id).length + '</b></td></tr>'; })) + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 소통이남다르상 (멘토 2명) — 답글 수 (운영진 최종 확정)</div>' + table(["멘토 (팀)","답글 수"], ansArr.sort(function(a, b){ return b.n - a.n; }).slice(0, 10).map(function(a){ return '<tr><td>' + esc(a.k) + '</td><td><b>' + a.n + '</b></td></tr>'; })) + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 한국인의정성상 (멘티 10명) — ♥ 누른 수 최다</div>' + table(["멘티 (팀)","♥ 누른 수"], topN(givArr, 10, function(g){ return g.n; }).map(function(g){ return '<tr><td>' + esc(g.k) + '</td><td><b>' + g.n + '</b></td></tr>'; })) + '</div>' +
+        '<div class="adm-card"><div class="adm-card-title">🏆 어쩜이렇게잘하상 (멘티 5명) — 운영진·멘토 투표용 멘티 질문·댓글 ' + menteeC.length + '개</div>' +
+          '<div class="adm-list">' + (menteeC.length ? menteeC.sort(function(a, b){ return (b.d.ts || 0) - (a.d.ts || 0); }).map(function(c){
+            var pp = S.photo_posts.filter(function(x){ return x.id === c.d.postId; })[0];
+            return '<div class="adm-item"><div class="adm-item-meta" style="margin:0">' + esc(c.d.author || "") + ' · ' + esc(c.d.teamName || c.d.team || "") + ' · ' + fmtTime(c.d.ts) + (pp ? ' · → ' + esc(pp.d.author || "") + ' 멘토 시간표' : '') + '</div><div class="adm-item-text">' + esc(c.d.text || "") + '</div></div>';
+          }).join("") : '<div class="adm-empty">아직 없어요.</div>') + '</div></div>' +
+        '<div class="adm-card"><div class="adm-card-title">등록된 시간표 ' + cur.length + '개 (부적절한 시간표는 삭제)</div><div class="adm-list">' + cur.sort(function(a, b){ return lc(b) - lc(a); }).map(function(x){
+            var p = x.d; (window.__PZ = window.__PZ || {})["q_" + x.id] = [p.thumb];
+            return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;gap:12px;align-items:flex-start">' +
+              (p.thumb ? '<img src="' + esc(p.thumb) + '" data-pz="q_' + esc(x.id) + '" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:8px;flex:none;cursor:zoom-in">' : '') +
+              '<div style="flex:1;min-width:0"><div class="adm-item-meta" style="margin:0">' + esc(p.author || "") + ' · ' + esc([p.college, p.major, p.teamName].filter(Boolean).join(" · ")) + ' · ' + fmtTime(p.ts) + ' · ♥ ' + lc(x) + ' · 💬 ' + cOf(x.id).length + '</div>' +
+              '<div class="adm-item-text"><b>' + esc(p.intro || "") + '</b>\n' + esc(p.reason || "") + (p.rec ? '\n<b>추천 수업</b> ' + esc(p.rec) : '') + '</div></div>' +
+              '<button class="adm-btn bad small" type="button" data-adm="quest-del" style="flex:none">삭제</button></div>';
+          }).join("") + '</div></div>';
+      mainEl.innerHTML = h;
+      viewQuest.csv = function(){
+        var rows = [["구분","이름","단과대·팀","내용","수치"]];
+        cur.forEach(function(x){ rows.push(["시간표", x.d.author || "", [x.d.college, x.d.teamName].filter(Boolean).join(" "), x.d.intro || "", "♥" + lc(x) + " / 댓글" + cOf(x.id).length]); });
+        ansArr.forEach(function(a){ rows.push(["멘토 답글", a.k, "", "", a.n]); });
+        givArr.forEach(function(g){ rows.push(["멘티 ♥ 누른 수", g.k, g.team, "", g.n]); });
+        menteeC.forEach(function(c){ rows.push(["멘티 댓글", c.d.author || "", c.d.teamName || c.d.team || "", c.d.text || "", ""]); });
+        downloadCsv("11월퀘스트_집계.csv", rows);
+      };
+    }
+
     function viewPosts(){
       var boards = [["private_posts","자유게시판"],["photo_posts","사진 게시판"],["team_posts","팀별 게시판"]];
-      var list = scoped(postsBoard).sort(byNewest);
+      var list = scoped(postsBoard).filter(function(x){ return x.d.type !== "quest_tt_img"; }).sort(byNewest);
       mainEl.innerHTML = '<h2 class="adm-h">게시물 관리</h2>' +
         '<p class="adm-desc">부적절한 글이나 잘못 올라간 글을 삭제할 수 있어요. 삭제하면 되돌릴 수 없어요.</p>' +
         '<div class="adm-filters">' + boards.map(function(b){
@@ -902,7 +962,7 @@
         }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, program:viewProgram, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, program:viewProgram, quest:viewQuest, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
     function render(force){
       renderTabs();
       if(force){ VIEWS[tab](); return; }
@@ -1028,6 +1088,8 @@
         return;
       }
       if(a === "s-del"){ if(confirm("이 건의를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
+      if(a === "quest-csv"){ if(viewQuest.csv) viewQuest.csv(); return; }
+      if(a === "quest-del"){ if(confirm("이 시간표를 삭제할까요? 되돌릴 수 없어요.")){ var qd = find("photo_posts"); act(col("photo_posts").doc(id).delete()); if(qd && qd.d.imgId) act(col("photo_posts").doc(qd.d.imgId).delete()); } return; }
       if(a === "post-del"){ if(confirm("이 글을 삭제할까요? 되돌릴 수 없어요.")) act(col(postsBoard).doc(id).delete()); return; }
       if(a === "roster-add"){
         var rc = isSuper ? root.querySelector("#adm-r-college").value : myCollege;
