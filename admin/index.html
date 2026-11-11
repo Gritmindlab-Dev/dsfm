@@ -594,7 +594,7 @@
             var p = x.d; (window.__PZ = window.__PZ || {})["q_" + x.id] = [p.thumb];
             return '<div class="adm-item" data-id="' + esc(x.id) + '" style="display:flex;gap:12px;align-items:flex-start">' +
               (p.thumb ? '<img src="' + esc(p.thumb) + '" data-pz="q_' + esc(x.id) + '" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:8px;flex:none;cursor:zoom-in">' : '') +
-              '<div style="flex:1;min-width:0"><div class="adm-item-meta" style="margin:0">' + esc(p.author || "") + ' · ' + esc([p.college, p.major, p.teamName].filter(Boolean).join(" · ")) + ' · ' + fmtTime(p.ts) + ' · ♥ ' + lc(x) + ' · 💬 ' + cOf(x.id).length + '</div>' +
+              '<div style="flex:1;min-width:0"><div class="adm-item-meta" style="margin:0">' + esc(p.author || "") + ' · ' + esc([p.college, p.major, p.sem && p.sem + " 시간표", p.teamName].filter(Boolean).join(" · ")) + ' · ' + fmtTime(p.ts) + ' · ♥ ' + lc(x) + ' · 💬 ' + cOf(x.id).length + '</div>' +
               '<div class="adm-item-text"><b>' + esc(p.intro || "") + '</b>\n' + esc(p.reason || "") + (p.rec ? '\n<b>추천 수업</b> ' + esc(p.rec) : '') + '</div></div>' +
               '<button class="adm-btn bad small" type="button" data-adm="quest-del" style="flex:none">삭제</button></div>';
           }).join("") + '</div></div>';
