@@ -804,7 +804,7 @@
           '</div>' +
           '<div class="adm-form-row">' +
             '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">학생 버튼 <select class="adm-select" id="adm-m-action" style="width:auto">' +
-              [["poll","투표하러 가기"],["verify","인증하러 가기"],["none","버튼 없음"]].map(function(o){ return '<option value="' + o[0] + '"' + ((m.action || "verify") === o[0] ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") + '</select></label>' +
+              [["poll","투표하러 가기"],["verify","인증하러 가기"],["quest","11월 퀘스트 하러 가기"],["none","버튼 없음"]].map(function(o){ return '<option value="' + o[0] + '"' + ((m.action || "verify") === o[0] ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") + '</select></label>' +
             '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">연결 투표 (팀 진행률 표시) <select class="adm-select" id="adm-m-poll" style="width:auto"><option value="">없음</option>' +
               S.polls.map(function(x){ return '<option value="' + esc(x.id) + '"' + (m.linkPollId === x.id ? " selected" : "") + '>' + esc(x.d.title || "") + '</option>'; }).join("") + '</select></label>' +
           '</div></div>' +
