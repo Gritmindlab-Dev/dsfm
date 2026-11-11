@@ -936,7 +936,7 @@
 
         <!-- 자유게시판 -->
         <section id="page-quest" class="page" style="display:none">
-          <div class="page-eyebrow">11월 퀘스트 · 11.12 ~ 11.20</div>
+          <div class="page-eyebrow">11월 퀘스트 (멘토링 Mission Quest) · 11.12 ~ 11.20</div>
           <h2 class="page-title">선배 전공 시간표 공개</h2>
         </section>
         <section id="page-mission" class="page" style="display:none">
@@ -1951,9 +1951,9 @@
       missionsCache = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
       /* 11월 퀘스트는 사이트에 기본으로 들어있는 미션 (운영진이 같은 달에 '퀘스트 하러 가기' 미션을 올리면 그걸 대신 보여줘요) */
       if(!missionsCache.some(function(m){ return m.month === "2026-11" && m.action === "quest"; })) missionsCache.push({
-        id: "builtin-quest11", month: "2026-11", tag: "11월 퀘스트", order: -1, college: "전체", action: "quest",
+        id: "builtin-quest11", month: "2026-11", tag: "11월 퀘스트 (멘토링 Mission Quest)", order: -1, college: "전체", action: "quest",
         title: "선배 전공 시간표 공개 「MY MAJOR TIMETABLE」",
-        desc: "멘토 ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (몇 학년 몇 학기인지 선택)\n멘토 ② 내 시간표에 달린 멘티 질문에 답글 달기\n멘티 ① 관심 있는 선배 시간표에 ♥ 누르기\n멘티 ② 시간표에 궁금한 점 댓글 달기",
+        desc: "퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션이에요.\n\n멘토 ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (몇 학년 몇 학기인지 선택)\n멘토 ② 내 시간표에 달린 멘티 질문에 답글 달기\n멘티 ① 관심 있는 선배 시간표에 ♥ 누르기\n멘티 ② 시간표에 궁금한 점 댓글 달기 (멘토가 대댓글로 답해 줘요)\n\n※ 참여 내용은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.",
         startAt: new Date("2026-11-12T09:00:00+09:00").getTime(), endAt: new Date("2026-11-20T23:59:00+09:00").getTime(),
         reward: "총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)", howto: "공유공간 「11월 퀘스트」 메뉴에서 참여" });
       renderMissions();
@@ -3042,7 +3042,7 @@
     var closed = t > new Date("2026-11-20T23:59:59+09:00").getTime();
     return '<div class="notice-item pinned">' +
       '<div class="notice-top"><span class="notice-pin">📌 고정</span><span class="notice-tag">11월 미션</span><span class="notice-label">' + (closed ? "11월 퀘스트 마감 — 결과 집계 중이에요" : "11월 퀘스트 「선배 전공 시간표 공개」 오픈!") + '</span></div>' +
-      '<div class="notice-detail" style="white-space:pre-wrap">' + esc("11월 미션은 온라인 퀘스트로 진행돼요. 왼쪽 메뉴 「11월 퀘스트」에서 참여해 주세요.\n\n· 기간: 11/12(목) 오전 9시 ~ 11/20(금) 23:59\n· 멘토: ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (학년·학기 상관없이, 몇 학년 몇 학기인지 선택) ② 내 시간표에 달린 멘티 질문에 답글 달기\n· 멘티: ① 관심 있는 선배 시간표에 ♥ 누르기 ② 시간표에 궁금한 점 댓글 달기\n· 시상: 총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)\n\n※ 시간표 사진의 학번·이름 등 개인정보는 가리고, 수업 추천은 좋았던 점만 적어 주세요.") + '</div>' +
+      '<div class="notice-detail" style="white-space:pre-wrap">' + esc("퀘스트란? 멘토와 멘티가 함께 참여하는 월별 온라인 멘토링 미션(멘토링 Mission Quest)이에요. 11월 미션은 온라인 퀘스트로 진행돼요. 왼쪽 메뉴 「11월 퀘스트」에서 참여해 주세요.\n\n· 기간: 11/12(목) 오전 9시 ~ 11/20(금) 23:59\n· 멘토: ① 보여주고 싶거나 자랑하고 싶은 내 전공 시간표 업로드 (학년·학기 상관없이, 몇 학년 몇 학기인지 선택) ② 내 시간표에 달린 멘티 질문에 답글 달기\n· 멘티: ① 관심 있는 선배 시간표에 ♥ 누르기 ② 시간표에 궁금한 점 댓글 달기 (멘토가 대댓글로 답해 줘요)\n· 시상: 총 20명 커피 쿠폰 (멘토 5명 · 멘티 15명)\n\n※ 시간표 사진의 학번·이름 등 개인정보는 가리고, 수업 추천은 좋았던 점만 적어 주세요.\n※ 참여 내용(시간표·♥·댓글·답글)은 장학금 지급을 위한 결과보고서와 성과보고회 활동자료로 활용됩니다.") + '</div>' +
       (closed ? '' : '<div class="notice-foot"><button type="button" class="notice-read-btn" data-goto="quest">11월 퀘스트 하러 가기 →</button></div>') +
     '</div>';
   }
@@ -3286,7 +3286,7 @@
     verify:"미션을 완료했다면 사진으로 인증해 주세요.",
     mypage:"나의 멘토링 기록과 내가 쓴 글을 한곳에서 모아 봐요.",
     program:"멘티를 위한 교육 프로그램, 계획부터 결과보고까지 한곳에서.",
-    quest:"「MY MAJOR TIMETABLE」 선배의 진짜 전공 시간표와 \'왜 이렇게 짰는지\'를 만나 보세요."
+    quest:"멘토링 Mission Quest · 선배는 전공 시간표를 공개하고, 후배는 ♥와 질문으로 함께해요."
   };
   Object.keys(BN).forEach(function(k){
     var sec = document.getElementById("page-" + k); if(!sec) return;
