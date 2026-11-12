@@ -642,6 +642,7 @@
         '<textarea class="adm-textarea" id="adm-p-options" placeholder="선택지를 한 줄에 하나씩 적어주세요&#10;예) 10/24(토)&#10;10/25(일)&#10;10/31(토)" style="min-height:96px">' + esc((p.options || []).join("\n")) + '</textarea>' +
         '<div class="adm-form-row">' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">대상 <select class="adm-select" id="adm-p-college" style="width:auto">' + collegeOptions(p.college || "전체", true) + '</select></label>' +
+          '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">공개 시작 <input class="adm-input" id="adm-p-open" type="datetime-local" value="' + toLocalInput(p.opensAt) + '" style="width:auto"></label>' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">마감 <input class="adm-input" id="adm-p-close" type="datetime-local" value="' + toLocalInput(p.closesAt) + '" style="width:auto"></label>' +
           '<label class="adm-desc" style="margin:0;display:flex;align-items:center;gap:6px">순서 <input class="adm-input" id="adm-p-order" type="number" value="' + esc(p.order != null ? p.order : 1) + '" style="width:80px"></label>' +
         '</div>' +
@@ -663,9 +664,10 @@
       var opts2 = q("#adm-p-options").value.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
       var seen = {}; opts2 = opts2.filter(function(o){ if(seen[o]) return false; seen[o] = 1; return true; });
       var cl = q("#adm-p-close").value;
+      var op = q("#adm-p-open") ? q("#adm-p-open").value : "";
       var ro = q("#adm-p-reason").value.split(",").map(function(x){ return x.trim(); }).filter(function(x){ return x && opts2.indexOf(x) >= 0; });
       return { tag: q("#adm-p-tag").value.trim() || "투표", title: q("#adm-p-title").value.trim(), desc: q("#adm-p-desc").value.trim(),
-        options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, order: Number(q("#adm-p-order").value) || 0,
+        options: opts2, college: q("#adm-p-college").value, closesAt: cl ? new Date(cl).getTime() : null, opensAt: op ? new Date(op).getTime() : null, order: Number(q("#adm-p-order").value) || 0,
         mode: q("#adm-p-mode").value, reasonOptions: ro };
     }
     /* 팀원 모두 투표를 마친 팀 — 마지막 팀원이 처음 투표한 시각 순서 (선착순) */
@@ -730,11 +732,11 @@
         var max = Math.max.apply(null, [1].concat(Object.keys(cnt).map(function(k){ return cnt[k]; })));
         return '<div class="adm-card" data-id="' + esc(x.id) + '">' +
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-            '<span class="adm-tag' + (closed ? " gray" : " green") + '">' + (closed ? "마감" : "진행 중") + '</span>' +
+            '<span class="adm-tag' + (closed ? " gray" : " green") + '">' + (closed ? "마감" : (p.opensAt && Date.now() < p.opensAt ? "공개 예정" : "진행 중")) + '</span>' +
             '<span class="adm-tag gold">' + esc(p.tag || "투표") + '</span>' +
             '<span class="adm-tag gray">' + esc(p.college || "전체") + '</span>' +
             '<b style="font-size:15px">' + esc(p.title || "") + '</b>' +
-            '<span class="adm-item-meta" style="margin:0">' + (p.closesAt ? "마감 " + new Date(p.closesAt).toLocaleString("ko-KR") : "마감일 없음") + ' · 순서 ' + esc(p.order || 0) + '</span>' +
+            '<span class="adm-item-meta" style="margin:0">' + (p.opensAt ? "공개 " + new Date(p.opensAt).toLocaleString("ko-KR") + " · " : "") + (p.closesAt ? "마감 " + new Date(p.closesAt).toLocaleString("ko-KR") : "마감일 없음") + ' · 순서 ' + esc(p.order || 0) + '</span>' +
           '</div>' +
           (p.desc ? '<div class="adm-desc" style="margin-top:6px;white-space:pre-wrap">' + esc(p.desc) + '</div>' : '') +
           '<div style="margin-top:10px">' + Object.keys(cnt).map(function(o){
