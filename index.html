@@ -1745,7 +1745,7 @@
   function myVoteDoc(pid){ return pollVotesCache.filter(function(x){ return x.pollId === pid && x.rosterId === state.rosterId; })[0]; }
   function pollClosed(p){ return p.open === false || (p.closesAt && Date.now() >= p.closesAt); }
   function visiblePolls(){
-    return pollsCache.filter(function(p){ return p.visible !== false && collegeVisible(p); })
+    return pollsCache.filter(function(p){ return p.visible !== false && !(p.opensAt && Date.now() < p.opensAt) && collegeVisible(p); })
       .sort(function(a, b){ return (a.order || 0) - (b.order || 0) || (b.createdAt || 0) - (a.createdAt || 0); });
   }
   function pollVoteOf(pid, name){
