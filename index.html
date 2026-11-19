@@ -694,6 +694,13 @@
   #rail-nav button.nav-past{margin-top:8px; border-top:1px solid rgba(255,255,255,.16); border-radius:0 0 10px 10px; padding-top:14px;}
   #rail-nav button.nav-past.active{border-radius:10px;}
   #rail-nav button.nav-past[data-page=picnic]:not(.active){color:rgba(255,255,255,.82) !important; font-weight:500 !important;}
+  /* 결과보고서 메뉴 — 눈에 띄게 (금색) */
+  #rail-nav button#nav-report{background:linear-gradient(100deg,#f3c96b,#e8b04b) !important; color:#4c1226 !important; font-weight:800 !important; border-radius:10px; box-shadow:0 4px 14px rgba(232,176,75,.35); animation:rpGlow 2.4s ease-in-out infinite;}
+  #rail-nav button#nav-report svg{stroke:#4c1226;}
+  #rail-nav button#nav-report.active{background:#fff !important; color:#7c1f3d !important; animation:none;}
+  #rail-nav button#nav-report.active svg{stroke:#7c1f3d;}
+  #nav-report .qx-new{margin-left:auto;font-size:9.5px;font-weight:800;background:#7c1f3d;color:#fff;border-radius:8px;padding:2px 6px;letter-spacing:.03em}
+  @keyframes rpGlow{0%,100%{box-shadow:0 4px 14px rgba(232,176,75,.30)}50%{box-shadow:0 4px 22px rgba(243,201,107,.75)}}
   /* 메뉴별 캠퍼스 사진 띠 */
   .pg-hero{position:relative; border-radius:0; overflow:hidden; padding:30px 42px 26px; margin:-34px 0 26px -42px; width:var(--mainw,calc(100% + 84px)); box-sizing:border-box; background:var(--wine) center/cover no-repeat; color:#fff; min-height:260px; display:flex; flex-direction:column; justify-content:flex-end;}
   .pg-hero::before{content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(76,18,38,.78) 0%,rgba(124,31,61,.38) 55%,rgba(124,31,61,.06) 100%);}
