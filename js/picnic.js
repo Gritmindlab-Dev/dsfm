@@ -17,7 +17,7 @@
   function attendOpenNow(cfg){ return ((cfg && cfg.qrMode) === "on") || Date.now() >= ATTEND_OPEN; }
   var EVENT_END   = new Date("2026-10-29T16:00:00+09:00").getTime();
   var REOPEN_END  = new Date("2026-11-06T23:59:59+09:00").getTime(); /* 미션 3 사진 인증 추가 기간 (11/6 금까지) */
-  function reopenNow(){ var n = Date.now(); return n > EVENT_END && n <= REOPEN_END; }
+  function reopenNow(){ var n = Date.now(); return n > EVENT_END; } /* 11/19: 기한 없이 다시 열어 둠 */
   var POINT_KEYS = ["b1","b2","b3","b4","b5"];
   /* QR 주소의 토큰은 sha256("dsfm-qr|토큰") 값으로만 비교해요 (토큰 원문은 코드에 없어요) */
   var POINT_HASH = {
@@ -112,7 +112,7 @@
     if(mode === "on") return true;
     if(mode === "off") return false;
     var n = Date.now();
-    return n >= EVENT_START && n <= EVENT_END;
+    return true; /* 11/19: 행사 후에도 계속 참여할 수 있게 열어 둠 */
   }
   function pointName(cfg, k){ return (cfg && cfg.points && cfg.points[k]) || DEFAULT_POINT_NAMES[k]; }
   function stampCount(u){ var s = (u && u.stamps) || {}; return POINT_KEYS.filter(function(k){ return !!s[k]; }).length; }
@@ -381,7 +381,7 @@
     if(!teamComplete() && !reopenNow()) return lockCard("피크닉미션 3 · 피크닉 사진 인증", "팀원 전원이 스탬프 5개를 모으면 열려요.");
     var files = S.files;
     return '<div class="pk-card"><h3>피크닉미션 3 · 피크닉 사진 인증</h3>' +
-      (reopenNow() ? '<div class="pk-note" style="margin-bottom:8px"><b>📢 추가 인증 기간 · 11/6(금)까지</b><br>피크닉데이 당일 사진을 아직 못 올린 팀은 지금 올려 주세요.</div>' : '') +
+      (reopenNow() ? '<div class="pk-note" style="margin-bottom:8px"><b>📢 피크닉데이 미션이 다시 열렸어요</b><br>아직 사진 인증을 못 한 팀은 지금 올려 주세요.</div>' : '') +
       '<p class="d">영근터에서 <b>멘토·멘티가 함께 간식을 먹는 사진 2장 이상</b> + 간단한 소감을 <b>팀 대표 1명</b>이 올려주세요. 올리면 팀 전원에게 체험부스 이용권이 열려요.</p>' +
       '<button class="pk-big alt" type="button" data-pk="pick">📷 사진 고르기 (2~4장)</button>' +
       '<input type="file" id="pk-file" accept="image/*" multiple style="display:none">' +
