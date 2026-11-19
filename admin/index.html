@@ -233,6 +233,7 @@
     {key:"verify",  label:"인증 승인"},
     {key:"suggest", label:"건의함"},
     {key:"program", label:"멘토 프로그램"},
+    {key:"report", label:"성과보고회 제출"},
     {key:"quest",   label:"11월 퀘스트"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"투표"},
@@ -314,13 +315,14 @@
       return {
         verify: scoped("verify_posts").filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
         suggest: scoped("suggestion_posts").filter(function(x){ return !x.d.kind && (!x.d.status || x.d.status === "접수"); }).length,
-        program: scoped("suggestion_posts").filter(function(x){ return (x.d.kind === "program_plan" || x.d.kind === "program_report") && (!x.d.status || x.d.status === "접수"); }).length
+        program: scoped("suggestion_posts").filter(function(x){ return (x.d.kind === "program_plan" || x.d.kind === "program_report") && (!x.d.status || x.d.status === "접수"); }).length,
+        report: scoped("suggestion_posts").filter(function(x){ return x.d.kind === "final_report" && x.d.status !== "확인완료"; }).length
       };
     }
     function renderTabs(){
       var c = counts();
       tabsEl.innerHTML = TABS.filter(function(t){ return (isSuper || !t.superOnly) && (isMaster || !t.masterOnly); }).map(function(t){
-        var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : t.key === "program" ? c.program : 0;
+        var n = t.key === "verify" ? c.verify : t.key === "suggest" ? c.suggest : t.key === "program" ? c.program : t.key === "report" ? c.report : 0;
         return '<button type="button" class="adm-tab' + (t.key === tab ? " active" : "") + '" data-tab="' + t.key + '">' +
           esc(t.label) + (n ? '<span class="adm-count">' + n + '</span>' : "") + '</button>';
       }).join("");
@@ -508,6 +510,32 @@
         }).join("") : '<div class="adm-empty">아직 건의가 없어요.</div>') + '</div>';
     }
 
+
+    function viewReport(){
+      var subs = scoped("suggestion_posts").filter(function(x){ return x.d.kind === "final_report"; }).sort(byNewest);
+      var latest = {}, older = {};
+      subs.forEach(function(x){ var k = x.d.rosterId || (x.d.team + "|" + x.d.author); if(!latest[k]) latest[k] = x; else older[k] = (older[k] || 0) + 1; });
+      var keys = Object.keys(latest), list = keys.map(function(k){ return latest[k]; }).sort(byNewest);
+      var mentors = scoped("team_roster").filter(function(r){ return r.d.role === "멘토"; });
+      var missing = mentors.filter(function(r){ return !latest[r.id] && !list.some(function(x){ return x.d.author === r.d.name && x.d.team === (r.d.teamKey || r.d.team); }); })
+        .sort(function(a, b){ return String(a.d.college + a.d.team).localeCompare(String(b.d.college + b.d.team)); });
+      var okN = list.filter(function(x){ return x.d.status === "확인완료"; }).length;
+      mainEl.innerHTML = '<h2 class="adm-h">성과보고회 제출</h2>' +
+        '<p class="adm-desc">멘토가 제출한 팀 결과보고서(PPTX·PDF)예요. 제출한 멘토 본인과 운영진만 볼 수 있어요. 파일을 내려받아 확인한 뒤 <b>확인 완료</b>를 눌러 주세요. 같은 멘토가 여러 번 올리면 마지막 파일만 보여요.</p>' +
+        '<div class="adm-item-meta" style="margin:0 0 12px">제출 <b>' + list.length + '</b>명 / 멘토 ' + mentors.length + '명 · 확인 완료 ' + okN + '명 · 미제출 ' + missing.length + '명</div>' +
+        '<div class="adm-list">' + (list.length ? list.map(function(x){
+          var p = x.d, ok = p.status === "확인완료", k = p.rosterId || (p.team + "|" + p.author);
+          return '<div class="adm-item" data-id="' + esc(x.id) + '"><div class="adm-item-top"><span class="adm-tag ' + (ok ? "green" : "gold") + '">' + (ok ? "확인완료" : "제출") + '</span>' +
+            '<b style="margin-left:6px">' + esc(p.author || "멘토") + '</b><span class="adm-item-meta" style="margin:0 0 0 8px">' + esc([p.college, p.teamName].filter(Boolean).join(" · ")) + '</span>' +
+            '<span class="adm-item-meta" style="margin:0 0 0 auto">' + fmtTime(p.createdAt) + (older[k] ? ' · 이전 제출 ' + older[k] + '건' : '') + '</span></div>' +
+            '<div style="margin:8px 0;display:flex;gap:8px;flex-wrap:wrap"><a class="adm-btn ghost small" href="#" data-adm="prg-file" data-fid="' + esc(x.id) + '">📎 ' + esc(p.fileName || "파일") + '</a>' +
+            (ok ? '<button class="adm-btn ghost small" type="button" data-adm="rpt-undo">확인 취소</button>' : '<button class="adm-btn small" type="button" data-adm="rpt-ok">확인 완료</button>') + '</div></div>';
+        }).join("") : '<div class="adm-empty">아직 제출된 결과보고서가 없어요.</div>') + '</div>' +
+        '<h3 class="adm-h" style="font-size:16px;margin-top:22px">미제출 멘토 (' + missing.length + '명)</h3>' +
+        '<div class="adm-list">' + (missing.length ? missing.map(function(r){
+          return '<div class="adm-item" style="padding:10px 14px"><b>' + esc(r.d.name) + '</b><span class="adm-item-meta" style="margin:0 0 0 8px">' + esc([r.d.college, r.d.team].filter(Boolean).join(" · ")) + '</span></div>';
+        }).join("") : '<div class="adm-empty">모든 멘토가 제출했어요.</div>') + '</div>';
+    }
 
     function viewProgram(){
       var all = scoped("suggestion_posts");
@@ -966,7 +994,7 @@
         }).join("") : '<div class="adm-empty">등록된 운영진이 없어요.</div>') + '</div>';
     }
 
-    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, program:viewProgram, quest:viewQuest, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
+    var VIEWS = {dash:viewDash, notice:viewNotice, sched:viewSched, verify:viewVerify, suggest:viewSuggest, program:viewProgram, report:viewReport, quest:viewQuest, posts:viewPosts, vote:viewVote, roster:viewRoster, missions:viewMissions, accounts:viewAccounts, mypw:viewMyPw, logs:viewLogs};
     function render(force){
       renderTabs();
       if(force){ VIEWS[tab](); return; }
@@ -1066,6 +1094,7 @@
       }
       if(a === "prg-del"){ if(confirm("이 계획서를 삭제할까요?")) act(col("suggestion_posts").doc(id).delete()); return; }
       if(a === "prg-rep-ok"){ act(col("suggestion_posts").doc(b.getAttribute("data-rid")).update({ status: "확인완료" })); return; }
+      if(a === "rpt-ok" || a === "rpt-undo"){ act(col("suggestion_posts").doc(id).update({ status: a === "rpt-ok" ? "확인완료" : "제출", checkedAt: Date.now() })); return; }
       if(a === "prg-file"){
         e.preventDefault();
         var fid = b.getAttribute("data-fid"), fd = (S.suggestion_posts.filter(function(x){ return x.id === fid; })[0] || {}).d || {};
