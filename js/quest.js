@@ -211,10 +211,21 @@
   /* ---------- 이미지 줄이기 ---------- */
   function loadImage(file){
     return new Promise(function(res, rej){
+      try{
+        if(window.URL && URL.createObjectURL){
+          var u = URL.createObjectURL(file), im0 = new Image();
+          im0.onload = function(){ res(im0); setTimeout(function(){ URL.revokeObjectURL(u); }, 3000); };
+          im0.onerror = function(){ URL.revokeObjectURL(u); viaReader(); };
+          im0.src = u; return;
+        }
+      }catch(e){}
+      viaReader();
+      function viaReader(){
       var r = new FileReader();
       r.onload = function(){ var im = new Image(); im.onload = function(){ res(im); }; im.onerror = function(){ rej(new Error("사진을 읽지 못했어요. JPG·PNG 캡처 파일로 올려 주세요.")); }; im.src = r.result; };
       r.onerror = function(){ rej(new Error("사진을 읽지 못했어요.")); };
       r.readAsDataURL(file);
+      }
     });
   }
   function shrink(im, maxSide, q, maxLen){
@@ -270,7 +281,7 @@
       '<div class="qx-col">' +
         '<label>시간표 사진 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">학번·이름 등 개인정보는 가리고 캡처해 주세요</span>' +
           '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>시간표 캡처 1장 올리기</b><span>에브리타임·포털 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
-          '<input type="file" id="qx-file" accept="image/*" style="display:none"></label>' +
+          '<input type="file" id="qx-file" accept="image/*" style="display:none"></label><div class="qx-msg" id="qx-pmsg" style="margin-top:-4px"></div>' +
         '<div class="qx-2">' +
           '<label>단과대학 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">시간표 카드에 표시돼요</span><select id="qx-college"><option value="">선택</option>' + COLLEGES.map(function(c){ return '<option' + (d.college === c ? " selected" : "") + '>' + c + '</option>'; }).join("") + '</select></label>' +
           '<label>학과(전공) <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">무전공·자율전공이면 그대로 적어 주세요</span><input type="text" id="qx-major" maxlength="30" placeholder="예) 경영학전공 / 자유전공학부" value="' + esc(d.major || "") + '"></label>' +
@@ -523,10 +534,12 @@
     });
   }
   function onPick(file){
-    var msg = $("qx-msg");
+    var say = function(t){ var a = $("qx-pmsg"), b = $("qx-msg"); if(a) a.textContent = t; if(b) b.textContent = t; };
     if(!file) return;
-    if(!/^image\//.test(file.type)){ if(msg) msg.textContent = "사진(JPG·PNG) 파일만 올릴 수 있어요."; return; }
-    if(msg) msg.textContent = "사진을 준비하는 중이에요…";
+    var nm = String(file.name || "").toLowerCase(), ty = String(file.type || "").toLowerCase();
+    if(/\.(heic|heif)$/.test(nm) || /heic|heif/.test(ty)){ say("아이폰 사진(HEIC)은 올릴 수 없어요. 시간표 화면을 스크린샷(캡처)해서 올려 주세요."); alert("아이폰 사진(HEIC)은 올릴 수 없어요.\n시간표 화면을 스크린샷(캡처)해서 그 캡처 사진을 올려 주세요."); return; }
+    if(ty && !/^image\//.test(ty)){ say("사진(JPG·PNG) 파일만 올릴 수 있어요."); alert("사진(JPG·PNG) 파일만 올릴 수 있어요."); return; }
+    say("사진을 준비하는 중이에요…");
     readForm();
     loadImage(file).then(function(im){
       var full = shrink(im, 1400, 0.8, 640000), thumb = shrink(im, 440, 0.6, 70000);
@@ -535,7 +548,7 @@
       if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
       render();
       var m2 = $("qx-msg"); if(m2) m2.textContent = "";
-    }).catch(function(e){ var m3 = $("qx-msg"); if(m3) m3.textContent = e.message; });
+    }).catch(function(e){ say(e.message); alert(e.message); });
   }
 
   /* ---------- 이벤트 ---------- */
@@ -548,7 +561,7 @@
       if((t = e.target.closest("[data-qx-college]"))){ S.college = t.getAttribute("data-qx-college"); render(); return; }
       if((t = e.target.closest("[data-qx-tag]"))){ var tg = t.getAttribute("data-qx-tag"); S.tag = S.tag === tg ? "" : tg; render(); return; }
       if((t = e.target.closest("[data-qx-sort]"))){ S.sort = t.getAttribute("data-qx-sort"); render(); return; }
-      if(e.target.closest("#qx-drop")){ var f = $("qx-file"); if(f) f.click(); return; }
+      if(e.target.closest("#qx-drop")){ e.preventDefault(); var f = $("qx-file"); if(f) f.click(); return; } /* label 안이라 기본 동작까지 겹쳐 파일창이 두 번 열리지 않게 */
       if((t = e.target.closest("[data-tag]"))){
         var tags = S.draft.tags, v = t.getAttribute("data-tag"), i = tags.indexOf(v);
         if(i >= 0) tags.splice(i, 1); else if(tags.length < 3) tags.push(v); else { var mm = $("qx-msg"); if(mm) mm.textContent = "태그는 3개까지 고를 수 있어요."; return; }
