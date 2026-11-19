@@ -198,7 +198,7 @@
     var h = '';
     h += '<div class="rp-card"><div class="rp-h"><span class="no">1</span>결과보고서 양식 받기</div>' +
       '<div class="rp-d">팀별로 멘토 1명이 작성해요. 양식을 채워 <b>' + DUE_TEXT + '까지</b> 아래 ③에서 제출해 주세요. 발표는 팀당 5분이에요.<br>' +
-      '빈 양식을 받아 직접 채워도 되고, ②에서 공유공간에 올린 글·사진을 골라 <b>미리 채워진 양식</b>으로 받을 수도 있어요.</div>' +
+      '빈 양식을 받아 직접 채워도 되고, ②에서 공유공간에 올린 글·사진을 골라 <b>미리 채워진 양식</b>으로 받을 수도 있어요.<br>받은 PPT의 글·사진·표는 <b>모두 자유롭게 고치거나 지울 수 있어요.</b> 꼭 이 양식이 아니어도 괜찮아요. <b>본인만의 양식</b>으로 만들어 제출해도 돼요.</div>' +
       '<div class="rp-btns"><button class="rp-btn ghost" type="button" data-rp="blank">📄 빈 양식 받기 (PPTX)</button></div></div>';
 
     h += '<div class="rp-card"><div class="rp-h"><span class="no">2</span>내 글·사진 골라서 채우기</div>' +
@@ -221,8 +221,8 @@
 
     var last = S.mine[0];
     h += '<div class="rp-card"><div class="rp-h"><span class="no">3</span>결과보고서 제출</div>' +
-      '<div class="rp-d">완성한 파일(PPTX 또는 PDF, 5MB 이하)을 올려 주세요. 파일명은 <b>팀번호_멘토이름_결과보고서.pptx</b>로 해 주세요. 다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
-      '<input type="file" id="rp-file" accept=".pptx,.ppt,.pdf">' +
+      '<div class="rp-d">완성한 파일(PPT·PDF·한글·워드, 5MB 이하)을 올려 주세요. 본인만의 양식으로 만든 파일도 괜찮아요. 파일명은 <b>팀번호_멘토이름_결과보고서</b>로 해 주세요. 다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
+      '<input type="file" id="rp-file" accept=".pptx,.ppt,.pdf,.hwp,.hwpx,.docx,.doc">' +
       '<div class="rp-btns" style="margin-top:10px"><button class="rp-btn" type="button" data-rp="submit"' + (S.busy ? " disabled" : "") + '>제출하기</button></div>' +
       '<div class="rp-msg" id="rp-msg"></div>' +
       (last ? '<div class="rp-sub"><span class="rp-st' + (last.d.status === "확인완료" ? " ok" : "") + '">' + (last.d.status === "확인완료" ? "✅ 확인 완료" : "📨 제출 완료") + '</span>' +
@@ -466,7 +466,7 @@
   function submit(){
     var inp = $("rp-file"), f = inp && inp.files && inp.files[0];
     if(!f){ msg("rp-msg", "제출할 파일을 골라 주세요."); return; }
-    if(!/\.(pptx|ppt|pdf)$/i.test(f.name)){ msg("rp-msg", "PPTX 또는 PDF 파일만 올릴 수 있어요."); return; }
+    if(!/\.(pptx|ppt|pdf|hwp|hwpx|docx|doc)$/i.test(f.name)){ msg("rp-msg", "PPT·PDF·한글·워드 파일만 올릴 수 있어요."); return; }
     if(f.size > MAX_FILE){ msg("rp-msg", "파일이 5MB를 넘어요. 사진 용량을 줄이거나 PDF로 저장해 올려 주세요."); return; }
     if(!db){ msg("rp-msg", "서버에 연결하지 못했어요. 새로고침해 주세요."); return; }
     S.busy = true; render(); msg("rp-msg", "올리는 중이에요… 창을 닫지 마세요.");
