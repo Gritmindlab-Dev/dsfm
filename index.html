@@ -871,6 +871,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
           멘토 프로그램
         </button>
+        <button data-page="report" id="nav-report" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+          성과보고회<span class="qx-new">NEW</span>
+        </button>
         <button data-page="picnic" class="nav-past">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M12 3l9 9H3l9-9Z"/><path d="M12 12v9"/></svg>
           PICNIC DAY
@@ -976,6 +980,13 @@
             </label>
           </div>
           <div class="posts" id="suggest-posts"></div>
+        </section>
+
+        <!-- 성과보고회 결과보고서 (멘토 전용 · 비공개) — js/report.js 가 그려요 -->
+        <section id="page-report" class="page" style="display:none">
+          <div class="page-eyebrow">멘토 전용 · 비공개</div>
+          <h2 class="page-title">성과보고회</h2>
+          <p class="page-desc">팀 결과보고서 양식을 받아 작성하고 제출해요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</p>
         </section>
 
         <!-- 멘토 프로그램 계획서 (비공개: 본인 + 운영진만) -->
@@ -1374,6 +1385,7 @@
     if(pageName === "mypage") renderMyPage();
     if(pageName === "program") watchPrograms();
     if(pageName === "quest" && window.DSFMQuest) window.DSFMQuest.open();
+    if(pageName === "report" && window.DSFMReport) window.DSFMReport.open();
   }
   document.getElementById("rail-nav").addEventListener("click", function(e){
     var btn = e.target.closest("button[data-page]");
@@ -2081,7 +2093,7 @@
 
   /* ---------- db-backed boards ---------- */
   function renderPosts(containerId, docs, emptyMsg){
-    if(containerId === "suggest-posts") docs = (docs || []).filter(function(d){ var k = d.data().kind; return k !== "program_plan" && k !== "program_report" && k !== "program_chunk"; });
+    if(containerId === "suggest-posts") docs = (docs || []).filter(function(d){ return !d.data().kind; });
     postsCache[containerId] = docs;
     docs = docs.slice().sort(function(a,b){ return ((b.data().notice?1:0) - (a.data().notice?1:0)); });
     var el = document.getElementById(containerId);
@@ -3161,6 +3173,7 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="js/picnic.js?v=20261119a"></script>
 <script src="js/quest.js?v=20261111a"></script>
+<script src="js/report.js?v=20261119a"></script>
 <script>
 /* 사진 크게 보기 (여러 장이면 넘겨보기) */
 (function(){
