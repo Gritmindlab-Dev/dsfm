@@ -92,7 +92,16 @@
     ".rp-mo .ti{display:block;width:100%;border:2px solid #ecdde1;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff;text-align:left;font:inherit;font-size:13.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap}",
     ".rp-mo .ti.on{border-color:#7c1f3d;background:#fbf5f1}",
     ".rp-mo .ti small{display:block;color:#8a737a;font-size:11.5px;margin-top:4px}",
-    ".rp-mo .em{padding:30px 10px;text-align:center;color:#8a737a;font-size:13.5px}"
+    ".rp-mo .em{padding:30px 10px;text-align:center;color:#8a737a;font-size:13.5px}",
+    ".rp-mo .up{display:block;border:2px dashed #c9aeb6;border-radius:12px;padding:14px;text-align:center;font-weight:800;font-size:14.5px;color:#7c1f3d;cursor:pointer;background:#fbf7f8}",
+    ".rp-mo .upn{font-size:12px;color:#8a737a;margin:6px 0 16px;text-align:center}",
+    ".rp-mo .wr{border:2px dashed #c9aeb6;border-radius:12px;padding:12px;background:#fbf7f8;margin-bottom:6px;display:flex;flex-direction:column;gap:8px}",
+    ".rp-mo .wr b{font-size:14px;color:#7c1f3d}",
+    ".rp-mo .wr textarea{width:100%;min-height:70px;border:1.5px solid #ecdde1;border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical}",
+    ".rp-mo .wr .rw{display:flex;gap:8px}",
+    ".rp-mo .wr input{flex:1;border:1.5px solid #ecdde1;border-radius:10px;padding:8px 10px;font:inherit;font-size:14px}",
+    ".rp-mo .wr button{border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:800;font-size:14px;background:#7c1f3d;color:#fff;cursor:pointer}",
+    ".rp-mo .sep{font-size:12.5px;font-weight:800;color:#8a737a;margin:4px 0 10px}"
   ].join("\n");
 
   /* ---------- 데이터 불러오기 ---------- */
@@ -202,7 +211,7 @@
       '<div class="rp-btns"><button class="rp-btn ghost" type="button" data-rp="blank">📄 빈 양식 받기 (PPTX)</button></div></div>';
 
     h += '<div class="rp-card"><div class="rp-h"><span class="no">2</span>내 글·사진 골라서 채우기</div>' +
-      '<div class="rp-d">우리 팀(멘토·멘티)이 공유공간에 올린 글과 사진 중에서 양식의 각 칸에 넣을 것을 골라 주세요.<br>피크닉데이·11월 퀘스트 기록은 미리 골라 두었어요. 받은 파일은 PowerPoint에서 자유롭게 고칠 수 있어요.</div>';
+      '<div class="rp-d">우리 팀(멘토·멘티)이 공유공간에 올린 글과 사진 중에서 양식의 각 칸에 넣을 것을 골라 주세요.<br>피크닉데이·11월 퀘스트 기록은 미리 골라 두었어요. 받은 파일은 PowerPoint에서 자유롭게 고칠 수 있어요.<br>공유공간에 없는 사진(1학기 활동 등)이나 글은 [고르기]에서 <b>직접 올리거나 써서</b> 넣을 수 있어요.</div>';
     if(S.loading) h += '<div class="rp-auto">우리 팀 기록을 불러오는 중이에요…</div>';
     else if(S.loadErr) h += '<div class="rp-auto">기록을 불러오지 못했어요. 새로고침 후 다시 열어 주세요. (빈 양식은 위에서 받을 수 있어요)</div>';
     else if(S.loaded){
@@ -238,20 +247,23 @@
   function openPicker(k){
     var s = slot(k); if(!s) return;
     var menteeNames = mentees().map(function(m){ return m.name; });
-    var list = S.items.filter(function(x){ return x.kind === s.type && (k !== "voice" || menteeNames.indexOf(x.author) >= 0); });
+    var list = S.items.filter(function(x){ return x.kind === s.type && (k !== "voice" || x.mine || menteeNames.indexOf(x.author) >= 0); });
     var srcs = []; list.forEach(function(x){ if(srcs.indexOf(x.src) < 0) srcs.push(x.src); });
     var flt = "전체";
     var w = document.createElement("div"); w.className = "rp-mo";
     function draw(){
       var L = list.filter(function(x){ return flt === "전체" || x.src === flt; });
-      var body = !list.length ? '<div class="em">' + (k === "voice" ? "멘티가 올린 글이 없어요." : "우리 팀이 올린 " + (s.type === "photo" ? "사진" : "글") + "이 없어요.") + '</div>' :
+      var add = s.type === "photo" ?
+        '<label class="up">📷 내 컴퓨터·휴대폰에서 사진 직접 올리기<input type="file" accept="image/*" data-up style="display:none"></label><div class="upn">공유공간에 없는 사진(1학기 활동 등)도 넣을 수 있어요. 결과보고서 파일에만 들어가고 공유공간에는 올라가지 않아요.</div>' :
+        '<div class="wr"><b>✏️ 직접 써서 넣기</b><textarea data-wt maxlength="300" placeholder="' + (k === "voice" ? "멘티가 해 준 한마디를 적어 주세요" : "넣고 싶은 글을 적어 주세요") + '"></textarea><div class="rw"><input data-wa maxlength="20" placeholder="작성자 이름" value="' + (k === "voice" ? "" : esc(S.me.name || "")) + '"><button type="button" data-wok>이 글 넣기</button></div></div><div class="upn"></div>';
+      var body = add + (list.length ? '<div class="sep">또는 공유공간에 올린 ' + (s.type === "photo" ? "사진" : "글") + '에서 고르기</div>' : '') + (!list.length ? '<div class="em">' + (k === "voice" ? "멘티가 공유공간에 올린 글이 없어요." : "우리 팀이 공유공간에 올린 " + (s.type === "photo" ? "사진" : "글") + "이 없어요.") + '</div>' :
         s.type === "photo" ? '<div class="pg">' + L.map(function(x){
           return '<button type="button" class="pi' + (S.sel[k] === x.id ? " on" : "") + '" data-id="' + esc(x.id) + '"><div class="im" style="background-image:url(' + esc(x.img) + ')"></div>' +
             '<div class="ca">' + esc(cut(x.title || x.text || x.src, 30)) + '<small>' + esc(x.src) + ' · ' + esc(x.author) + ' · ' + md(x.ts) + '</small></div></button>';
         }).join("") + '</div>' :
         L.map(function(x){
           return '<button type="button" class="ti' + (S.sel[k] === x.id ? " on" : "") + '" data-id="' + esc(x.id) + '">' + esc(cut(cleanText(x.text), 200)) + '<small>' + esc(x.src) + ' · ' + esc(x.author) + ' · ' + md(x.ts) + '</small></button>';
-        }).join("");
+        }).join(""));
       w.innerHTML = '<div class="bx"><div class="hd"><b>' + esc(s.label) + ' 고르기</b><button type="button" data-x>닫기</button></div><div class="bd">' +
         (srcs.length > 1 ? '<div class="flt">' + ["전체"].concat(srcs).map(function(f){ return '<button type="button" data-f="' + esc(f) + '" class="' + (f === flt ? "on" : "") + '">' + esc(f) + '</button>'; }).join("") + '</div>' : '') +
         body + '</div></div>';
@@ -260,7 +272,30 @@
     w.addEventListener("click", function(e){
       if(e.target === w || e.target.closest("[data-x]")){ w.remove(); return; }
       var f = e.target.closest("[data-f]"); if(f){ flt = f.getAttribute("data-f"); draw(); return; }
-      var b = e.target.closest("[data-id]"); if(b){ S.sel[k] = b.getAttribute("data-id"); w.remove(); render(); }
+      var b = e.target.closest("[data-id]"); if(b){ S.sel[k] = b.getAttribute("data-id"); w.remove(); render(); return; }
+      if(e.target.closest("[data-wok]")){
+        var tx = (w.querySelector("[data-wt]").value || "").trim(), au = (w.querySelector("[data-wa]").value || "").trim();
+        if(!tx){ w.querySelector("[data-wt]").focus(); return; }
+        var nid = "w_" + Date.now();
+        S.items.unshift({ id: nid, kind: "text", src: "직접 입력", text: tx, author: au || (S.me.name || ""), ts: Date.now(), mine: true });
+        S.sel[k] = nid; w.remove(); render();
+      }
+    });
+    w.addEventListener("change", function(e){
+      var inp = e.target.closest("[data-up]"); if(!inp || !inp.files || !inp.files[0]) return;
+      var f = inp.files[0], lb = w.querySelector(".up");
+      if(!/^image\//.test(f.type)){ alert("사진 파일만 올릴 수 있어요."); return; }
+      if(lb) lb.firstChild.textContent = "사진을 불러오는 중…";
+      var fr = new FileReader();
+      fr.onload = function(){
+        prepImage(fr.result).then(function(p){
+          if(!p){ alert("사진을 불러오지 못했어요. 다른 사진으로 시도해 주세요."); w.remove(); return; }
+          var nid = "u_" + Date.now();
+          S.items.unshift({ id: nid, kind: "photo", src: "직접 올린 사진", img: "data:image/jpeg;base64," + p.b64, title: f.name.replace(/\.[^.]+$/, ""), text: "", author: S.me.name || "", ts: Date.now(), mine: true });
+          S.sel[k] = nid; w.remove(); render();
+        });
+      };
+      fr.readAsDataURL(f);
     });
     document.body.appendChild(w);
   }
