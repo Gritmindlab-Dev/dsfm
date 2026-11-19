@@ -1,5 +1,5 @@
 /* =====================================================================
-   DS-FM/GLM 결과보고서 게시판 — 멘토 결과보고서 (멘토 전용 · 비공개)
+   DS-FM/GLM 결과보고서 — 멘토 결과보고서 (멘토 전용 · 비공개)
    ① 빈 양식(PPTX) 내려받기
    ② 공유공간에 올린 우리 팀 글·사진을 골라 양식에 자동으로 채워서 내려받기
    ③ 작성한 파일(PPTX·PDF, 5MB 이하) 제출 → 제출 완료 / 확인 완료
@@ -282,7 +282,7 @@
   /* 양식 안내 슬라이드의 메뉴 이름을 지금 메뉴 이름으로 */
   function fixGuide(zip){
     var f = zip.file("ppt/slides/slide1.xml"); if(!f) return Promise.resolve();
-    return f.async("string").then(function(x){ zip.file("ppt/slides/slide1.xml", x.split("「성과보고회」 메뉴").join("「결과보고서 게시판」 메뉴")); });
+    return f.async("string").then(function(x){ zip.file("ppt/slides/slide1.xml", x.split("「성과보고회」 메뉴").join("「결과보고서」 메뉴")); });
   }
   var PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
   function blankTpl(){
