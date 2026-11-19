@@ -73,9 +73,10 @@
     ".qx-form input:focus,.qx-form select:focus,.qx-form textarea:focus{border-color:var(--wine-soft);background:#fff}",
     ".qx-col{display:flex;flex-direction:column;gap:12px;min-width:0}",
     ".qx-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}",
-    ".qx-drop{border:2px dashed #dcc3cb;border-radius:12px;background:var(--cream);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--ink-soft);font-size:13px;text-align:center;padding:12px;overflow:hidden}",
+    ".qx-drop{position:relative;border:2px dashed #dcc3cb;border-radius:12px;background:var(--cream);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--ink-soft);font-size:13px;text-align:center;padding:12px;overflow:hidden}",
     ".qx-drop img{max-width:100%;max-height:320px;border-radius:8px}",
     ".qx-drop b{color:var(--wine)}",
+    ".qx-drop input[type=file]{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:200px}",
     ".qx-tags{display:flex;flex-wrap:wrap;gap:6px}",
     ".qx-tag{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer}",
     ".qx-tag.on{background:var(--wine);border-color:var(--wine);color:#fff}",
@@ -280,8 +281,8 @@
     return '<div class="card qx-form" id="qx-form">' +
       '<div class="qx-col">' +
         '<label>시간표 사진 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">학번·이름 등 개인정보는 가리고 캡처해 주세요</span>' +
-          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>시간표 캡처 1장 올리기</b><span>에브리타임·포털 시간표 화면 캡처 (JPG·PNG)</span>') + '</div>' +
-          '<input type="file" id="qx-file" accept="image/*" style="display:none"></label><div class="qx-msg" id="qx-pmsg" style="margin-top:-4px"></div>' +
+          '<div class="qx-drop" id="qx-drop">' + (d.thumb ? '<img src="' + d.full + '" alt="">' + '<span style="font-size:12px">다른 사진으로 바꾸려면 눌러 주세요</span>' : '<span style="font-size:28px">🗓️</span><b>시간표 캡처 1장 올리기</b><span>에브리타임·포털 시간표 화면 캡처 (JPG·PNG)</span>') + '<input type="file" id="qx-file" accept="image/*" title="시간표 사진 고르기"></div>' +
+          '</label><div class="qx-msg" id="qx-pmsg" style="margin-top:-4px"></div>' +
         '<div class="qx-2">' +
           '<label>단과대학 <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">시간표 카드에 표시돼요</span><select id="qx-college"><option value="">선택</option>' + COLLEGES.map(function(c){ return '<option' + (d.college === c ? " selected" : "") + '>' + c + '</option>'; }).join("") + '</select></label>' +
           '<label>학과(전공) <span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">무전공·자율전공이면 그대로 적어 주세요</span><input type="text" id="qx-major" maxlength="30" placeholder="예) 경영학전공 / 자유전공학부" value="' + esc(d.major || "") + '"></label>' +
@@ -561,7 +562,7 @@
       if((t = e.target.closest("[data-qx-college]"))){ S.college = t.getAttribute("data-qx-college"); render(); return; }
       if((t = e.target.closest("[data-qx-tag]"))){ var tg = t.getAttribute("data-qx-tag"); S.tag = S.tag === tg ? "" : tg; render(); return; }
       if((t = e.target.closest("[data-qx-sort]"))){ S.sort = t.getAttribute("data-qx-sort"); render(); return; }
-      if(e.target.closest("#qx-drop")){ e.preventDefault(); var f = $("qx-file"); if(f) f.click(); return; } /* label 안이라 기본 동작까지 겹쳐 파일창이 두 번 열리지 않게 */
+      if(e.target.closest("#qx-drop")){ return; } /* 사진 칸 위에 투명한 파일 선택 버튼이 덮여 있어서, 누르면 브라우저가 바로 파일창을 열어요 (스크립트로 대신 누르지 않음) */
       if((t = e.target.closest("[data-tag]"))){
         var tags = S.draft.tags, v = t.getAttribute("data-tag"), i = tags.indexOf(v);
         if(i >= 0) tags.splice(i, 1); else if(tags.length < 3) tags.push(v); else { var mm = $("qx-msg"); if(mm) mm.textContent = "태그는 3개까지 고를 수 있어요."; return; }
