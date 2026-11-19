@@ -221,7 +221,7 @@
 
     var last = S.mine[0];
     h += '<div class="rp-card"><div class="rp-h"><span class="no">3</span>결과보고서 제출</div>' +
-      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀번호_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 07_김덕성_20240000_시각디자인_결과보고서.pdf) 다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
+      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀번호_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 07_김덕성_20240000_시각디자인_결과보고서.pdf)<br>다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
       '<input type="file" id="rp-file" accept=".pdf,application/pdf">' +
       '<div class="rp-btns" style="margin-top:10px"><button class="rp-btn" type="button" data-rp="submit"' + (S.busy ? " disabled" : "") + '>제출하기</button></div>' +
       '<div class="rp-msg" id="rp-msg"></div>' +
