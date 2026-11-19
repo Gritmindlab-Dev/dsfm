@@ -1,5 +1,5 @@
 /* =====================================================================
-   DS-FM/GLM 성과보고회 — 멘토 결과보고서 (멘토 전용 · 비공개)
+   DS-FM/GLM 결과보고서 게시판 — 멘토 결과보고서 (멘토 전용 · 비공개)
    ① 빈 양식(PPTX) 내려받기
    ② 공유공간에 올린 우리 팀 글·사진을 골라 양식에 자동으로 채워서 내려받기
    ③ 작성한 파일(PPTX·PDF, 5MB 이하) 제출 → 제출 완료 / 확인 완료
@@ -279,6 +279,17 @@
     return jszipP;
   }
   function getTpl(){ return fetch(TPL_URL, { cache: "no-cache" }).then(function(r){ if(!r.ok) throw new Error("tpl"); return r.arrayBuffer(); }); }
+  /* 양식 안내 슬라이드의 메뉴 이름을 지금 메뉴 이름으로 */
+  function fixGuide(zip){
+    var f = zip.file("ppt/slides/slide1.xml"); if(!f) return Promise.resolve();
+    return f.async("string").then(function(x){ zip.file("ppt/slides/slide1.xml", x.split("「성과보고회」 메뉴").join("「결과보고서 게시판」 메뉴")); });
+  }
+  var PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  function blankTpl(){
+    return Promise.all([loadZip(), getTpl()]).then(function(r){
+      return r[0].loadAsync(r[1]).then(function(zip){ return fixGuide(zip).then(function(){ return zip.generateAsync({ type: "blob", mimeType: PPTX_MIME, compression: "DEFLATE" }); }); });
+    }).catch(function(){ return getTpl().then(function(buf){ return new Blob([buf], { type: PPTX_MIME }); }); });
+  }
   function saveBlob(blob, name){
     var url = URL.createObjectURL(blob), a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -369,7 +380,7 @@
     return Promise.all([loadZip(), getTpl(), Promise.all(imgJobs.map(function(s){ return prepImage(picked[s.key].img); }))]).then(function(r){
       var JSZip = r[0], imgs = {};
       imgJobs.forEach(function(s, i){ imgs[s.key] = r[2][i]; });
-      return JSZip.loadAsync(r[1]).then(function(zip){
+      return JSZip.loadAsync(r[1]).then(function(zip){ return fixGuide(zip).then(function(){ return zip; }); }).then(function(zip){
         var slides = {}, rels = {};
         var nums = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
         return Promise.all(nums.map(function(n){
@@ -469,7 +480,7 @@
             .then(function(){ done++; msg("rp-msg", "올리는 중이에요… (" + done + "/" + parts.length + ")"); });
         });
       }, Promise.resolve()).then(function(){
-        return ref.set({ kind: "final_report", text: "[성과보고회 결과보고서] " + f.name, author: me.name || "멘토", rosterId: me.rosterId || "", role: me.role || "",
+        return ref.set({ kind: "final_report", text: "[결과보고서] " + f.name, author: me.name || "멘토", rosterId: me.rosterId || "", role: me.role || "",
           college: me.college || "", team: me.team || "", teamName: me.teamName || "", fileName: f.name, fileSize: f.size, fileChunks: parts.length,
           status: "제출", createdAt: Date.now() });
       });
@@ -497,7 +508,7 @@
       var a = b.getAttribute("data-rp");
       if(a === "blank"){
         b.disabled = true;
-        getTpl().then(function(buf){ saveBlob(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" }), fileBase() + ".pptx"); })
+        blankTpl().then(function(blob){ saveBlob(blob, fileBase() + ".pptx"); })
           .catch(function(){ alert("양식을 내려받지 못했어요. 새로고침 후 다시 시도해 주세요."); }).then(function(){ b.disabled = false; });
       }
       if(a === "make"){
