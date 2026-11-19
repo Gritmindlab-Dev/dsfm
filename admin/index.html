@@ -233,7 +233,7 @@
     {key:"verify",  label:"인증 승인"},
     {key:"suggest", label:"건의함"},
     {key:"program", label:"멘토 프로그램"},
-    {key:"report", label:"성과보고회 제출"},
+    {key:"report", label:"결과보고서"},
     {key:"quest",   label:"11월 퀘스트"},
     {key:"posts",   label:"게시물 관리"},
     {key:"vote",    label:"투표"},
@@ -520,7 +520,7 @@
       var missing = mentors.filter(function(r){ return !latest[r.id] && !list.some(function(x){ return x.d.author === r.d.name && x.d.team === (r.d.teamKey || r.d.team); }); })
         .sort(function(a, b){ return String(a.d.college + a.d.team).localeCompare(String(b.d.college + b.d.team)); });
       var okN = list.filter(function(x){ return x.d.status === "확인완료"; }).length;
-      mainEl.innerHTML = '<h2 class="adm-h">성과보고회 제출</h2>' +
+      mainEl.innerHTML = '<h2 class="adm-h">결과보고서</h2>' +
         '<p class="adm-desc">멘토가 제출한 팀 결과보고서(PPTX·PDF)예요. 제출한 멘토 본인과 운영진만 볼 수 있어요. 파일을 내려받아 확인한 뒤 <b>확인 완료</b>를 눌러 주세요. 같은 멘토가 여러 번 올리면 마지막 파일만 보여요.</p>' +
         '<div class="adm-item-meta" style="margin:0 0 12px">제출 <b>' + list.length + '</b>명 / 멘토 ' + mentors.length + '명 · 확인 완료 ' + okN + '명 · 미제출 ' + missing.length + '명</div>' +
         '<div class="adm-list">' + (list.length ? list.map(function(x){
