@@ -221,8 +221,8 @@
 
     var last = S.mine[0];
     h += '<div class="rp-card"><div class="rp-h"><span class="no">3</span>결과보고서 제출</div>' +
-      '<div class="rp-d">완성한 파일(PPT·PDF·한글·워드, 5MB 이하)을 올려 주세요. 본인만의 양식으로 만든 파일도 괜찮아요. 파일명은 <b>팀번호_멘토이름_결과보고서</b>로 해 주세요. 다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
-      '<input type="file" id="rp-file" accept=".pptx,.ppt,.pdf,.hwp,.hwpx,.docx,.doc">' +
+      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요. 파일명은 <b>팀번호_멘토이름_결과보고서.pdf</b>로 해 주세요. 다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
+      '<input type="file" id="rp-file" accept=".pdf,application/pdf">' +
       '<div class="rp-btns" style="margin-top:10px"><button class="rp-btn" type="button" data-rp="submit"' + (S.busy ? " disabled" : "") + '>제출하기</button></div>' +
       '<div class="rp-msg" id="rp-msg"></div>' +
       (last ? '<div class="rp-sub"><span class="rp-st' + (last.d.status === "확인완료" ? " ok" : "") + '">' + (last.d.status === "확인완료" ? "✅ 확인 완료" : "📨 제출 완료") + '</span>' +
@@ -466,8 +466,8 @@
   function submit(){
     var inp = $("rp-file"), f = inp && inp.files && inp.files[0];
     if(!f){ msg("rp-msg", "제출할 파일을 골라 주세요."); return; }
-    if(!/\.(pptx|ppt|pdf|hwp|hwpx|docx|doc)$/i.test(f.name)){ msg("rp-msg", "PPT·PDF·한글·워드 파일만 올릴 수 있어요."); return; }
-    if(f.size > MAX_FILE){ msg("rp-msg", "파일이 5MB를 넘어요. 사진 용량을 줄이거나 PDF로 저장해 올려 주세요."); return; }
+    if(!/\.pdf$/i.test(f.name)){ msg("rp-msg", "PDF 파일만 올릴 수 있어요. PowerPoint에서 [파일 → 다른 이름으로 저장 → PDF]로 저장한 뒤 올려 주세요."); return; }
+    if(f.size > MAX_FILE){ msg("rp-msg", "파일이 5MB를 넘어요. PDF로 저장할 때 '최소 크기(온라인 게시)'를 고르거나 사진 용량을 줄여서 다시 올려 주세요."); return; }
     if(!db){ msg("rp-msg", "서버에 연결하지 못했어요. 새로고침해 주세요."); return; }
     S.busy = true; render(); msg("rp-msg", "올리는 중이에요… 창을 닫지 마세요.");
     var me = S.me, ref = db.collection("suggestion_posts").doc();
