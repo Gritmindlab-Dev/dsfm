@@ -34,8 +34,9 @@
     var d = new Date(ts); return (d.getMonth() + 1) + "/" + d.getDate();
   }
   function now(){ return Date.now(); }
-  function isOpen(){ var n = now(); return (n >= START || PREVIEW) && n <= END; }
-  function isClosed(){ return now() > END; }
+  /* 11/19: 마감(END)이 지나도 계속 올리고 댓글 달 수 있게 열어 둠 */
+  function isOpen(){ var n = now(); return (n >= START || PREVIEW); }
+  function isClosed(){ return false; }
   function visible(){ return PREVIEW || now() >= START; }
   function isMentor(){ return S.me && S.me.role === "멘토"; }
   function myKey(){ return (S.me.name || "") + "__" + (S.me.team || ""); }
