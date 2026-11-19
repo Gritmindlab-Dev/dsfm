@@ -230,7 +230,7 @@
 
     var last = S.mine[0];
     h += '<div class="rp-card"><div class="rp-h"><span class="no">3</span>결과보고서 제출</div>' +
-      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀번호_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 07_김덕성_20240000_시각디자인_결과보고서.pdf)<br>다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
+      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀이름_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 덕성한마음팀_김덕성_20240000_시각디자인_결과보고서.pdf)<br>다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
       '<input type="file" id="rp-file" accept=".pdf,application/pdf">' +
       '<div class="rp-btns" style="margin-top:10px"><button class="rp-btn" type="button" data-rp="submit"' + (S.busy ? " disabled" : "") + '>제출하기</button></div>' +
       '<div class="rp-msg" id="rp-msg"></div>' +
@@ -317,7 +317,7 @@
   /* 양식 안내 슬라이드의 메뉴 이름을 지금 메뉴 이름으로 */
   function fixGuide(zip){
     var f = zip.file("ppt/slides/slide1.xml"); if(!f) return Promise.resolve();
-    return f.async("string").then(function(x){ zip.file("ppt/slides/slide1.xml", x.split("「성과보고회」 메뉴").join("「결과보고서」 메뉴").split("팀번호_멘토이름_결과보고서.pptx  (예: 07_김덕성_결과보고서.pptx)").join("팀번호_멘토이름_학번_전공_결과보고서.pdf  (예: 07_김덕성_20240000_시각디자인_결과보고서.pdf)")); });
+    return f.async("string").then(function(x){ zip.file("ppt/slides/slide1.xml", x.split("「성과보고회」 메뉴").join("「결과보고서」 메뉴").split("팀번호_멘토이름_결과보고서.pptx  (예: 07_김덕성_결과보고서.pptx)").join("팀이름_멘토이름_학번_전공_결과보고서.pdf  (예: 덕성한마음팀_김덕성_20240000_시각디자인_결과보고서.pdf)")); });
   }
   var PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
   function blankTpl(){
@@ -331,7 +331,7 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 8000);
   }
   function teamNo(){ var m = String(S.me.teamName || "").match(/\d+/); return m ? ("0" + m[0]).slice(-2) : "00"; }
-  function fileBase(){ return teamNo() + "_" + (S.me.name || "멘토") + "_결과보고서"; }
+  function fileBase(){ return String(S.me.teamName || "팀이름").replace(/[\\/:*?"<>|\s]+/g, "") + "_" + (S.me.name || "멘토") + "_결과보고서"; }
 
   var A = "http://schemas.openxmlformats.org/drawingml/2006/main";
   var P = "http://schemas.openxmlformats.org/presentationml/2006/main";
