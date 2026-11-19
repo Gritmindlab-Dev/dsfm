@@ -202,7 +202,7 @@
       '<div class="rp-btns"><button class="rp-btn ghost" type="button" data-rp="blank">📄 빈 양식 받기 (PPTX)</button></div></div>';
 
     h += '<div class="rp-card"><div class="rp-h"><span class="no">2</span>내 글·사진 골라서 채우기</div>' +
-      '<div class="rp-d">우리 팀(멘토·멘티)이 공유공간에 올린 글과 사진 중에서 양식의 각 칸에 넣을 것을 골라 주세요. 피크닉데이·11월 퀘스트 기록은 미리 골라 두었어요. 받은 파일은 PowerPoint에서 자유롭게 고칠 수 있어요.</div>';
+      '<div class="rp-d">우리 팀(멘토·멘티)이 공유공간에 올린 글과 사진 중에서 양식의 각 칸에 넣을 것을 골라 주세요.<br>피크닉데이·11월 퀘스트 기록은 미리 골라 두었어요. 받은 파일은 PowerPoint에서 자유롭게 고칠 수 있어요.</div>';
     if(S.loading) h += '<div class="rp-auto">우리 팀 기록을 불러오는 중이에요…</div>';
     else if(S.loadErr) h += '<div class="rp-auto">기록을 불러오지 못했어요. 새로고침 후 다시 열어 주세요. (빈 양식은 위에서 받을 수 있어요)</div>';
     else if(S.loaded){
