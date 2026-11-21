@@ -47,6 +47,16 @@
     "#page-hub .hb-card{background:#fff;border:1px solid #ecdde1;border-radius:18px;padding:20px 22px;margin-bottom:14px}",
     "#page-hub .hb-card h3{font-size:19px;color:#4f1226;margin-bottom:6px}",
     "#page-hub .hb-d{font-size:14px;color:#8a737a;line-height:1.65}",
+    "#page-hub .hb-intro{background:#fff;border:1px solid #efe2e6;border-radius:16px;padding:16px 20px;margin-bottom:16px;font-size:14px;color:#5a4a50;line-height:1.7}",
+    "#page-hub .hb-intro b{color:#7c1f3d}",
+    "#page-hub .hb-tile .sub{font-size:13px;opacity:.92;font-weight:500;line-height:1.5}",
+    "#page-hub .t4 .sub{color:#6b5a60}",
+    "#page-hub .hb-steps{list-style:none;margin:12px 0 4px;padding:0;counter-reset:st}",
+    "#page-hub .hb-steps li{counter-increment:st;position:relative;padding:9px 12px 9px 44px;margin-bottom:6px;background:#faf6f7;border-radius:12px;font-size:14px;color:#4a3a40;line-height:1.6}",
+    "#page-hub .hb-steps li:before{content:counter(st);position:absolute;left:12px;top:9px;width:22px;height:22px;border-radius:50%;background:#7c1f3d;color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}",
+    "#page-hub .hb-steps li b{color:#4f1226}",
+    "#page-hub .hb-sec{font-size:14.5px;font-weight:900;color:#4f1226;margin:16px 0 4px}",
+    "@media(max-width:640px){#page-hub .hb-tile .sub{font-size:11.5px}#page-hub .hb-intro{font-size:13px;padding:13px 15px}}",
     "#page-hub .hb-bar{height:12px;background:#f3e6ea;border-radius:8px;overflow:hidden;margin:12px 0 6px}",
     "#page-hub .hb-bar i{display:block;height:100%;background:#2b6cb0;border-radius:8px}",
     "#page-hub .hb-opts{display:flex;flex-direction:column;gap:10px;margin-top:14px}",
@@ -95,20 +105,17 @@
   }
   function myOption(){ return S.rsvp ? S.rsvp.option : S.pollMine; }
   function loadReports(){
-    return db.collection("suggestion_posts").where("kind", "==", "final_report").get().then(function(s){
-      var latest = {};
-      s.docs.forEach(function(x){
-        var d = x.data(), k = d.rosterId || (d.team + "|" + d.author);
-        if(!latest[k] || (d.createdAt || 0) > (latest[k].d.createdAt || 0)) latest[k] = { id: x.id, d: d };
-      });
-      S.reports = Object.keys(latest).map(function(k){ return latest[k]; })
-        .sort(function(a, b){ return String(a.d.college + a.d.teamName).localeCompare(String(b.d.college + b.d.teamName), "ko"); });
+    /* 후보 = 운영진이 관리자 화면에서 올린 결과보고서만 (polls/replay_prevote, 최고 관리자만 수정 가능) */
+    return db.collection("polls").doc("replay_prevote").get().then(function(s){
+      var c = (s.exists && s.data().candidates) || [];
+      S.reports = c.map(function(x){ return { id: x.id, d: { teamName: x.team || "", author: x.mentor || "", college: x.college || "", team: x.teamKey || "", fileName: x.fileName || "", fileChunks: x.fileChunks || 0, fileId: x.fileId || x.id, title: x.team || "" } }; });
     }).catch(function(){ S.reports = []; });
   }
   function loadMyVote(){
     return voteRef().get().then(function(s){ S.myVote = s.exists ? s.data() : null; }).catch(function(){ S.myVote = null; });
   }
   function teamTitle(d){
+    if(d.title) return d.title;
     var f = String(d.fileName || "").replace(/\.[^.]+$/, "").split("_")[0];
     return f && f !== "팀이름" && f !== "팀번호" ? f : (d.teamName || "팀");
   }
@@ -128,17 +135,19 @@
     var v = S.view, h = "";
     if(v === "home"){
       var vs = voteState(), full = S.attend >= CAP;
-      h = head() + '<div class="hb-grid">' +
-        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
-        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
-        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span>행운권 추첨으로 참여자 중 약 30명에게 상품</span></button>' +
-        '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="pill">공지 · 게시판</span></button>' +
+      h = head() + '<div class="hb-intro">11월 26일(목) <b>2학기 멘토링 성과보고회</b>를 준비하고 있어요. 아래 네 가지 중에서 필요한 메뉴를 눌러 주세요.<br>· 성과보고회에 오실 분은 <b>참석 투표</b>를 먼저 해 주세요 (선착순 ' + CAP + '명).<br>· <b>11. 24.(화)~25.(수)</b>에는 <b>후보 멘토 8명</b>의 결과보고서를 읽고 <b>우수멘토 사전투표</b>에 참여해 주세요. 사전투표로 뽑힌 5명이 성과보고회에서 발표하고, 그중 3명이 대상·최우수상·우수상을 받아요.<br>· 성과보고회에 오면 입장할 때 번호표를 받고, 시상이 끝난 뒤 <b>럭키드로우</b> 추첨으로 약 30명에게 상품을 드려요.<br>· 공지·게시판·결과보고서 제출 등 기존 기능은 <b>공유공간 들어가기</b>에서 그대로 이용할 수 있어요.</div>' + '<div class="hb-grid">' +
+        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나 · 선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
+        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">후보 멘토 8명의 결과보고서 보고 1팀에 투표</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
+        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표 → 시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
+        '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div>';
     } else if(v === "rsvp"){
       var mine = myOption(), att = isAttend(mine), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
       var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">멘토·멘티 누구나 참여할 수 있어요. <b>선착순 ' + CAP + '명</b>까지 받아요. 참석하면 현장투표 1표, 커피차·간식, 럭키드로우에 참여할 수 있어요.</div>' +
+        '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:30</b> · 장소는 추후 안내 · 멘토·멘티 <b>누구나</b> 참여할 수 있어요.<br>자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
+        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 · 간식 2종</b> — 현장에서 함께 즐겨요.</li><li><b>럭키드로우</b> — 입장할 때 받은 번호표로 상품 추첨에 참여해요 (약 30명).</li></ul>' +
+        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#2b6cb0">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
         (full2 ? '<div class="hb-msg">선착순 ' + CAP + '명이 모두 차서 참석 신청이 마감됐어요.</div>' : '') +
@@ -147,21 +156,25 @@
     } else if(v === "vote"){
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) ~ 11. 25.(수)</b> · 최종 점수의 50%예요. 멘토들의 2026년 결과보고서를 읽어 보고 <b>가장 좋았던 팀 1곳</b>에 투표해 주세요.<br>사전투표로 <b>8명 중 5명</b>을 뽑아 성과보고회 현장에서 발표하고, 그중 <b>3명</b>에게 <b>대상·최우수상·우수상</b>을 드려요.<br> <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 바꿀 수 있어요.<br>' +
+        '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
+        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 운영진이 선정한 후보 멘토 <b>8명</b>의 결과보고서 중에서 <b>5명</b>을 뽑아요. 사전투표는 <b>최종 점수의 50%</b>예요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 현장투표를 더해 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
+        '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#3f9a5a">지금 투표할 수 있어요!</b>') +
-        '<br><span style="font-size:12.5px">※ 사전투표를 위해 제출된 결과보고서는 공유공간 참여자 모두에게 공개돼요.</span></div>' +
+        '<br><span style="font-size:12.5px">※ 운영진이 선정한 <b>후보 멘토 8명</b>의 결과보고서만 아래에 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
         (myVoteId ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.myVote.reportTeam || "") + '</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
-        (list === null ? '<div class="hb-d" style="margin-top:12px">불러오는 중이에요…</div>' : !list.length ? '<div class="hb-d" style="margin-top:12px">아직 제출된 결과보고서가 없어요.</div>' :
+        (list === null ? '<div class="hb-d" style="margin-top:12px">불러오는 중이에요…</div>' : !list.length ? '<div class="hb-d" style="margin-top:12px">후보 결과보고서를 준비하고 있어요. 11. 24.(화)까지 올라와요.</div>' :
           list.map(function(x){
             var d = x.d, isMine = d.team && d.team === S.me.team, voted = myVoteId === x.id;
-            return '<div class="hb-rep' + (isMine ? " mine" : "") + (voted ? " voted" : "") + '"><div class="nm"><b>' + esc(teamTitle(d)) + (isMine ? '<span class="hb-tag">우리 팀</span>' : '') + (voted ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([d.college, d.teamName, "멘토 " + (d.author || "")].filter(Boolean).join(" · ")) + '</small></div>' +
+            return '<div class="hb-rep' + (isMine ? " mine" : "") + (voted ? " voted" : "") + '"><div class="nm"><b>' + esc(teamTitle(d)) + (isMine ? '<span class="hb-tag">우리 팀</span>' : '') + (voted ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([d.college, d.team, "멘토 " + (d.author || "")].filter(Boolean).join(" · ")) + '</small></div>' +
               '<button type="button" class="hb-btn gh" data-view="' + esc(x.id) + '">📄 보고서 보기</button>' +
               '<button type="button" class="hb-btn" data-vote="' + esc(x.id) + '"' + (isMine || vs2 !== "open" || voted || S.busy ? " disabled" : "") + '>' + (voted ? "투표함" : "이 팀에 투표") + '</button></div>';
           }).join("")) + '</div>';
     } else if(v === "lucky"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>참여자</b> 중 <b>약 30명</b>에게 럭키드로우 상품을 드려요.<br>입장할 때 <b>번호표(행운권)</b>를 나눠 드리고, <b>시상이 끝난 뒤 추첨</b>해요. 현장에서는 커피차와 간식 2종도 준비돼 있어요.</div>' +
+        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회에 참여한 멘토·멘티 중 <b>약 30명</b>에게 행운권 추첨으로 상품을 드려요.</div>' +
+        '<div class="hb-sec">추첨은 이렇게 진행돼요</div><ul class="hb-steps"><li><b>입장</b> — 행사장에 들어올 때 <b>번호표(행운권)</b>를 받아요.</li><li><b>발표 · 시상</b> — 우수멘토 발표와 시상이 끝날 때까지 번호표를 잘 보관해 주세요.</li><li><b>추첨</b> — 시상이 끝난 뒤 번호를 뽑아 상품을 드려요. <b>현장에 있어야</b> 받을 수 있어요.</li></ul>' +
+        '<div class="hb-sec">상품 미리 보기</div>' +
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         '<div class="hb-soon">그 밖의 상품도 곧 공개돼요!</div>' +
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#2b6cb0;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
@@ -207,7 +220,7 @@
     var d = r.d, w = null;
     try{ w = window.open("", "_blank"); if(w) w.document.write('<p style="font-family:sans-serif;padding:20px">결과보고서를 불러오는 중이에요…</p>'); }catch(e){ w = null; }
     var old = btn.textContent; btn.textContent = "불러오는 중…"; btn.disabled = true;
-    var get = d.fileData ? Promise.resolve(d.fileData) : db.collection("attendance_votes").where("parentId", "==", id).get().then(function(s){
+    var get = d.fileData ? Promise.resolve(d.fileData) : db.collection("attendance_votes").where("parentId", "==", d.fileId || id).get().then(function(s){
       var ch = s.docs.map(function(x){ return x.data(); }).sort(function(a, b){ return a.idx - b.idx; });
       if(d.fileChunks && ch.length < d.fileChunks) throw new Error("part");
       return ch.map(function(x){ return x.data || ""; }).join("");
