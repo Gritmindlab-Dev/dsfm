@@ -317,7 +317,7 @@
         verify: scoped("verify_posts").filter(function(x){ return (x.d.status || "확인중") === "확인중"; }).length,
         suggest: scoped("suggestion_posts").filter(function(x){ return !x.d.kind && (!x.d.status || x.d.status === "접수"); }).length,
         program: scoped("suggestion_posts").filter(function(x){ return (x.d.kind === "program_plan" || x.d.kind === "program_report") && (!x.d.status || x.d.status === "접수"); }).length,
-        report: scoped("suggestion_posts").filter(function(x){ return x.d.kind === "final_report" && x.d.status !== "확인완료"; }).length
+        report: (function(){ var lt = {}; scoped("suggestion_posts").filter(function(x){ return x.d.kind === "final_report"; }).forEach(function(x){ var k = x.d.rosterId || (x.d.team + "|" + x.d.author); if(!lt[k] || (x.d.createdAt || 0) > (lt[k].d.createdAt || 0)) lt[k] = x; }); return Object.keys(lt).filter(function(k){ return lt[k].d.status !== "확인완료"; }).length; })()
       };
     }
     function renderTabs(){
