@@ -49,6 +49,8 @@
     "#page-hub .hb-d{font-size:14px;color:#8a737a;line-height:1.65}",
     "#page-hub .hb-intro{background:#fff;border:1px solid #efe2e6;border-radius:16px;padding:16px 20px;margin-bottom:16px;font-size:14px;color:#5a4a50;line-height:1.7}",
     "#page-hub .hb-intro b{color:#7c1f3d}",
+    "#page-hub{word-break:keep-all;overflow-wrap:break-word}#page-hub br.mb{display:none}",
+    "@media(max-width:640px){#page-hub br.mb{display:inline}#page-hub .dt{display:none}#page-hub .hb-head b span{display:block;margin:2px 0 0}}",
     "#page-hub .hb-tile .sub{font-size:13px;opacity:.92;font-weight:500;line-height:1.5}",
     "#page-hub .t4 .sub{color:#5a4d12}",
     "#page-hub .hb-steps{list-style:none;margin:12px 0 4px;padding:0;counter-reset:st}",
@@ -128,18 +130,18 @@
     return $("hb-body");
   }
   function head(){
-    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내 · 사전투표·현장투표로 우수멘토를 함께 뽑아요</p></div>';
+    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내<br class="mb"><span class="dt"> · </span>사전투표·현장투표로 우수멘토를 함께 뽑아요</p></div>';
   }
   function render(){
     var el = ensure(); if(!el || !S.me) return;
     var v = S.view, h = "";
     if(v === "home"){
       var vs = voteState(), full = S.attend >= CAP;
-      h = head() + '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>, 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요. 기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
-        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나 · 선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
-        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">후보 멘토 8명의 결과보고서 보고 1팀에 투표</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
-        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표 → 시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
-        '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
+      h = head() + '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
+        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
+        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">후보 멘토 8명의 결과보고서<br class="mb"> 보고 1팀에 투표</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
+        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
+        '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div>';
     } else if(v === "rsvp"){
       var mine = myOption(), att = isAttend(mine), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
