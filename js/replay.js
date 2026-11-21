@@ -57,6 +57,8 @@
     "#page-hub .hb-steps li{counter-increment:st;position:relative;padding:9px 12px 9px 44px;margin-bottom:6px;background:#faf6f7;border-radius:12px;font-size:14px;color:#4a3a40;line-height:1.6}",
     "#page-hub .hb-steps li:before{content:counter(st);position:absolute;left:12px;top:9px;width:22px;height:22px;border-radius:50%;background:#7c1f3d;color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}",
     "#page-hub .hb-steps li b{color:#4f1226}",
+    "#page-hub .hb-score{display:flex;gap:6px;margin:12px 0 6px}#page-hub .hb-score div{flex:1;border-radius:12px;padding:10px 6px;text-align:center;background:#f3f6f9;color:#4a4a55;font-size:12.5px;font-weight:700;line-height:1.4}#page-hub .hb-score div b{display:block;font-size:20px;font-weight:900}#page-hub .hb-score .main{flex:1.5;background:#459cad;color:#fff}",
+    "#page-hub .hb-ask{background:#fff7d6;border:1.5px solid #f2dd68;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:800;color:#5a4d12;margin:6px 0 4px}",
     "#page-hub .hb-sec{font-size:14.5px;font-weight:900;color:#4f1226;margin:16px 0 4px}",
     "@media(max-width:640px){#page-hub .hb-tile .sub{font-size:11.5px}#page-hub .hb-intro{font-size:13px;padding:13px 15px}}",
     "#page-hub .hb-bar{height:12px;background:#f3e6ea;border-radius:8px;overflow:hidden;margin:12px 0 6px}",
@@ -130,7 +132,7 @@
     return $("hb-body");
   }
   function head(){
-    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내<br class="mb"><span class="dt"> · </span>사전투표·현장투표로 우수멘토를 함께 뽑아요</p></div>';
+    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내<br class="mb"><span class="dt"> · </span>사전·현장·전문가 투표로 우수멘토를 뽑아요</p></div>';
   }
   function render(){
     var el = ensure(); if(!el || !S.me) return;
@@ -139,7 +141,7 @@
       var vs = voteState(), full = S.attend >= CAP;
       h = head() + '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
         '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
-        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">후보 멘토 8명의 결과보고서<br class="mb"> 보고 1팀에 투표</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
+        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
         '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div>';
@@ -159,10 +161,12 @@
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
-        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 운영진이 선정한 후보 멘토 <b>8명</b>의 결과보고서 중에서 <b>5명</b>을 뽑아요. 사전투표는 <b>최종 점수의 50%</b>예요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 현장투표를 더해 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
+        '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>30%</b></div><div>전문가투표<b>20%</b></div></div>' +
+        '<div class="hb-ask">📣 사전투표 점수 비중이 가장 커요! 여러분의 한 표가 우수멘토를 결정하니 많이 참여해 주세요.</div>' +
+        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 사전투표·현장투표·전문가투표 점수를 합쳐 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#2f7f8f">지금 투표할 수 있어요!</b>') +
-        '<br><span style="font-size:12.5px">※ 운영진이 선정한 <b>후보 멘토 8명</b>의 결과보고서만 아래에 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
+        '<br><span style="font-size:12.5px">※ 아래에 <b>후보 멘토 8명</b>의 결과보고서가 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
         (myVoteId ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.myVote.reportTeam || "") + '</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
         (list === null ? '<div class="hb-d" style="margin-top:12px">불러오는 중이에요…</div>' : !list.length ? '<div class="hb-d" style="margin-top:12px">후보 결과보고서를 준비하고 있어요. 11. 24.(화)까지 올라와요.</div>' :
