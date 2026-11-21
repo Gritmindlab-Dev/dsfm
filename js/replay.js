@@ -1,6 +1,6 @@
 /* =====================================================================
    DS-FM/GLM 2학기 성과보고회 (DS-FM REPLAY) 홈 — 로그인하면 첫 화면
-   ① 참석 투표 (선착순 100명)  ② 결과보고서 사전투표 (11.24~11.25)
+   ① 참석 투표 (선착순 100명)  ② 우수멘토 사전투표 (11.24~11.25)
    ③ 럭키드로우 상품보기       ④ 공유공간 들어가기
    데이터 (Firestore)
      poll_votes (pollId = POLL_ID)              : 11/20까지 받은 기존 참여 신청
@@ -121,7 +121,7 @@
     return $("hb-body");
   }
   function head(){
-    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내 · 사전투표·현장투표로 BEST 멘토를 함께 뽑아요</p></div>';
+    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내 · 사전투표·현장투표로 우수멘토를 함께 뽑아요</p></div>';
   }
   function render(){
     var el = ensure(); if(!el || !S.me) return;
@@ -130,8 +130,8 @@
       var vs = voteState(), full = S.attend >= CAP;
       h = head() + '<div class="hb-grid">' +
         '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
-        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>결과보고서<br>사전투표</b><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
-        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span>행운권 추첨으로 참여자 중 30명에게 상품</span></button>' +
+        '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
+        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span>행운권 추첨으로 참여자 중 약 30명에게 상품</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="pill">공지 · 게시판</span></button>' +
         '</div>';
     } else if(v === "rsvp"){
@@ -147,7 +147,7 @@
     } else if(v === "vote"){
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>결과보고서 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) ~ 11. 25.(수)</b> · 최종 점수의 50%예요. 팀 결과보고서를 읽어 보고 <b>가장 좋았던 팀 1곳</b>에 투표해 주세요. <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 바꿀 수 있어요.<br>' +
+        '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) ~ 11. 25.(수)</b> · 최종 점수의 50%예요. 멘토들의 2026년 결과보고서를 읽어 보고 <b>가장 좋았던 팀 1곳</b>에 투표해 주세요.<br>사전투표로 <b>8명 중 5명</b>을 뽑아 성과보고회 현장에서 발표하고, 그중 <b>3명</b>에게 <b>대상·최우수상·우수상</b>을 드려요.<br> <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#3f9a5a">지금 투표할 수 있어요!</b>') +
         '<br><span style="font-size:12.5px">※ 사전투표를 위해 제출된 결과보고서는 공유공간 참여자 모두에게 공개돼요.</span></div>' +
         (myVoteId ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.myVote.reportTeam || "") + '</div>' : '') +
@@ -161,7 +161,7 @@
           }).join("")) + '</div>';
     } else if(v === "lucky"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>현장 참석자</b> 중 <b>행운권 추첨</b>으로 <b>30명</b>에게 상품을 드려요. 현장에서는 커피차와 간식 2종도 준비돼 있어요.</div>' +
+        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>참여자</b> 중 <b>약 30명</b>에게 럭키드로우 상품을 드려요.<br>입장할 때 <b>번호표(행운권)</b>를 나눠 드리고, <b>시상이 끝난 뒤 추첨</b>해요. 현장에서는 커피차와 간식 2종도 준비돼 있어요.</div>' +
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         '<div class="hb-soon">그 밖의 상품도 곧 공개돼요!</div>' +
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#2b6cb0;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
