@@ -16,6 +16,7 @@
   var EVENT_TEXT = "2026. 11. 26.(목) 18:30";
   var VOTE_START = new Date("2026-11-24T00:00:00+09:00").getTime();
   var VOTE_END   = new Date("2026-11-25T23:59:59+09:00").getTime();
+  var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권" }, { name: "🥈 최우수상", gift: "올리브영 5만원권" }, { name: "🥉 우수상", gift: "올리브영 3만원권" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
   var PRIZES = [ { name: "올리브영 1만원권", qty: "10명" } ];  /* 상품이 정해지면 여기에 추가 */
   var OPT_PRESENT = "발표로 참여할게요 (멘토·팀)", OPT_WATCH = "참관으로 참여할게요", OPT_NO = "참석이 어려워요";
 
@@ -80,6 +81,7 @@
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
     "#page-hub .hb-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:#f1e6e9;color:#7c1f3d;margin-left:6px}",
     "#page-hub .hb-prize{display:flex;justify-content:space-between;align-items:center;border:1px solid #f3dcb8;background:#fff8ec;border-radius:12px;padding:12px 16px;margin-top:10px;font-size:15px;font-weight:800;color:#5a3a10}",
+    "#page-hub .hb-prize.aw{background:#eef7f9;border-color:#bfe0e7;color:#1f4f5a}",
     "#page-hub .hb-soon{border:2px dashed #e8c48a;border-radius:12px;padding:16px;text-align:center;color:#a87a2c;font-weight:800;margin-top:10px}",
     "@media(max-width:640px){#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-rep .nm{flex-basis:100%}}"
   ].join("\n");
@@ -163,7 +165,7 @@
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
         '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>30%</b></div><div>전문가투표<b>20%</b></div></div>' +
         '<div class="hb-ask">📣 사전투표 점수 비중이 가장 커요! 여러분의 한 표가 우수멘토를 결정하니 많이 참여해 주세요.</div>' +
-        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 사전투표·현장투표·전문가투표 점수를 합쳐 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
+        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가투표 점수를 더해 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#2f7f8f">지금 투표할 수 있어요!</b>') +
         '<br><span style="font-size:12.5px">※ 아래에 <b>후보 멘토 8명</b>의 결과보고서가 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
@@ -180,7 +182,9 @@
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회에 참여한 멘토·멘티 중 <b>약 30명</b>에게 행운권 추첨으로 상품을 드려요.</div>' +
         '<div class="hb-sec">추첨은 이렇게 진행돼요</div><ul class="hb-steps"><li><b>입장</b> — 행사장에 들어올 때 <b>번호표(행운권)</b>를 받아요.</li><li><b>발표 · 시상</b> — 우수멘토 발표와 시상이 끝날 때까지 번호표를 잘 보관해 주세요.</li><li><b>추첨</b> — 시상이 끝난 뒤 번호를 뽑아 상품을 드려요. <b>현장에 있어야</b> 받을 수 있어요.</li></ul>' +
-        '<div class="hb-sec">상품 미리 보기</div>' +
+        '<div class="hb-sec">🏆 시상 상품</div>' +
+        AWARDS.map(function(p){ return '<div class="hb-prize aw"><span>' + esc(p.name) + '</span><span>' + esc(p.gift) + '</span></div>'; }).join("") +
+        '<div class="hb-sec">🎁 럭키드로우 상품</div>' +
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         '<div class="hb-soon">그 밖의 상품도 곧 공개돼요!</div>' +
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
