@@ -834,6 +834,10 @@
         <div class="sub" id="user-team-display">멘토링 참여자</div>
       </div>
       <div class="rail-nav" id="rail-nav">
+        <button data-page="hub" id="nav-hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+          성과보고회 홈
+        </button>
         <button data-page="announce" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           공지사항
@@ -903,6 +907,9 @@
         </section>
 
         <!-- 공지사항 -->
+        <!-- 성과보고회 홈 (로그인 첫 화면) — js/replay.js 가 그려요 -->
+        <section id="page-hub" class="page" style="display:none"></section>
+
         <section id="page-announce" class="page">
           <div class="page-eyebrow">운영진 공지</div>
           <h2 class="page-title">공지사항</h2>
@@ -1396,6 +1403,7 @@
     if(pageName === "program") watchPrograms();
     if(pageName === "quest" && window.DSFMQuest) window.DSFMQuest.open();
     if(pageName === "report" && window.DSFMReport) window.DSFMReport.open();
+    if(pageName === "hub" && window.DSFMReplay) window.DSFMReplay.open();
   }
   document.getElementById("rail-nav").addEventListener("click", function(e){
     var btn = e.target.closest("button[data-page]");
@@ -3184,6 +3192,7 @@
 <script src="js/picnic.js?v=20261119a"></script>
 <script src="js/quest.js?v=20261119c"></script>
 <script src="js/report.js?v=20261119j"></script>
+<script src="js/replay.js?v=20261121e"></script>
 <script>
 /* 사진 크게 보기 (여러 장이면 넘겨보기) */
 (function(){
