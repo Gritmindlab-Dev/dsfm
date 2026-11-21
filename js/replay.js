@@ -40,8 +40,8 @@
     "#page-hub .hb-tile b{font-size:21px;font-weight:900;line-height:1.35}",
     "#page-hub .hb-tile span{font-size:14px;opacity:.95;line-height:1.45}",
     "#page-hub .hb-tile .pill{display:inline-block;background:rgba(255,255,255,.22);border-radius:14px;padding:4px 12px;font-weight:800;font-size:13.5px}",
-    "#page-hub .t1{background:#2b6cb0}#page-hub .t2{background:#3f9a5a}#page-hub .t3{background:#e8962e}#page-hub .t4{background:#f1ebee;color:#4f1226}",
-    "#page-hub .t4 .pill{background:#7c1f3d;color:#fff}",
+    "#page-hub .t1{background:#205696}#page-hub .t2{background:#459cad}#page-hub .t3{background:#c5637a}#page-hub .t4{background:#f2dd68;color:#3b3208}",
+    "#page-hub .t4 .pill{background:#3b3208;color:#f2dd68}",
     "@media(max-width:640px){#page-hub .hb-grid{gap:10px}#page-hub .hb-tile{min-height:160px;padding:14px;gap:8px}#page-hub .hb-tile svg{width:44px;height:44px}#page-hub .hb-tile b{font-size:16px}#page-hub .hb-tile span{font-size:12px}#page-hub .hb-tile .pill{font-size:11.5px;padding:3px 9px}#page-hub .hb-head b{font-size:19px}}",
     "#page-hub .hb-back{border:0;background:none;color:#7c1f3d;font:inherit;font-weight:800;font-size:14px;cursor:pointer;padding:4px 0;margin-bottom:10px}",
     "#page-hub .hb-card{background:#fff;border:1px solid #ecdde1;border-radius:18px;padding:20px 22px;margin-bottom:14px}",
@@ -50,7 +50,7 @@
     "#page-hub .hb-intro{background:#fff;border:1px solid #efe2e6;border-radius:16px;padding:16px 20px;margin-bottom:16px;font-size:14px;color:#5a4a50;line-height:1.7}",
     "#page-hub .hb-intro b{color:#7c1f3d}",
     "#page-hub .hb-tile .sub{font-size:13px;opacity:.92;font-weight:500;line-height:1.5}",
-    "#page-hub .t4 .sub{color:#6b5a60}",
+    "#page-hub .t4 .sub{color:#5a4d12}",
     "#page-hub .hb-steps{list-style:none;margin:12px 0 4px;padding:0;counter-reset:st}",
     "#page-hub .hb-steps li{counter-increment:st;position:relative;padding:9px 12px 9px 44px;margin-bottom:6px;background:#faf6f7;border-radius:12px;font-size:14px;color:#4a3a40;line-height:1.6}",
     "#page-hub .hb-steps li:before{content:counter(st);position:absolute;left:12px;top:9px;width:22px;height:22px;border-radius:50%;background:#7c1f3d;color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}",
@@ -58,20 +58,20 @@
     "#page-hub .hb-sec{font-size:14.5px;font-weight:900;color:#4f1226;margin:16px 0 4px}",
     "@media(max-width:640px){#page-hub .hb-tile .sub{font-size:11.5px}#page-hub .hb-intro{font-size:13px;padding:13px 15px}}",
     "#page-hub .hb-bar{height:12px;background:#f3e6ea;border-radius:8px;overflow:hidden;margin:12px 0 6px}",
-    "#page-hub .hb-bar i{display:block;height:100%;background:#2b6cb0;border-radius:8px}",
+    "#page-hub .hb-bar i{display:block;height:100%;background:#205696;border-radius:8px}",
     "#page-hub .hb-opts{display:flex;flex-direction:column;gap:10px;margin-top:14px}",
     "#page-hub .hb-opt{border:2px solid #ecdde1;background:#fff;border-radius:14px;padding:14px 16px;font:inherit;font-size:15px;font-weight:800;text-align:left;cursor:pointer;color:#2a1e22}",
-    "#page-hub .hb-opt.on{border-color:#2b6cb0;background:#eef4fb;color:#1f4f85}",
+    "#page-hub .hb-opt.on{border-color:#205696;background:#eef4fb;color:#1f4f85}",
     "#page-hub .hb-opt[disabled]{opacity:.45;cursor:default}",
     "#page-hub .hb-mine{margin-top:12px;font-size:14px;font-weight:800;color:#2f7a4b}",
     "#page-hub .hb-msg{margin-top:8px;font-size:13px;color:#7c1f3d;min-height:16px}",
     "#page-hub .hb-rep{display:flex;align-items:center;gap:12px;border:1px solid #ecdde1;border-radius:14px;padding:14px 16px;margin-top:10px;background:#fff}",
     "#page-hub .hb-rep.mine{background:#fbf7f8}",
-    "#page-hub .hb-rep.voted{border:2px solid #3f9a5a;background:#f1f8f3}",
+    "#page-hub .hb-rep.voted{border:2px solid #2f7f8f;background:#f1f8f3}",
     "#page-hub .hb-rep .nm{flex:1;min-width:0}",
     "#page-hub .hb-rep .nm b{display:block;font-size:16px;color:#2a1e22}",
     "#page-hub .hb-rep .nm small{color:#8a737a;font-size:12.5px}",
-    "#page-hub .hb-btn{border:0;border-radius:10px;padding:9px 13px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:#3f9a5a;color:#fff;white-space:nowrap}",
+    "#page-hub .hb-btn{border:0;border-radius:10px;padding:9px 13px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:#2f7f8f;color:#fff;white-space:nowrap}",
     "#page-hub .hb-btn.gh{background:#fff;color:#4f1226;border:1.5px solid #d9c3ca}",
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
     "#page-hub .hb-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:#f1e6e9;color:#7c1f3d;margin-left:6px}",
@@ -135,7 +135,7 @@
     var v = S.view, h = "";
     if(v === "home"){
       var vs = voteState(), full = S.attend >= CAP;
-      h = head() + '<div class="hb-intro">11월 26일(목) <b>2학기 멘토링 성과보고회</b>를 준비하고 있어요. 아래 네 가지 중에서 필요한 메뉴를 눌러 주세요.<br>· 성과보고회에 오실 분은 <b>참석 투표</b>를 먼저 해 주세요 (선착순 ' + CAP + '명).<br>· <b>11. 24.(화)~25.(수)</b>에는 <b>후보 멘토 8명</b>의 결과보고서를 읽고 <b>우수멘토 사전투표</b>에 참여해 주세요. 사전투표로 뽑힌 5명이 성과보고회에서 발표하고, 그중 3명이 대상·최우수상·우수상을 받아요.<br>· 성과보고회에 오면 입장할 때 번호표를 받고, 시상이 끝난 뒤 <b>럭키드로우</b> 추첨으로 약 30명에게 상품을 드려요.<br>· 공지·게시판·결과보고서 제출 등 기존 기능은 <b>공유공간 들어가기</b>에서 그대로 이용할 수 있어요.</div>' + '<div class="hb-grid">' +
+      h = head() + '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>, 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요. 기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
         '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나 · 선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">후보 멘토 8명의 결과보고서 보고 1팀에 투표</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
         '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표 → 시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
@@ -148,7 +148,7 @@
         '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:30</b> · 장소는 추후 안내 · 멘토·멘티 <b>누구나</b> 참여할 수 있어요.<br>자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
         '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 · 간식 2종</b> — 현장에서 함께 즐겨요.</li><li><b>럭키드로우</b> — 입장할 때 받은 번호표로 상품 추첨에 참여해요 (약 30명).</li></ul>' +
         '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
-        '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#2b6cb0">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
+        '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
         (full2 ? '<div class="hb-msg">선착순 ' + CAP + '명이 모두 차서 참석 신청이 마감됐어요.</div>' : '') +
         (mine ? '<div class="hb-mine">내 응답: ' + esc(mine) + (att ? ' · 신청 완료' : '') + '</div><div class="hb-d" style="margin-top:4px">다른 항목을 누르면 응답이 바뀌어요.</div>' : '<div class="hb-d" style="margin-top:12px">아직 응답하지 않았어요.</div>') +
@@ -159,7 +159,7 @@
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
         '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 운영진이 선정한 후보 멘토 <b>8명</b>의 결과보고서 중에서 <b>5명</b>을 뽑아요. 사전투표는 <b>최종 점수의 50%</b>예요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 현장투표를 더해 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
-        (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#3f9a5a">지금 투표할 수 있어요!</b>') +
+        (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#2f7f8f">지금 투표할 수 있어요!</b>') +
         '<br><span style="font-size:12.5px">※ 운영진이 선정한 <b>후보 멘토 8명</b>의 결과보고서만 아래에 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
         (myVoteId ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.myVote.reportTeam || "") + '</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
@@ -177,7 +177,7 @@
         '<div class="hb-sec">상품 미리 보기</div>' +
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         '<div class="hb-soon">그 밖의 상품도 곧 공개돼요!</div>' +
-        '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#2b6cb0;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
+        '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
     }
     el.innerHTML = h;
   }
