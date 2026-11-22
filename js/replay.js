@@ -96,6 +96,15 @@
     "#page-hub .hb-tl{list-style:none;margin:10px 0 4px;padding:0}#page-hub .hb-tl li{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed #efe2e6;font-size:14px;color:#4a3a40;line-height:1.5}#page-hub .hb-tl li b{color:#4f1226}#page-hub .hb-tl .tm{flex:none;width:48px;font-weight:900;color:#7c1f3d}#page-hub .hb-tl small{display:block;color:#8a737a;font-size:12.5px}",
     "#page-hub .hb-menu{background:#faf6f7;border-radius:12px;padding:12px 14px;font-size:13.5px;color:#4a3a40;line-height:1.7;margin-top:8px}#page-hub .hb-menu b{color:#4f1226}",
     "#page-hub .hb-form label{display:block;font-size:13.5px;font-weight:800;color:#4f1226;margin:12px 0 5px}#page-hub .hb-form input,#page-hub .hb-form textarea{width:100%;box-sizing:border-box;border:1.5px solid #e8d9de;border-radius:10px;padding:11px 12px;font:inherit;font-size:14.5px;background:#fff}#page-hub .hb-form textarea{min-height:96px;resize:vertical}",
+    "#page-hub .hb-cm{background:#f0efdc;border:2px dashed #a3528f;border-radius:16px;overflow:hidden;color:#a3528f;text-align:center;margin-top:10px}",
+    "#page-hub .hb-cm .top{padding:22px 12px;background-color:#f0efdc;background-image:conic-gradient(from 45deg,#a3528f 25%,transparent 0 50%,#a3528f 0 75%,transparent 0);background-size:56px 56px}",
+    "#page-hub .hb-cm .oval{display:inline-block;background:#f0efdc;border:2px dashed #a3528f;border-radius:50%;padding:16px 34px 14px}#page-hub .hb-cm .oval small{display:block;font-size:11px;font-weight:800;letter-spacing:.5px}#page-hub .hb-cm .oval b{display:block;font:italic 900 30px/1.1 Georgia,'Times New Roman',serif;color:#a3528f;transform:rotate(-6deg);margin-top:4px}",
+    "#page-hub .hb-cm .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 10px;padding:18px 14px 6px}#page-hub .hb-cm h4{font-size:18px;font-weight:900;margin:6px 0 6px}#page-hub .hb-cm p{margin:0;font-size:14.5px;line-height:1.8;color:#8f4a7e}",
+    "#page-hub .hb-cm .snack{display:flex;align-items:center;gap:14px;margin:8px 14px 14px;padding:12px;background:#fff;border-radius:12px;text-align:left}#page-hub .hb-cm .snack img{width:130px;height:84px;object-fit:cover;border-radius:10px;flex:none}#page-hub .hb-cm .snack b{display:block;font-size:15px;color:#a3528f}#page-hub .hb-cm .snack span{font-size:13px;color:#7a6070;line-height:1.5}",
+    "#page-hub .hb-cm .ty{background:#a3528f;color:#f0efdc;font:italic 900 20px Georgia,serif;letter-spacing:1px;padding:10px}",
+    "#page-hub .hb-more{display:block;margin:14px auto 0;border:1.5px solid #a3528f;background:#f6f3e6;color:#a3528f;border-radius:22px;padding:10px 18px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}",
+    "#page-hub .hb-agree{margin-top:16px;border:1.5px solid #e8d9de;border-radius:12px;padding:12px 14px;background:#fcfafb;font-size:13px;color:#4a3a40}#page-hub .hb-agree b{display:block;font-size:14px;color:#4f1226;margin-bottom:8px}#page-hub .hb-agree table{width:100%;border-collapse:collapse}#page-hub .hb-agree th,#page-hub .hb-agree td{border:1px solid #eadde1;padding:6px 8px;text-align:left;vertical-align:top;line-height:1.5}#page-hub .hb-agree th{width:96px;background:#f5eef0;font-weight:800;color:#4f1226}#page-hub .hb-agree p{margin:8px 0 4px;color:#8a737a;font-size:12.5px}",
+    "#page-hub .hb-form .hb-agree label.ck{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;font-size:13.5px;color:#4f1226;cursor:pointer}#page-hub .hb-form .hb-agree label.ck input{width:18px;height:18px;flex:none;margin:1px 0 0}",
     "#page-hub .hb-prize.aw{background:#eef7f9;border-color:#bfe0e7;color:#1f4f5a}",
     "#page-hub .hb-soon{border:2px dashed #e8c48a;border-radius:12px;padding:16px;text-align:center;color:#a87a2c;font-weight:800;margin-top:10px}",
     "@media(max-width:640px){#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-rep .nm{flex-basis:100%}}"
@@ -141,6 +150,13 @@
     return f && f !== "팀이름" && f !== "팀번호" ? f : (d.teamName || "팀");
   }
 
+  function coffeeMenu(){
+    var g = function(t, items){ return '<div><h4>' + t + '</h4><p>' + items.join("<br>") + '</p></div>'; };
+    return '<div class="hb-cm"><div class="top"><span class="oval"><small>ME,STAR FOOD TRUCK</small><b>Choice Package</b></span></div>' +
+      '<div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
+      '<div class="snack"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개</span></div></div>' +
+      '<div class="ty">✦ THANK YOU ✦</div></div>';
+  }
   /* ---------- 화면 ---------- */
   function ensure(){
     var sec = $("page-hub"); if(!sec) return null;
@@ -165,14 +181,14 @@
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
         '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 8종 30개</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
-        '</div>';
+        '</div><button type="button" class="hb-more" data-hb="menu">☕ 18:00 커피차 메뉴 보기</button>';
     } else if(v === "rsvp"){
       var mine = myOption(), att = isAttend(mine), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
       var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:00</b> 커피차 다과 · <b>18:30</b> 본 행사 · 📍 <b>' + PLACE + '</b><br>멘토·멘티 <b>누구나</b> 참여할 수 있어요. 자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
         '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 웰컴 다과</b> — 18:00부터 음료 1잔 + 간식 2종을 받아요.</li><li><b>럭키드로우</b> — 식순지 행운권으로 경품 8종 30개 추첨에 참여해요.</li></ul>' +
-        '<div class="hb-sec">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div><div class="hb-menu"><b>커피</b> 아메리카노 · 헤이즐넛 아메리카노 · 바닐라 아메리카노<br><b>에이드</b> 자몽 · 망고 · 청포도<br><b>음료·차</b> 복숭아 아이스티 · 아샷추 · 유자차<br><b>간식</b> 소떡소떡 1개 + 미니츄러스<br><span style="font-size:12.5px;color:#8a737a">※ 행사장 밖 커피차에서 받아 다 먹고 입장해 주세요.</span></div>' +
+        '<div class="hb-sec">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div>' + coffeeMenu() +
         '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
         '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
@@ -209,6 +225,9 @@
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
+    } else if(v === "menu"){
+      h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
+        '<div class="hb-card"><h3>☕ 웰컴 커피차</h3><div class="hb-d"><b>11. 26.(목) 18:00</b>부터 행사장(차미리사관 136호) 밖 커피차에서 <b>1인 음료 1잔 + 간식 2종</b>을 받아요. 다 먹고 입장해 주세요.</div>' + coffeeMenu() + '</div>';
     } else if(v === "live"){
       var cfl = S.cfg || {}, pres = cfl.presenters || [], lm = S.liveMine && S.liveMine.presenterId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
@@ -234,6 +253,13 @@
           '<label>학과(전공)</label><input id="ap-major" placeholder="예: 시각디자인전공">' +
           '<label>연락처</label><input id="ap-phone" inputmode="tel" placeholder="010-0000-0000">' +
           '<label>지원 동기 (선택)</label><textarea id="ap-why" placeholder="멘토가 되고 싶은 이유를 자유롭게 적어 주세요"></textarea>' +
+          '<div class="hb-agree"><b>개인정보 수집·이용 동의 (필수)</b><table>' +
+          '<tr><th>수집 항목</th><td>이름, 학번, 학과(전공), 연락처, 소속 단과대·팀, 지원 동기</td></tr>' +
+          '<tr><th>수집·이용 목적</th><td>2027학년도 신입생 멘토링(DS-FM/GLM) 멘토 선발·연락 및 운영 안내</td></tr>' +
+          '<tr><th>보유·이용 기간</th><td>2027학년도 멘토링 사업 종료 시까지 보관 후 파기</td></tr>' +
+          '<tr><th>수집·운영</th><td>덕성여자대학교 · 그릿마인드랩(운영 위탁)</td></tr></table>' +
+          '<p>개인정보 수집·이용에 동의하지 않을 수 있으며, 동의하지 않으면 멘토 신청을 할 수 없어요.</p>' +
+          '<label class="ck"><input type="checkbox" id="ap-agree"> 위 내용을 확인했고, 개인정보 수집·이용에 동의합니다.</label></div>' +
           '<div style="margin-top:14px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 22px;font-size:15px" data-apply="1"' + (S.busy ? " disabled" : "") + '>신청하기</button></div>' +
           '<div class="hb-d" style="margin-top:8px;font-size:12.5px">※ 학번·연락처는 운영진만 볼 수 있는 신청 명단(스프레드시트)으로만 전달돼요.</div></div>') +
         '<div class="hb-msg" id="hb-msg"></div></div>';
@@ -295,12 +321,13 @@
     if(!major){ msg("학과(전공)를 적어 주세요."); return; }
     if(!/^[0-9\-\s]{9,14}$/.test(phone)){ msg("연락처를 확인해 주세요. (예: 010-0000-0000)"); return; }
     if(why.length > 1000){ msg("지원 동기는 1000자 이내로 적어 주세요."); return; }
+    var ag = $("ap-agree"); if(!ag || !ag.checked){ msg("개인정보 수집·이용에 동의해야 신청할 수 있어요."); return; }
     var me = S.me, t = now();
-    var full = { type: "apply2027", name: me.name || "", college: me.college || "", team: me.teamName || "", role: me.role || "", rosterId: me.rosterId || "", studentId: sid, major: major, phone: phone, why: why, at: new Date(t).toISOString() };
+    var full = { type: "apply2027", name: me.name || "", college: me.college || "", team: me.teamName || "", role: me.role || "", rosterId: me.rosterId || "", studentId: sid, major: major, phone: phone, why: why, consent: "동의", at: new Date(t).toISOString() };
     S.busy = true; render(); msg("신청하는 중이에요…");
     var send = cf.sheetUrl ? fetch(cf.sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(full) }).catch(function(){ return null; }) : Promise.resolve(null);
     send.then(function(){
-      return applyRef().set({ choice: "attend", kind: "apply2027", name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", team: me.teamName || "", major: major, sentToSheet: !!cf.sheetUrl, appliedAt: (S.applied && S.applied.appliedAt) || t, updatedAt: t });
+      return applyRef().set({ choice: "attend", kind: "apply2027", name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", team: me.teamName || "", major: major, consent: true, consentAt: t, sentToSheet: !!cf.sheetUrl, appliedAt: (S.applied && S.applied.appliedAt) || t, updatedAt: t });
     }).then(function(){ return applyRef().get(); }).then(function(s){ S.applied = s.exists ? s.data() : null; S.busy = false; render(); msg("신청이 접수됐어요. 고마워요!"); })
       .catch(function(){ S.busy = false; render(); msg("신청하지 못했어요. 잠시 후 다시 시도해 주세요."); });
   }
@@ -352,7 +379,7 @@
     if(S.started) return;
     S.started = true; S.me = me;
     try{ if(firebase.apps.length) db = firebase.firestore(); }catch(e){}
-    var qrGo = (location.search.match(/[?&]go=(live|apply|vote|lucky|rsvp)\b/) || [])[1] || "";
+    var qrGo = (location.search.match(/[?&]go=(live|apply|vote|lucky|rsvp|menu)\b/) || [])[1] || "";
     if(qrGo) S.view = qrGo;
     render();
     loadCount().then(render);
