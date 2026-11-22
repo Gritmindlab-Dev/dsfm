@@ -7,21 +7,30 @@
      attendance_votes/replay1126_{명단ID}       : 새 참석 신청 (kind "replay_rsvp")
      attendance_votes/prevote1126_{명단ID}      : 사전투표 1인 1표 (kind "prevote")
      suggestion_posts kind "final_report"       : 멘토가 제출한 결과보고서
+     attendance_votes/live1126_{명단ID}         : 당일 현장투표 1인 1표 (kind "livevote")
+     attendance_votes/apply2027_{명단ID}        : 2027 멘토 신청 기록 (연락처·학번은 시트로만 보냄)
+     polls/replay_prevote                       : 운영 설정 (후보·발표자·현장투표 열기·멘토 신청 열기·시트 주소)
+     QR 바로가기: ?go=live (현장투표) · ?go=apply (2027 멘토 신청)
    ===================================================================== */
 (function(){
   "use strict";
 
   var POLL_ID = "Vypn1dWt0tPgNl5a6N0J";
   var CAP = 100;
-  var EVENT_TEXT = "2026. 11. 26.(목) 18:30";
+  var EVENT_TEXT = "2026. 11. 26.(목) 18:00";
+  var PLACE = "차미리사관 136호";
   var VOTE_START = new Date("2026-11-24T00:00:00+09:00").getTime();
   var VOTE_END   = new Date("2026-11-25T23:59:59+09:00").getTime();
-  var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권" }, { name: "🥈 최우수상", gift: "올리브영 5만원권" }, { name: "🥉 우수상", gift: "올리브영 3만원권" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
-  var PRIZES = [ { name: "올리브영 1만원권", qty: "10명" } ];  /* 상품이 정해지면 여기에 추가 */
+  var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권 + 꽃다발" }, { name: "🥈 최우수상", gift: "올리브영 5만원권 + 꽃다발" }, { name: "🥉 우수상", gift: "올리브영 3만원권 + 꽃다발" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
+  var PRIZES = [ { name: "스타벅스 텀블러 세트", qty: "1명" }, { name: "스타벅스 머그컵 세트", qty: "1명" }, { name: "스타벅스 상품권 1만원권", qty: "2명" }, { name: "아로닉스 비건 핸드크림 세트", qty: "2명" },
+                 { name: "송월타올 고리수건 핸드타월 세트", qty: "2명" }, { name: "모나미 DIY 펜키트 12종 세트", qty: "2명" }, { name: "엘쏘캐릭터 수면양말 세트", qty: "10명" }, { name: "컴포즈커피 아메리카노 쿠폰", qty: "10명" } ];
+  var PROGRAM = [ ["18:00", "접수 · 웰컴 다과", "커피차에서 음료 1잔 + 간식 2종 → 출석 서명 · 식순지 받기"], ["18:30", "성과보고회 설명", "진행 순서 · 평가 방법 안내"], ["18:40", "2026년도 사업 정리", "공유공간 OPEN → PICNIC DAY → 11월 퀘스트"],
+                  ["18:50", "결과보고서 발표 (5인)", "사전투표로 뽑힌 멘토 5명 · 1인 5분"], ["19:20", "현장투표", "식순지 QR로 누구나 1표"], ["19:40", "시상", "대상 · 최우수상 · 우수상 · 최대참여팀"],
+                  ["19:50", "럭키드로우", "행운권 추첨 · 경품 8종 30개"], ["20:10", "2027 사업 안내", "내년도 신입생 멘토링 안내 · 멘토 신청"] ];
   var OPT_PRESENT = "발표로 참여할게요 (멘토·팀)", OPT_WATCH = "참관으로 참여할게요", OPT_NO = "참석이 어려워요";
 
   var S = { me: null, started: false, view: "home", rsvp: null, pollMine: null, attend: 0, loading: false,
-            reports: null, myVote: null, busy: false };
+            reports: null, myVote: null, busy: false, cfg: {}, liveMine: null, applied: null };
   var db = null;
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -81,6 +90,12 @@
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
     "#page-hub .hb-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:#f1e6e9;color:#7c1f3d;margin-left:6px}",
     "#page-hub .hb-prize{display:flex;justify-content:space-between;align-items:center;border:1px solid #f3dcb8;background:#fff8ec;border-radius:12px;padding:12px 16px;margin-top:10px;font-size:15px;font-weight:800;color:#5a3a10}",
+    "#page-hub .hb-banner{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:16px;padding:16px 20px;margin-bottom:12px;font:inherit;font-size:16px;font-weight:900;color:#fff;background:linear-gradient(100deg,#c5637a,#7c1f3d);cursor:pointer;text-align:left;box-shadow:0 6px 18px rgba(124,31,61,.25);animation:hbPulse 1.6s ease-in-out infinite}#page-hub .hb-banner small{display:block;font-size:12.5px;font-weight:600;opacity:.9}#page-hub .hb-banner .go{margin-left:auto;background:#fff;color:#7c1f3d;border-radius:20px;padding:6px 12px;font-size:13px;white-space:nowrap}",
+    "#page-hub .hb-banner.apply{background:linear-gradient(100deg,#205696,#459cad);animation:none}",
+    "@keyframes hbPulse{0%,100%{transform:none}50%{transform:scale(1.012)}}",
+    "#page-hub .hb-tl{list-style:none;margin:10px 0 4px;padding:0}#page-hub .hb-tl li{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed #efe2e6;font-size:14px;color:#4a3a40;line-height:1.5}#page-hub .hb-tl li b{color:#4f1226}#page-hub .hb-tl .tm{flex:none;width:48px;font-weight:900;color:#7c1f3d}#page-hub .hb-tl small{display:block;color:#8a737a;font-size:12.5px}",
+    "#page-hub .hb-menu{background:#faf6f7;border-radius:12px;padding:12px 14px;font-size:13.5px;color:#4a3a40;line-height:1.7;margin-top:8px}#page-hub .hb-menu b{color:#4f1226}",
+    "#page-hub .hb-form label{display:block;font-size:13.5px;font-weight:800;color:#4f1226;margin:12px 0 5px}#page-hub .hb-form input,#page-hub .hb-form textarea{width:100%;box-sizing:border-box;border:1.5px solid #e8d9de;border-radius:10px;padding:11px 12px;font:inherit;font-size:14.5px;background:#fff}#page-hub .hb-form textarea{min-height:96px;resize:vertical}",
     "#page-hub .hb-prize.aw{background:#eef7f9;border-color:#bfe0e7;color:#1f4f5a}",
     "#page-hub .hb-soon{border:2px dashed #e8c48a;border-radius:12px;padding:16px;text-align:center;color:#a87a2c;font-weight:800;margin-top:10px}",
     "@media(max-width:640px){#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-rep .nm{flex-basis:100%}}"
@@ -134,25 +149,31 @@
     return $("hb-body");
   }
   function head(){
-    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' · 장소는 추후 안내<br class="mb"><span class="dt"> · </span>사전·현장·전문가 투표로 우수멘토를 뽑아요</p></div>';
+    return '<div class="hb-head"><small>덕성여대 신입생 멘토링(DS-FM/GLM)</small><b>2학기 멘토링 성과보고회<span>DS-FM REPLAY</span></b><p>📅 ' + EVENT_TEXT + ' (본 행사 18:30)<span class="dt"> · </span><br class="mb">📍 ' + PLACE + '</p></div>';
   }
   function render(){
     var el = ensure(); if(!el || !S.me) return;
     var v = S.view, h = "";
     if(v === "home"){
       var vs = voteState(), full = S.attend >= CAP;
-      h = head() + '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
+      var cf = S.cfg || {};
+      h = head() +
+        (cf.liveOpen ? '<button type="button" class="hb-banner" data-hb="live">🗳️<span>지금 현장투표 중이에요!<small>발표를 들은 멘토 5명 중 1명에게 투표해 주세요</small></span><span class="go">투표하기 →</span></button>' : '') +
+        (cf.applyOpen ? '<button type="button" class="hb-banner apply" data-hb="apply">🙋<span>2027학년도 멘토 신청<small>내년 신입생의 선배 멘토가 되어 주세요</small></span><span class="go">신청하기 →</span></button>' : '') +
+        '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
         '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
-        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">입장 시 번호표<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">참여자 중 약 30명</span></button>' +
+        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 8종 30개</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div>';
     } else if(v === "rsvp"){
       var mine = myOption(), att = isAttend(mine), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
       var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:30</b> · 장소는 추후 안내 · 멘토·멘티 <b>누구나</b> 참여할 수 있어요.<br>자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
-        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 · 간식 2종</b> — 현장에서 함께 즐겨요.</li><li><b>럭키드로우</b> — 입장할 때 받은 번호표로 상품 추첨에 참여해요 (약 30명).</li></ul>' +
+        '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:00</b> 커피차 다과 · <b>18:30</b> 본 행사 · 📍 <b>' + PLACE + '</b><br>멘토·멘티 <b>누구나</b> 참여할 수 있어요. 자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
+        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 웰컴 다과</b> — 18:00부터 음료 1잔 + 간식 2종을 받아요.</li><li><b>럭키드로우</b> — 식순지 행운권으로 경품 8종 30개 추첨에 참여해요.</li></ul>' +
+        '<div class="hb-sec">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div><div class="hb-menu"><b>커피</b> 아메리카노 · 헤이즐넛 아메리카노 · 바닐라 아메리카노<br><b>에이드</b> 자몽 · 망고 · 청포도<br><b>음료·차</b> 복숭아 아이스티 · 아샷추 · 유자차<br><b>간식</b> 소떡소떡 1개 + 미니츄러스<br><span style="font-size:12.5px;color:#8a737a">※ 행사장 밖 커피차에서 받아 다 먹고 입장해 주세요.</span></div>' +
+        '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
         '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
@@ -163,9 +184,9 @@
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
-        '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>30%</b></div><div>전문가투표<b>20%</b></div></div>' +
+        '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>20%</b></div><div>전문가평가<b>30%</b></div></div>' +
         '<div class="hb-ask">📣 사전투표 점수 비중이 가장 커요! 여러분의 한 표가 우수멘토를 결정하니 많이 참여해 주세요.</div>' +
-        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26.)</b> — 선발된 <b>5명</b>의 멘토가 성과보고회에서 활동을 발표해요.</li><li><b>현장투표 · 시상</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가투표 점수를 더해 <b>3명</b>에게 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
+        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26. 18:50)</b> — 선발된 <b>5명</b>이 1인 5분씩 발표하고, 평가위원이 현장에서 채점해요 (전문가평가).</li><li><b>현장투표 (19:20)</b> — 참석자 누구나 식순지 QR로 <b>1표</b>를 투표해요.</li><li><b>시상 (19:40)</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가평가 점수를 더해 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#2f7f8f">지금 투표할 수 있어요!</b>') +
         '<br><span style="font-size:12.5px">※ 아래에 <b>후보 멘토 8명</b>의 결과보고서가 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
@@ -180,14 +201,42 @@
           }).join("")) + '</div>';
     } else if(v === "lucky"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회에 참여한 멘토·멘티 중 <b>약 30명</b>에게 행운권 추첨으로 상품을 드려요.</div>' +
-        '<div class="hb-sec">추첨은 이렇게 진행돼요</div><ul class="hb-steps"><li><b>입장</b> — 행사장에 들어올 때 <b>번호표(행운권)</b>를 받아요.</li><li><b>발표 · 시상</b> — 우수멘토 발표와 시상이 끝날 때까지 번호표를 잘 보관해 주세요.</li><li><b>추첨</b> — 시상이 끝난 뒤 번호를 뽑아 상품을 드려요. <b>현장에 있어야</b> 받을 수 있어요.</li></ul>' +
+        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>참석자 전원</b>이 행운권 추첨에 참여해요. 경품은 <b>8종 30개</b>예요.</div>' +
+        '<div class="hb-sec">추첨은 이렇게 진행돼요</div><ul class="hb-steps"><li><b>접수 (18:00)</b> — 식순지를 받을 때 운영진이 <b>행운권 번호</b>를 적어 드려요.</li><li><b>추첨함에 넣기</b> — 식순지 오른쪽 아래 행운권을 점선대로 잘라 추첨함에 넣고, 같은 번호가 적힌 식순지는 <b>본인이 보관</b>해요.</li><li><b>추첨 (19:50)</b> — 시상이 끝난 뒤 번호를 뽑아 상품을 바로 드려요. <b>현장에 있어야</b> 받을 수 있어요.</li></ul>' +
         '<div class="hb-sec">🏆 시상 상품</div>' +
         AWARDS.map(function(p){ return '<div class="hb-prize aw"><span>' + esc(p.name) + '</span><span>' + esc(p.gift) + '</span></div>'; }).join("") +
         '<div class="hb-sec">🎁 럭키드로우 상품</div>' +
         PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
-        '<div class="hb-soon">그 밖의 상품도 곧 공개돼요!</div>' +
+        
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
+    } else if(v === "live"){
+      var cfl = S.cfg || {}, pres = cfl.presenters || [], lm = S.liveMine && S.liveMine.presenterId;
+      h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
+        '<div class="hb-card"><h3>🗳️ 현장투표</h3><div class="hb-d">발표를 들은 <b>멘토 5명</b> 중 가장 좋았던 1명에게 투표해 주세요. 참석자 <b>누구나 1표</b>이고, 투표가 열려 있는 동안 바꿀 수 있어요. 현장투표는 최종 점수의 <b>20%</b>예요.</div>' +
+        (cfl.liveOpen ? '<div class="hb-ask" style="background:#e9f5f7;border-color:#459cad;color:#1f4f5a">지금 투표할 수 있어요!</div>' : '<div class="hb-ask">현장투표는 성과보고회 당일 <b>19:20</b>에 열려요. 진행자 안내에 맞춰 다시 들어와 주세요.</div>') +
+        (lm ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.liveMine.team || "") + ' (멘토 ' + esc(S.liveMine.mentor || "") + ')</div>' : '') +
+        '<div class="hb-msg" id="hb-msg"></div>' +
+        (!pres.length ? '<div class="hb-d" style="margin-top:12px">발표자 5명은 사전투표가 끝난 뒤 안내돼요.</div>' :
+          pres.map(function(x, i){
+            var mineT = x.teamKey && x.teamKey === S.me.team, on = lm === x.id;
+            return '<div class="hb-rep' + (mineT ? " mine" : "") + (on ? " voted" : "") + '"><div class="nm"><b>' + (i + 1) + '. ' + esc(x.team || "") + (mineT ? '<span class="hb-tag">우리 팀</span>' : '') + (on ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([x.college, "멘토 " + (x.mentor || "")].filter(Boolean).join(" · ")) + '</small></div>' +
+              '<button type="button" class="hb-btn" data-live="' + esc(x.id) + '"' + (mineT || !cfl.liveOpen || on || S.busy ? " disabled" : "") + '>' + (on ? "투표함" : "이 멘토에게 투표") + '</button></div>';
+          }).join("")) +
+        '<div class="hb-d" style="margin-top:12px;font-size:12.5px">※ 우리 팀에는 투표할 수 없어요.</div></div>';
+    } else if(v === "apply"){
+      var cfa = S.cfg || {}, ap = S.applied;
+      h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
+        '<div class="hb-card"><h3>🙋 2027학년도 멘토 신청</h3><div class="hb-d">2027학년도 신입생 멘토링(DS-FM/GLM)에서 <b>선배 멘토</b>로 함께할 분을 모집해요. 아래 내용을 적어 신청해 주세요.</div>' +
+        (!cfa.applyOpen ? '<div class="hb-ask">멘토 신청은 아직 열리지 않았어요.</div>' : !cfa.sheetUrl ? '<div class="hb-ask">신청 접수를 준비하고 있어요. 잠시 후 다시 들어와 주세요.</div>' :
+          (ap ? '<div class="hb-mine">✓ ' + esc(S.me.name || "") + '님, 신청이 접수됐어요. 다시 제출하면 마지막 내용으로 바뀌어요.</div>' : '') +
+          '<div class="hb-form"><label>이름</label><input value="' + esc(S.me.name || "") + '" disabled>' +
+          '<label>학번</label><input id="ap-sid" inputmode="numeric" placeholder="예: 20260000">' +
+          '<label>학과(전공)</label><input id="ap-major" placeholder="예: 시각디자인전공">' +
+          '<label>연락처</label><input id="ap-phone" inputmode="tel" placeholder="010-0000-0000">' +
+          '<label>지원 동기 (선택)</label><textarea id="ap-why" placeholder="멘토가 되고 싶은 이유를 자유롭게 적어 주세요"></textarea>' +
+          '<div style="margin-top:14px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 22px;font-size:15px" data-apply="1"' + (S.busy ? " disabled" : "") + '>신청하기</button></div>' +
+          '<div class="hb-d" style="margin-top:8px;font-size:12.5px">※ 학번·연락처는 운영진만 볼 수 있는 신청 명단(스프레드시트)으로만 전달돼요.</div></div>') +
+        '<div class="hb-msg" id="hb-msg"></div></div>';
     }
     el.innerHTML = h;
   }
@@ -225,6 +274,36 @@
       .then(function(){ S.busy = false; render(); msg("'" + title + "' 팀에 투표했어요!"); })
       .catch(function(){ S.busy = false; render(); msg("투표하지 못했어요. 새로고침 후 다시 시도해 주세요."); });
   }
+  function liveRef(){ return db.collection("attendance_votes").doc("live1126_" + S.me.rosterId); }
+  function castLive(id){
+    var cf = S.cfg || {}; if(!db || S.busy || !cf.liveOpen) return;
+    var x = (cf.presenters || []).filter(function(p){ return p.id === id; })[0]; if(!x) return;
+    if(x.teamKey && x.teamKey === S.me.team){ msg("우리 팀에는 투표할 수 없어요."); return; }
+    if(!confirm("'" + (x.team || "") + "' (멘토 " + (x.mentor || "") + ")에게 투표할까요?")) return;
+    S.busy = true; render(); var me = S.me;
+    liveRef().set({ choice: "attend", kind: "livevote", presenterId: x.id, team: x.team || "", mentor: x.mentor || "", presenterTeamKey: x.teamKey || "",
+      name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", voterTeam: me.team || "", updatedAt: now() })
+      .then(function(){ return liveRef().get(); }).then(function(s){ S.liveMine = s.exists ? s.data() : null; S.busy = false; render(); msg("투표했어요! 고마워요."); })
+      .catch(function(){ S.busy = false; render(); msg("투표하지 못했어요. 잠시 후 다시 시도해 주세요."); });
+  }
+  function applyRef(){ return db.collection("attendance_votes").doc("apply2027_" + S.me.rosterId); }
+  function submitApply(){
+    var cf = S.cfg || {}; if(!db || S.busy || !cf.applyOpen || !cf.sheetUrl) return;
+    var g = function(id){ var e = $(id); return e ? String(e.value || "").trim() : ""; };
+    var sid = g("ap-sid"), major = g("ap-major"), phone = g("ap-phone"), why = g("ap-why");
+    if(!/^\d{6,10}$/.test(sid)){ msg("학번을 숫자로 적어 주세요."); return; }
+    if(!major){ msg("학과(전공)를 적어 주세요."); return; }
+    if(!/^[0-9\-\s]{9,14}$/.test(phone)){ msg("연락처를 확인해 주세요. (예: 010-0000-0000)"); return; }
+    if(why.length > 1000){ msg("지원 동기는 1000자 이내로 적어 주세요."); return; }
+    var me = S.me, t = now();
+    var full = { type: "apply2027", name: me.name || "", college: me.college || "", team: me.teamName || "", role: me.role || "", rosterId: me.rosterId || "", studentId: sid, major: major, phone: phone, why: why, at: new Date(t).toISOString() };
+    S.busy = true; render(); msg("신청하는 중이에요…");
+    var send = cf.sheetUrl ? fetch(cf.sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(full) }).catch(function(){ return null; }) : Promise.resolve(null);
+    send.then(function(){
+      return applyRef().set({ choice: "attend", kind: "apply2027", name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", team: me.teamName || "", major: major, sentToSheet: !!cf.sheetUrl, appliedAt: (S.applied && S.applied.appliedAt) || t, updatedAt: t });
+    }).then(function(){ return applyRef().get(); }).then(function(s){ S.applied = s.exists ? s.data() : null; S.busy = false; render(); msg("신청이 접수됐어요. 고마워요!"); })
+      .catch(function(){ S.busy = false; render(); msg("신청하지 못했어요. 잠시 후 다시 시도해 주세요."); });
+  }
   function viewReport(id, btn){
     var r = (S.reports || []).filter(function(x){ return x.id === id; })[0]; if(!r) return;
     var d = r.d, w = null;
@@ -249,6 +328,8 @@
     S.view = v; render(); window.scrollTo(0, 0);
     if(v === "home" || v === "rsvp") loadCount().then(render);
     if(v === "vote"){ Promise.all([loadReports(), loadMyVote()]).then(render); }
+    if(v === "live" && db) liveRef().get().then(function(s){ S.liveMine = s.exists ? s.data() : null; render(); }).catch(function(){});
+    if(v === "apply" && db) applyRef().get().then(function(s){ S.applied = s.exists ? s.data() : null; render(); }).catch(function(){});
   }
   function wire(el){
     el.addEventListener("click", function(e){
@@ -261,6 +342,8 @@
       if((t = e.target.closest("[data-opt]")) && !t.disabled){ saveRsvp(t.getAttribute("data-opt")); return; }
       if((t = e.target.closest("[data-vote]")) && !t.disabled){ castVote(t.getAttribute("data-vote")); return; }
       if((t = e.target.closest("[data-view]")) && !t.disabled){ viewReport(t.getAttribute("data-view"), t); return; }
+      if((t = e.target.closest("[data-live]")) && !t.disabled){ castLive(t.getAttribute("data-live")); return; }
+      if((t = e.target.closest("[data-apply]")) && !t.disabled){ submitApply(); return; }
     });
   }
 
@@ -269,12 +352,17 @@
     if(S.started) return;
     S.started = true; S.me = me;
     try{ if(firebase.apps.length) db = firebase.firestore(); }catch(e){}
+    var qrGo = (location.search.match(/[?&]go=(live|apply|vote|lucky|rsvp)\b/) || [])[1] || "";
+    if(qrGo) S.view = qrGo;
     render();
     loadCount().then(render);
+    /* 운영 설정(현장투표 열기·멘토 신청 열기·발표자)은 실시간으로 받아요 */
+    if(db){ try{ db.collection("polls").doc("replay_prevote").onSnapshot(function(s){ S.cfg = s.exists ? (s.data() || {}) : {}; render(); }, function(){}); }catch(e){} }
     /* 로그인하면 첫 화면은 성과보고회 홈 (QR로 들어온 피크닉 등은 그대로) */
     setTimeout(function(){
       if(window.__dsfmPicnicFromQr) return;
       if(window.DSFM && window.DSFM.goToPage) window.DSFM.goToPage("hub");
+      if(qrGo) go(qrGo);
     }, 0);
   }
   window.DSFMReplay = { open: open };
