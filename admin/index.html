@@ -546,6 +546,56 @@
         }).join("") : '<div class="adm-empty">고를 수 있는 제출 보고서가 없어요.</div>') + '</div></div></div>';
       return h;
     }
+    function cfgSave(patch){ patch.kind = "replay_candidates"; patch.title = "(성과보고회 사전투표 후보)"; patch.visible = false; patch.open = false; patch.updatedAt = Date.now(); return col("polls").doc(CAND_ID).set(patch, { merge: true }); }
+    function liveTallyHtml(votes){
+      var cfg = candDoc() || {}, pres = cfg.presenters || [], n = {}, total = 0;
+      votes.forEach(function(v){ n[v.presenterId] = (n[v.presenterId] || 0) + 1; total++; });
+      var max = Math.max.apply(null, [1].concat(pres.map(function(p){ return n[p.id] || 0; })));
+      return '<div style="font-size:13px;color:#8a737a;margin-bottom:6px">총 <b style="color:#7c1f3d;font-size:16px">' + total + '</b>표 · ' + new Date().toLocaleTimeString("ko-KR") + ' 기준' + (cfg.liveOpen ? ' · 5초마다 자동 새로고침' : '') + '</div>' +
+        (pres.length ? pres.map(function(p, i){ var c = n[p.id] || 0;
+          return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800"><span>' + (i + 1) + '. ' + esc(p.team || "") + ' <span style="font-weight:500;color:#8a737a">멘토 ' + esc(p.mentor || "") + '</span></span><span>' + c + '표' + (total ? ' (' + Math.round(c / total * 100) + '%)' : '') + '</span></div>' +
+            '<div style="height:12px;background:#f1e8eb;border-radius:8px;overflow:hidden;margin-top:4px"><i style="display:block;height:100%;width:' + Math.round(c / max * 100) + '%;background:#459cad"></i></div></div>'; }).join("") : '<div class="adm-empty">발표자를 먼저 정해 주세요.</div>');
+    }
+    function liveCard(liveVotes, applies){
+      var cfg = candDoc() || {}, pres = cfg.presenters || [], cands = candList();
+      var mentors = S.team_roster.filter(function(r){ return r.d.role === "멘토"; }).sort(function(a, b){ return String(a.d.college + a.d.team + a.d.name).localeCompare(String(b.d.college + b.d.team + b.d.name), "ko"); });
+      var h = '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">🗳️ 당일 현장투표 (19:20) · ' + (cfg.liveOpen ? '<span class="adm-tag green">열림</span>' : '<span class="adm-tag gray">닫힘</span>') + '</div>' +
+        '<p class="adm-desc" style="margin:4px 0 10px">식순지 QR 주소: <b>https://gritmindlab-dev.github.io/dsfm/?go=live</b> — 찍으면 로그인 후 바로 현장투표 화면이 열려요. 발표자 5명을 정하고 <b>투표 열기</b>를 누르면 학생 첫 화면에 투표 배너가 떠요.</p>' +
+        '<div id="live-tally" style="padding:10px 12px;background:#fafcfd;border:1px solid #e3eef1;border-radius:12px">' + liveTallyHtml(liveVotes) + '</div>';
+      if(isMaster){
+        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
+          (cfg.liveOpen ? '<button class="adm-btn small" type="button" data-adm="live-close">투표 닫기</button>' : '<button class="adm-btn small" type="button" data-adm="live-open"' + (pres.length ? '' : ' disabled') + '>투표 열기</button>') +
+          '<button class="adm-btn ghost small" type="button" data-adm="live-refresh">새로고침</button>' +
+          '<button class="adm-btn ghost small" type="button" data-adm="live-csv">투표 내역 CSV</button>' +
+          '<button class="adm-btn ghost small" type="button" data-adm="live-reset">투표 초기화 (테스트 후)</button></div>' +
+          '<div style="margin-top:14px;padding:12px;border:1px dashed #d9c3ca;border-radius:12px"><b style="font-size:14px">발표자 5명 (' + pres.length + '/5)</b>' +
+          '<div class="adm-list" style="margin-top:8px">' + (pres.length ? pres.map(function(p, i){
+            return '<div class="adm-item" style="padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>' + (i + 1) + '. ' + esc(p.team || "") + '</b><span class="adm-item-meta" style="margin:0">' + esc([p.college, p.teamKey, "멘토 " + (p.mentor || "")].filter(Boolean).join(" · ")) + '</span>' +
+              '<span style="margin-left:auto;display:flex;gap:6px">' + (i ? '<button class="adm-btn ghost small" type="button" data-adm="pres-up" data-pid="' + esc(p.id) + '">▲</button>' : '') + '<button class="adm-btn ghost small" type="button" data-adm="pres-del" data-pid="' + esc(p.id) + '">빼기</button></span></div>';
+          }).join("") : '<div class="adm-empty">아직 발표자가 없어요. 사전투표 결과를 보고 아래에서 골라 주세요.</div>') + '</div>' +
+          (cands.filter(function(c){ return !pres.some(function(p){ return p.id === c.id; }); }).length ? '<div style="margin-top:8px;font-size:13px;font-weight:800">사전투표 후보에서 고르기</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' +
+            cands.filter(function(c){ return !pres.some(function(p){ return p.id === c.id; }); }).map(function(c){ return '<button class="adm-btn ghost small" type="button" data-adm="pres-add" data-cid="' + esc(c.id) + '">+ ' + esc(c.team || "") + ' (' + esc(c.mentor || "") + ')</button>'; }).join("") + '</div>' : '') +
+          '<div style="margin-top:8px;font-size:13px;font-weight:800">직접 추가</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center">' +
+          '<select class="adm-select" id="pres-mentor" style="width:auto;max-width:100%"><option value="">멘토 선택</option>' + mentors.map(function(r){ return '<option value="' + esc(r.id) + '">' + esc([r.d.college, r.d.team, r.d.name].filter(Boolean).join(" · ")) + '</option>'; }).join("") + '</select>' +
+          '<input class="adm-input" id="pres-team" placeholder="팀 이름" style="width:180px"><button class="adm-btn small" type="button" data-adm="pres-manual">추가</button></div></div>';
+      }
+      h += '</div>';
+      /* 2027 멘토 신청 */
+      h += '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">🙋 2027학년도 멘토 신청 · ' + (cfg.applyOpen ? '<span class="adm-tag green">학생 화면에 보임</span>' : '<span class="adm-tag gray">숨김</span>') + ' · 신청 ' + applies.length + '명</div>' +
+        '<p class="adm-desc" style="margin:4px 0 10px">식순지 QR 주소: <b>https://gritmindlab-dev.github.io/dsfm/?go=apply</b> — 학번·연락처는 공유공간에 저장하지 않고 <b>연결한 스프레드시트로만</b> 보내요. 그래서 시트를 먼저 연결해야 신청을 열 수 있어요.</p>' +
+        (isMaster ? '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (cfg.applyOpen ? '<button class="adm-btn small" type="button" data-adm="apply-close">숨기기</button>' : '<button class="adm-btn small" type="button" data-adm="apply-open"' + (cfg.sheetUrl ? '' : ' disabled') + '>학생 화면에 보이기</button>') + '</div>' : '') +
+        '<div class="adm-list" style="margin-top:8px">' + (applies.length ? applies.map(function(a){ return '<div class="adm-item" style="padding:8px 12px"><b>' + esc(a.name || "") + '</b><span class="adm-item-meta" style="margin:0 0 0 8px">' + esc([a.college, a.team, a.role, a.major].filter(Boolean).join(" · ")) + '</span><span class="adm-item-meta" style="margin:0 0 0 auto">' + fmtTime(a.updatedAt) + (a.sentToSheet ? '' : ' · 시트 미전송') + '</span></div>'; }).join("") : '<div class="adm-empty">아직 신청이 없어요.</div>') + '</div></div>';
+      /* 시트 연결 */
+      h += '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">📊 구글 스프레드시트 연결 · ' + (cfg.sheetUrl ? '<span class="adm-tag green">연결됨</span>' : '<span class="adm-tag gray">미연결</span>') + '</div>' +
+        '<p class="adm-desc" style="margin:4px 0 10px">시트의 Apps Script를 <b>웹 앱</b>으로 배포한 주소(https://script.google.com/macros/s/…/exec)를 붙여 넣어 주세요. 현장투표·사전투표·참석 신청은 시트가 1분마다 자동으로 가져가고, 2027 멘토 신청은 제출할 때 바로 시트에 쌓여요.</p>' +
+        (isMaster ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><input class="adm-input" id="sheet-url" value="' + esc(cfg.sheetUrl || "") + '" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:240px"><button class="adm-btn small" type="button" data-adm="sheet-save">저장</button></div>' : '') + '</div>';
+      return h;
+    }
+    var liveTimer = setInterval(function(){
+      var box = document.getElementById("live-tally"); if(!box || tab !== "replay") return;
+      if(!(candDoc() || {}).liveOpen) return;
+      col("attendance_votes").where("kind", "==", "livevote").get().then(function(s){ var b2 = document.getElementById("live-tally"); if(b2) b2.innerHTML = liveTallyHtml(s.docs.map(function(x){ return x.data(); })); }).catch(function(){});
+    }, 5000);
     function candSave(list){ return col("polls").doc(CAND_ID).set({ kind: "replay_candidates", title: "(성과보고회 사전투표 후보)", visible: false, open: false, candidates: list, updatedAt: Date.now() }, { merge: true }); }
     function candFileData(cid, chunks){
       return col("attendance_votes").where("parentId", "==", cid).get().then(function(snap){
@@ -564,7 +614,9 @@
       mainEl.innerHTML = '<h2 class="adm-h">성과보고회</h2><div class="adm-empty">불러오는 중이에요…</div>';
       Promise.all([
         col("attendance_votes").where("kind", "==", "replay_rsvp").get(),
-        col("attendance_votes").where("kind", "==", "prevote").get()
+        col("attendance_votes").where("kind", "==", "prevote").get(),
+        col("attendance_votes").where("kind", "==", "livevote").get(),
+        col("attendance_votes").where("kind", "==", "apply2027").get()
       ]).then(function(r){
         if(tab !== "replay") return;
         var people = {};
@@ -581,7 +633,7 @@
         replayCache = { att: att };
         mainEl.innerHTML = '<h2 class="adm-h">성과보고회 (11/26 DS-FM REPLAY)</h2>' +
           '<p class="adm-desc">학생 첫 화면의 <b>참석 투표</b>(선착순 100명)와 <b>우수멘토 사전투표</b>(11/24~11/25)를 관리해요. 11/20까지 받은 참여 신청 투표와 그 뒤 추가 접수를 합쳐서 보여 줘요 (같은 사람은 마지막 응답 기준).</p>' +
-          candCard() + '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">참석 신청 · 전체 ' + allAtt + ' / 100명' + (isSuper && collegeFilter === "전체" ? '' : ' (이 화면 ' + att.length + '명)') + '</div>' +
+          candCard() + liveCard(r[2].docs.map(function(x){ return x.data(); }), r[3].docs.map(function(x){ return x.data(); }).sort(function(a, b){ return (b.updatedAt || 0) - (a.updatedAt || 0); })) + '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">참석 신청 · 전체 ' + allAtt + ' / 100명' + (isSuper && collegeFilter === "전체" ? '' : ' (이 화면 ' + att.length + '명)') + '</div>' +
           '<div style="margin:6px 0 10px"><button class="adm-btn small" type="button" data-adm="rp-csv">참석 명단 CSV 받기</button></div>' +
           '<div class="adm-list">' + (att.length ? att.map(function(p){
             return '<div class="adm-item" style="padding:9px 14px"><b>' + esc(p.name || "") + '</b><span class="adm-item-meta" style="margin:0 0 0 8px">' + esc([p.college, p.team, p.role].filter(Boolean).join(" · ")) + '</span>' +
@@ -1216,6 +1268,42 @@
             .catch(function(er){ b.disabled = false; say("올리지 못했어요: " + (er && er.message || er)); });
         };
         fr.readAsDataURL(cf); return;
+      }
+      if(a === "live-refresh"){ viewReplay(); return; }
+      if(a === "live-open" && isMaster){ act(cfgSave({ liveOpen: true }).then(function(){ viewReplay(); })); return; }
+      if(a === "live-close" && isMaster){ act(cfgSave({ liveOpen: false }).then(function(){ viewReplay(); })); return; }
+      if(a === "apply-open" && isMaster){ if(!(candDoc() || {}).sheetUrl){ alert("스프레드시트를 먼저 연결해 주세요."); return; } act(cfgSave({ applyOpen: true }).then(function(){ viewReplay(); })); return; }
+      if(a === "apply-close" && isMaster){ act(cfgSave({ applyOpen: false }).then(function(){ viewReplay(); })); return; }
+      if(a === "sheet-save" && isMaster){
+        var su = ((document.getElementById("sheet-url") || {}).value || "").trim();
+        if(su && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(su)){ alert("Apps Script 웹 앱 주소(https://script.google.com/macros/s/…/exec)를 붙여 넣어 주세요."); return; }
+        act(cfgSave({ sheetUrl: su }).then(function(){ viewReplay(); })); return;
+      }
+      if(a === "pres-add" && isMaster){
+        var pc = candList().filter(function(x){ return x.id === b.getAttribute("data-cid"); })[0]; if(!pc) return;
+        var pl = ((candDoc() || {}).presenters || []).slice(); if(pl.length >= 5 && !confirm("발표자가 이미 " + pl.length + "명이에요. 그래도 추가할까요?")) return;
+        pl.push({ id: pc.id, team: pc.team || "", mentor: pc.mentor || "", college: pc.college || "", teamKey: pc.teamKey || "" });
+        act(cfgSave({ presenters: pl }).then(function(){ viewReplay(); })); return;
+      }
+      if(a === "pres-manual" && isMaster){
+        var pr = S.team_roster.filter(function(x){ return x.id === (document.getElementById("pres-mentor") || {}).value; })[0];
+        var ptn = ((document.getElementById("pres-team") || {}).value || "").trim();
+        if(!pr){ alert("멘토를 골라 주세요."); return; } if(!ptn){ alert("팀 이름을 적어 주세요."); return; }
+        var pl2 = ((candDoc() || {}).presenters || []).slice(); var rd2 = pr.d;
+        pl2.push({ id: "p_" + pr.id, team: ptn, mentor: rd2.name || "", college: rd2.college || "", teamKey: rd2.teamKey || ((rd2.college ? rd2.college + " " : "") + (rd2.team || "")) });
+        act(cfgSave({ presenters: pl2 }).then(function(){ viewReplay(); })); return;
+      }
+      if(a === "pres-del" && isMaster){ var pid = b.getAttribute("data-pid"); act(cfgSave({ presenters: ((candDoc() || {}).presenters || []).filter(function(x){ return x.id !== pid; }) }).then(function(){ viewReplay(); })); return; }
+      if(a === "pres-up" && isMaster){ var pid2 = b.getAttribute("data-pid"), pl3 = ((candDoc() || {}).presenters || []).slice(), pi = pl3.map(function(x){ return x.id; }).indexOf(pid2); if(pi > 0){ var tmp = pl3[pi - 1]; pl3[pi - 1] = pl3[pi]; pl3[pi] = tmp; } act(cfgSave({ presenters: pl3 }).then(function(){ viewReplay(); })); return; }
+      if(a === "live-csv"){
+        col("attendance_votes").where("kind", "==", "livevote").get().then(function(s){
+          downloadCsv("성과보고회_현장투표.csv", [["투표자","단과대","팀","구분","투표한 발표자 팀","발표 멘토","시각"]].concat(s.docs.map(function(x){ var d = x.data(); return [d.name || "", d.college || "", d.voterTeam || "", d.role || "", d.team || "", d.mentor || "", d.updatedAt ? new Date(d.updatedAt).toLocaleString("ko-KR") : ""]; })));
+        }); return;
+      }
+      if(a === "live-reset" && isMaster){
+        if(!confirm("현장투표 내역을 모두 지울까요? 되돌릴 수 없어요. (테스트 후에만 사용해 주세요)")) return;
+        col("attendance_votes").where("kind", "==", "livevote").get().then(function(s){ return Promise.all(s.docs.map(function(x){ return col("attendance_votes").doc(x.id).delete(); })); }).then(function(){ viewReplay(); }).catch(function(e){ alert("지우지 못했어요: " + (e && e.message || e)); });
+        return;
       }
       if(a === "rp-csv"){ if(replayCache) downloadCsv("성과보고회_참석명단.csv", [["단과대","팀","이름","구분","참석","접수"]].concat(replayCache.att.map(function(p){ return [p.college || "", p.team || "", p.name || "", p.role || "", p.option === "발표로 참여할게요 (멘토·팀)" ? "발표" : "참관", p.src]; }))); return; }
       if(a === "rpt-ok" || a === "rpt-undo"){ act(col("suggestion_posts").doc(id).update({ status: a === "rpt-ok" ? "확인완료" : "제출", checkedAt: Date.now() })); return; }
