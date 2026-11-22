@@ -657,13 +657,13 @@
         .sort(function(a, b){ return String(a.d.college + a.d.team).localeCompare(String(b.d.college + b.d.team)); });
       var okN = list.filter(function(x){ return x.d.status === "확인완료"; }).length;
       mainEl.innerHTML = '<h2 class="adm-h">결과보고서</h2>' +
-        '<p class="adm-desc">멘토가 제출한 팀 결과보고서(PPTX·PDF)예요. 제출한 멘토 본인과 운영진만 볼 수 있어요. 파일을 내려받아 확인한 뒤 <b>확인 완료</b>를 눌러 주세요. 같은 멘토가 여러 번 올리면 마지막 파일만 보여요.</p>' +
+        '<p class="adm-desc">멘토가 제출한 팀 결과보고서(PPTX·PDF)예요. 제출한 멘토 본인과 운영진만 볼 수 있어요. 파일을 내려받아 확인한 뒤 <b>확인 완료</b>를 눌러 주세요. 같은 멘토가 여러 번 올리면 <b>1명으로 세고 마지막 파일만</b> 보여요.</p>' +
         '<div class="adm-item-meta" style="margin:0 0 12px">제출 <b>' + list.length + '</b>명 / 멘토 ' + mentors.length + '명 · 확인 완료 ' + okN + '명 · 미제출 ' + missing.length + '명</div>' +
         '<div class="adm-list">' + (list.length ? list.map(function(x){
           var p = x.d, ok = p.status === "확인완료", k = p.rosterId || (p.team + "|" + p.author);
           return '<div class="adm-item" data-id="' + esc(x.id) + '"><div class="adm-item-top"><span class="adm-tag ' + (ok ? "green" : "gold") + '">' + (ok ? "확인완료" : "제출") + '</span>' +
             '<b style="margin-left:6px">' + esc(p.author || "멘토") + '</b><span class="adm-item-meta" style="margin:0 0 0 8px">' + esc([p.college, p.teamName].filter(Boolean).join(" · ")) + '</span>' +
-            '<span class="adm-item-meta" style="margin:0 0 0 auto">' + fmtTime(p.createdAt) + (older[k] ? ' · 이전 제출 ' + older[k] + '건' : '') + '</span></div>' +
+            '<span class="adm-item-meta" style="margin:0 0 0 auto">' + fmtTime(p.createdAt) + '</span></div>' +
             '<div style="margin:8px 0;display:flex;gap:8px;flex-wrap:wrap"><a class="adm-btn ghost small" href="#" data-adm="prg-file" data-fid="' + esc(x.id) + '">📎 ' + esc(p.fileName || "파일") + '</a>' +
             (ok ? '<button class="adm-btn ghost small" type="button" data-adm="rpt-undo">확인 취소</button>' : '<button class="adm-btn small" type="button" data-adm="rpt-ok">확인 완료</button>') + '</div></div>';
         }).join("") : '<div class="adm-empty">아직 제출된 결과보고서가 없어요.</div>') + '</div>' +
