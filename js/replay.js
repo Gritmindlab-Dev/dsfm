@@ -26,7 +26,7 @@
                  { name: "송월타올 고리수건 핸드타월 세트", qty: "2명" }, { name: "모나미 DIY 펜키트 12종 세트", qty: "2명" }, { name: "엘쏘캐릭터 수면양말 세트", qty: "10명" }, { name: "컴포즈커피 아메리카노 쿠폰", qty: "10명" } ];
   var PROGRAM = [ ["18:00", "접수 · 웰컴 다과", "커피차에서 음료 1잔 + 간식 2종 → 출석 서명 · 식순지 받기"], ["18:30", "성과보고회 설명", "진행 순서 · 평가 방법 안내"], ["18:40", "2026년도 사업 정리", "공유공간 OPEN → PICNIC DAY → 11월 퀘스트"],
                   ["18:50", "결과보고서 발표 (5인)", "사전투표로 뽑힌 멘토 5명 · 1인 5분"], ["19:20", "현장투표", "식순지 QR로 누구나 1표"], ["19:40", "시상", "대상 · 최우수상 · 우수상 · 최대참여팀"],
-                  ["19:50", "럭키드로우", "행운권 추첨 · 경품 8종 30개"], ["20:10", "2027 사업 안내", "내년도 신입생 멘토링 안내 · 멘토 신청"] ];
+                  ["19:50", "럭키드로우", "행운권 추첨 · 경품 11종 40명"], ["20:10", "2027 사업 안내", "내년도 신입생 멘토링 안내 · 멘토 신청"] ];
   var OPT_PRESENT = "발표로 참여할게요 (멘토·팀)", OPT_WATCH = "참관으로 참여할게요", OPT_NO = "참석이 어려워요";
 
   var S = { me: null, started: false, view: "home", rsvp: null, pollMine: null, attend: 0, loading: false,
@@ -105,6 +105,7 @@
     "#page-hub .hb-more{display:block;margin:14px auto 0;border:1.5px solid #a3528f;background:#f6f3e6;color:#a3528f;border-radius:22px;padding:10px 18px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}",
     "#page-hub .hb-agree{margin-top:16px;border:1.5px solid #e8d9de;border-radius:12px;padding:12px 14px;background:#fcfafb;font-size:13px;color:#4a3a40}#page-hub .hb-agree b{display:block;font-size:14px;color:#4f1226;margin-bottom:8px}#page-hub .hb-agree table{width:100%;border-collapse:collapse}#page-hub .hb-agree th,#page-hub .hb-agree td{border:1px solid #eadde1;padding:6px 8px;text-align:left;vertical-align:top;line-height:1.5}#page-hub .hb-agree th{width:96px;background:#f5eef0;font-weight:800;color:#4f1226}#page-hub .hb-agree p{margin:8px 0 4px;color:#8a737a;font-size:12.5px}",
     "#page-hub .hb-form .hb-agree label.ck{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;font-size:13.5px;color:#4f1226;cursor:pointer}#page-hub .hb-form .hb-agree label.ck input{width:18px;height:18px;flex:none;margin:1px 0 0}",
+    "#page-hub .hb-lineup{display:block;width:100%;height:auto;border-radius:14px;border:1px solid #efe2e6;margin-top:6px}",
     "#page-hub .hb-prize.aw{background:#eef7f9;border-color:#bfe0e7;color:#1f4f5a}",
     "#page-hub .hb-soon{border:2px dashed #e8c48a;border-radius:12px;padding:16px;text-align:center;color:#a87a2c;font-weight:800;margin-top:10px}",
     "@media(max-width:640px){#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-rep .nm{flex-basis:100%}}"
@@ -179,7 +180,7 @@
         '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
         '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
-        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 8종 30개</span></button>' +
+        '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 11종 40명</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div><button type="button" class="hb-more" data-hb="menu">☕ 18:00 커피차 메뉴 보기</button>';
     } else if(v === "rsvp"){
@@ -187,7 +188,7 @@
       var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:00</b> 커피차 다과 · <b>18:30</b> 본 행사 · 📍 <b>' + PLACE + '</b><br>멘토·멘티 <b>누구나</b> 참여할 수 있어요. 자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
-        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 웰컴 다과</b> — 18:00부터 음료 1잔 + 간식 2종을 받아요.</li><li><b>럭키드로우</b> — 식순지 행운권으로 경품 8종 30개 추첨에 참여해요.</li></ul>' +
+        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 웰컴 다과</b> — 18:00부터 음료 1잔 + 간식 2종을 받아요.</li><li><b>럭키드로우</b> — 식순지 행운권으로 경품 11종 40명 추첨에 참여해요.</li></ul>' +
         '<div class="hb-sec">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div>' + coffeeMenu() +
         '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
         '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
@@ -217,12 +218,11 @@
           }).join("")) + '</div>';
     } else if(v === "lucky"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>참석자 전원</b>이 행운권 추첨에 참여해요. 경품은 <b>8종 30개</b>예요.</div>' +
+        '<div class="hb-card"><h3>🎁 성과보고회 럭키드로우</h3><div class="hb-d">성과보고회 <b>참석자 전원</b>이 행운권 추첨에 참여해요. 선착순 100명 중 <b>40명</b>(경품추첨 30명 + 추가 경품 10명)에게 <b>11종</b>의 경품을 드려요.</div>' +
+        '<div class="hb-sec">🎁 럭키드로우 경품 라인업 <span style="font-size:12px;font-weight:600;color:#8a737a">(눌러서 크게 보기)</span></div><a href="assets/lucky_lineup.webp" target="_blank" rel="noopener"><img class="hb-lineup" src="assets/lucky_lineup.webp" alt="럭키드로우 경품 라인업 총 40명: 스타벅스 텀블러 세트 1명, 스타벅스 머그컵 세트 1명, 스타벅스 1만원 상품권 2명, 아로닉스 비건 핸드크림 세트 2명, 송월타올 고리수건 핸드타월 세트 2명, 모나미 DIY 펜키트 12종 세트 2명, 엘쏘캐릭터 수면양말 세트 10명, 컴포즈커피 아메리카노 쿠폰 10명, 추가 경품 볼펜 꾸미기 세트 3명, 1구 키캡 세트 3명, 알파벳 키링 세트 4명"></a>' +
         '<div class="hb-sec">추첨은 이렇게 진행돼요</div><ul class="hb-steps"><li><b>접수 (18:00)</b> — 식순지를 받을 때 운영진이 <b>행운권 번호</b>를 적어 드려요.</li><li><b>추첨함에 넣기</b> — 식순지 오른쪽 아래 행운권을 점선대로 잘라 추첨함에 넣고, 같은 번호가 적힌 식순지는 <b>본인이 보관</b>해요.</li><li><b>추첨 (19:50)</b> — 시상이 끝난 뒤 번호를 뽑아 상품을 바로 드려요. <b>현장에 있어야</b> 받을 수 있어요.</li></ul>' +
         '<div class="hb-sec">🏆 시상 상품</div>' +
         AWARDS.map(function(p){ return '<div class="hb-prize aw"><span>' + esc(p.name) + '</span><span>' + esc(p.gift) + '</span></div>'; }).join("") +
-        '<div class="hb-sec">🎁 럭키드로우 상품</div>' +
-        PRIZES.map(function(p){ return '<div class="hb-prize"><span>' + esc(p.name) + '</span><span>' + esc(p.qty) + '</span></div>'; }).join("") +
         
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
     } else if(v === "menu"){
