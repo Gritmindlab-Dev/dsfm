@@ -154,7 +154,7 @@
     var g = function(t, items){ return '<div><h4>' + t + '</h4><p>' + items.join("<br>") + '</p></div>'; };
     return '<div class="hb-cm"><div class="top"><span class="oval"><small>ME,STAR FOOD TRUCK</small><b>Choice Package</b></span></div>' +
       '<div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
-      '<div class="snack"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개</span></div></div>' +
+      '<div class="snack"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개<br>받아서 가지고 입장해요</span></div></div>' +
       '<div class="ty">✦ THANK YOU ✦</div></div>';
   }
   /* ---------- 화면 ---------- */
@@ -227,7 +227,7 @@
         '<div style="margin-top:16px"><button type="button" class="hb-btn" style="background:#205696;padding:12px 18px;font-size:14.5px" data-hb="rsvp">참석 투표하러 가기 →</button></div></div>';
     } else if(v === "menu"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>☕ 웰컴 커피차</h3><div class="hb-d"><b>11. 26.(목) 18:00</b>부터 행사장(차미리사관 136호) 밖 커피차에서 <b>1인 음료 1잔 + 간식 2종</b>을 받아요. 다 먹고 입장해 주세요.</div>' + coffeeMenu() + '</div>';
+        '<div class="hb-card"><h3>☕ 웰컴 커피차</h3><div class="hb-d"><b>11. 26.(목) 18:00</b>부터 행사장(차미리사관 136호) 밖 커피차에서 <b>1인 음료 1잔 + 간식 2종</b>을 받아요. 받은 음료와 간식은 <b>가지고 입장</b>하시면 돼요.</div>' + coffeeMenu() + '</div>';
     } else if(v === "live"){
       var cfl = S.cfg || {}, pres = cfl.presenters || [], lm = S.liveMine && S.liveMine.presenterId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
