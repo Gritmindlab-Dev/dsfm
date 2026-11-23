@@ -524,7 +524,7 @@
       subs = subs.filter(function(x){ var k = x.d.rosterId || (x.d.team + "|" + x.d.author); if(seen[k]) return false; seen[k] = 1; return true; });
       var mentors = S.team_roster.filter(function(r){ return r.d.role === "멘토"; }).sort(function(a, b){ return String(a.d.college + a.d.team + a.d.name).localeCompare(String(b.d.college + b.d.team + b.d.name), "ko"); });
       var h = '<div class="adm-card"><div class="adm-card-title">우수멘토 사전투표 후보 · ' + c.length + ' / ' + CAND_MAX + '명</div>' +
-        '<p class="adm-desc" style="margin:4px 0 10px">학생 화면의 <b>우수멘토 사전투표</b>에는 <b>여기에 올린 결과보고서만</b> 후보로 보여요. 후보 8명을 올려 주세요. (PDF, 10MB 이하)</p>' +
+        '<p class="adm-desc" style="margin:4px 0 10px">학생 화면의 <b>우수멘토 사전투표</b>에는 <b>여기에 올린 결과보고서만</b> 후보로 보여요. 후보 8명을 올려 주세요. (PDF, 용량 제한 없음)</p>' +
         '<div class="adm-list">' + (c.length ? c.map(function(x, i){
           return '<div class="adm-item" style="padding:9px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>' + (i + 1) + '. ' + esc(x.team || "") + '</b><span class="adm-item-meta" style="margin:0">' + esc([x.college, x.teamKey, "멘토 " + (x.mentor || "")].filter(Boolean).join(" · ")) + '</span>' +
             '<span style="margin-left:auto;display:flex;gap:6px"><button class="adm-btn ghost small" type="button" data-adm="cand-view" data-cid="' + esc(x.id) + '">📎 ' + esc(x.fileName || "보기") + '</button>' +
@@ -1253,7 +1253,6 @@
         var rr = S.team_roster.filter(function(x){ return x.id === rid; })[0];
         if(!rr){ say("멘토를 골라 주세요."); return; } if(!tnm){ say("팀 이름을 적어 주세요."); return; }
         if(!cf){ say("PDF 파일을 골라 주세요."); return; } if(!/\.pdf$/i.test(cf.name) && cf.type !== "application/pdf"){ say("PDF 파일만 올릴 수 있어요."); return; }
-        if(cf.size > 10 * 1024 * 1024){ say("10MB 이하 파일만 올릴 수 있어요."); return; }
         var cid = "cand_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), rd = rr.d;
         b.disabled = true; say("올리는 중이에요… 창을 닫지 말아 주세요.");
         var fr = new FileReader();
