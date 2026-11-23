@@ -2,7 +2,7 @@
    DS-FM/GLM 결과보고서 — 멘토 결과보고서 (멘토 전용 · 비공개)
    ① 빈 양식(PPTX) 내려받기
    ② 공유공간에 올린 우리 팀 글·사진을 골라 양식에 자동으로 채워서 내려받기
-   ③ 작성한 파일(PPTX·PDF, 5MB 이하) 제출 → 제출 완료 / 확인 완료
+   ③ 작성한 파일(PDF, 용량 제한 없음) 제출 → 제출 완료 / 확인 완료
    데이터 (Firestore)
      suggestion_posts kind "final_report" : 제출 정보 (파일 내용은 넣지 않아요)
      attendance_votes kind "report_chunk" : 파일 조각 (parentId = 제출 문서 ID)
@@ -13,7 +13,6 @@
   var TPL_URL = "assets/report_template.pptx?v=20261119";
   var JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
   var DUE_TEXT = "11. 23.(월)";
-  var MAX_FILE = 5 * 1024 * 1024;
   var CHUNK = 700000;
 
   var S = { me: null, started: false, loaded: false, loading: false, items: [], roster: [], quest: [], replies: [],
@@ -230,7 +229,7 @@
 
     var last = S.mine[0];
     h += '<div class="rp-card"><div class="rp-h"><span class="no">3</span>결과보고서 제출</div>' +
-      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요 (5MB 이하). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀이름_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 덕성한마음팀_김덕성_20240000_시각디자인_결과보고서.pdf)<br>다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
+      '<div class="rp-d">완성한 보고서를 <b>PDF 파일로 저장해서</b> 올려 주세요. 용량 제한은 없어요 (파일이 크면 올리는 데 시간이 조금 걸려요). PowerPoint에서는 <b>[파일 → 다른 이름으로 저장 → 파일 형식: PDF]</b>를 고르면 돼요. 본인만의 양식으로 만든 보고서도 PDF로 올리면 돼요.<br>파일명은 <b>팀이름_멘토이름_학번_전공_결과보고서.pdf</b>로 해 주세요. (예: 덕성한마음팀_김덕성_20240000_시각디자인_결과보고서.pdf)<br>다시 올리면 마지막 파일로 바뀌어요. 제출한 파일은 <b>본인과 운영진만</b> 볼 수 있어요.</div>' +
       '<input type="file" id="rp-file" accept=".pdf,application/pdf">' +
       '<div class="rp-btns" style="margin-top:10px"><button class="rp-btn" type="button" data-rp="submit"' + (S.busy ? " disabled" : "") + '>제출하기</button></div>' +
       '<div class="rp-msg" id="rp-msg"></div>' +
@@ -502,7 +501,6 @@
     var inp = $("rp-file"), f = inp && inp.files && inp.files[0];
     if(!f){ msg("rp-msg", "제출할 파일을 골라 주세요."); return; }
     if(!/\.pdf$/i.test(f.name)){ msg("rp-msg", "PDF 파일만 올릴 수 있어요. PowerPoint에서 [파일 → 다른 이름으로 저장 → PDF]로 저장한 뒤 올려 주세요."); return; }
-    if(f.size > MAX_FILE){ msg("rp-msg", "파일이 5MB를 넘어요. PDF로 저장할 때 '최소 크기(온라인 게시)'를 고르거나 사진 용량을 줄여서 다시 올려 주세요."); return; }
     if(!db){ msg("rp-msg", "서버에 연결하지 못했어요. 새로고침해 주세요."); return; }
     S.busy = true; render(); msg("rp-msg", "올리는 중이에요… 창을 닫지 마세요.");
     var me = S.me, ref = db.collection("suggestion_posts").doc();
