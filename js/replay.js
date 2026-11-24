@@ -96,6 +96,7 @@
     "#page-hub .hb-rep .nm small{color:#8a737a;font-size:12.5px}",
     "#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-pv{flex-basis:100%;order:3;display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;cursor:pointer;position:relative;-webkit-overflow-scrolling:touch}#page-hub .hb-pv img{height:150px;width:auto;border-radius:8px;border:1px solid #e6dce0;background:#f4eef0;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}#page-hub .hb-pv .more{flex-shrink:0;height:150px;min-width:110px;border-radius:8px;border:1.5px dashed #c9b3bb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#7c1f3d;background:#fbf7f8;padding:0 12px;text-align:center;line-height:1.5}#page-hub .hb-pv .more small{font-weight:600;color:#8a737a;font-size:11.5px}",
     "@media(max-width:640px){#page-hub .hb-pv img,#page-hub .hb-pv .more{height:118px}}",
+    "@media(max-width:640px){#page-hub .hb-cm .snack{flex-wrap:wrap}#page-hub .hb-cm .snack .ph{width:100%}#page-hub .hb-cm .snack .ph img{flex:1;width:auto;min-width:0;height:100px}}",
     "#page-hub .hb-btn{border:0;border-radius:10px;padding:9px 13px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:#2f7f8f;color:#fff;white-space:nowrap}",
     "#page-hub .hb-btn.gh{background:#fff;color:#4f1226;border:1.5px solid #d9c3ca}",
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
@@ -111,7 +112,7 @@
     "#page-hub .hb-cm .top{padding:22px 12px;background-color:#f0efdc;background-image:conic-gradient(from 45deg,#a3528f 25%,transparent 0 50%,#a3528f 0 75%,transparent 0);background-size:56px 56px}",
     "#page-hub .hb-cm .oval{display:inline-block;background:#f0efdc;border:2px dashed #a3528f;border-radius:50%;padding:16px 34px 14px}#page-hub .hb-cm .oval small{display:block;font-size:11px;font-weight:800;letter-spacing:.5px}#page-hub .hb-cm .oval b{display:block;font:italic 900 30px/1.1 Georgia,'Times New Roman',serif;color:#a3528f;transform:rotate(-6deg);margin-top:4px}",
     "#page-hub .hb-cm .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 10px;padding:18px 14px 6px}#page-hub .hb-cm h4{font-size:18px;font-weight:900;margin:6px 0 6px}#page-hub .hb-cm p{margin:0;font-size:14.5px;line-height:1.8;color:#8f4a7e}",
-    "#page-hub .hb-cm .snack{display:flex;align-items:center;gap:14px;margin:8px 14px 14px;padding:12px;background:#fff;border-radius:12px;text-align:left}#page-hub .hb-cm .snack img{width:130px;height:84px;object-fit:cover;border-radius:10px;flex:none}#page-hub .hb-cm .snack b{display:block;font-size:15px;color:#a3528f}#page-hub .hb-cm .snack span{font-size:13px;color:#7a6070;line-height:1.5}",
+    "#page-hub .hb-cm .snack{display:flex;align-items:center;gap:14px;margin:8px 14px 14px;padding:12px;background:#fff;border-radius:12px;text-align:left}#page-hub .hb-cm .snack .ph{display:flex;gap:6px;flex-shrink:0}#page-hub .hb-cm .snack img{width:130px;height:84px;object-fit:cover;border-radius:10px;flex:none}#page-hub .hb-cm .snack b{display:block;font-size:15px;color:#a3528f}#page-hub .hb-cm .snack span{font-size:13px;color:#7a6070;line-height:1.5}",
     "#page-hub .hb-cm .ty{background:#a3528f;color:#f0efdc;font:italic 900 20px Georgia,serif;letter-spacing:1px;padding:10px}",
     "#page-hub .hb-more{display:block;margin:14px auto 0;border:1.5px solid #a3528f;background:#f6f3e6;color:#a3528f;border-radius:22px;padding:10px 18px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}",
     "#page-hub .hb-agree{margin-top:16px;border:1.5px solid #e8d9de;border-radius:12px;padding:12px 14px;background:#fcfafb;font-size:13px;color:#4a3a40}#page-hub .hb-agree b{display:block;font-size:14px;color:#4f1226;margin-bottom:8px}#page-hub .hb-agree table{width:100%;border-collapse:collapse}#page-hub .hb-agree th,#page-hub .hb-agree td{border:1px solid #eadde1;padding:6px 8px;text-align:left;vertical-align:top;line-height:1.5}#page-hub .hb-agree th{width:96px;background:#f5eef0;font-weight:800;color:#4f1226}#page-hub .hb-agree p{margin:8px 0 4px;color:#8a737a;font-size:12.5px}",
@@ -184,7 +185,7 @@
     var g = function(t, items){ return '<div><h4>' + t + '</h4><p>' + items.join("<br>") + '</p></div>'; };
     return '<div class="hb-cm"><div class="top"><span class="oval"><small>ME,STAR FOOD TRUCK</small><b>Choice Package</b></span></div>' +
       '<div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
-      '<div class="snack"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개<br>받아서 가지고 입장해요</span></div></div>' +
+      '<div class="snack"><span class="ph"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><img src="assets/coffee_churros.webp" alt="츄러스" loading="lazy"></span><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개<br>받아서 가지고 입장해요</span></div></div>' +
       '<div class="ty">✦ THANK YOU ✦</div></div>';
   }
   /* ---------- 화면 ---------- */
