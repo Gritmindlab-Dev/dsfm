@@ -140,8 +140,12 @@
       db.collection("attendance_votes").where("kind", "==", "replay_rsvp").get().catch(function(){ return { docs: [] }; })
     ]).then(function(r){
       var m = {};
-      r[0].docs.forEach(function(x){ var d = x.data(); if(d.rosterId) m[d.rosterId] = isAttend(d.choice); if(d.rosterId === S.me.rosterId) S.pollMine = d.choice; });
-      r[1].docs.forEach(function(x){ var d = x.data(); if(d.rosterId) m[d.rosterId] = d.choice === "attend"; if(d.rosterId === S.me.rosterId) S.rsvp = d; });
+      /* 공지 투표와 성과보고회 홈 응답 중 더 나중에 누른 응답을 기준으로 해요 */
+      var at = {}, pollAt = 0;
+      r[0].docs.forEach(function(x){ var d = x.data(); if(!d.rosterId) return; m[d.rosterId] = isAttend(d.choice); at[d.rosterId] = Number(d.updatedAt || d.createdAt || 0); if(d.rosterId === S.me.rosterId){ S.pollMine = d.choice; pollAt = at[d.rosterId]; } });
+      r[1].docs.forEach(function(x){ var d = x.data(); if(!d.rosterId) return; var u = Number(d.updatedAt || 0);
+        if(!(d.rosterId in at) || u >= at[d.rosterId]) m[d.rosterId] = d.choice === "attend";
+        if(d.rosterId === S.me.rosterId) S.rsvp = (u >= pollAt) ? d : null; });
       S.attend = Object.keys(m).filter(function(k){ return m[k]; }).length;
     });
   }
@@ -322,6 +326,12 @@
       return rsvpRef().set({ choice: attend ? "attend" : "absent", kind: "replay_rsvp", option: opt, pollId: POLL_ID,
         name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", team: me.team || "", teamName: me.teamName || "",
         firstAt: (S.rsvp && S.rsvp.firstAt) || t, updatedAt: t });
+    }).then(function(){
+      /* 공지사항 참석 신청 투표(poll_votes)에도 같은 응답을 기록 — 관리자 '투표' 탭 집계와 맞추기 */
+      var me = S.me, t = now(), pv = { pollId: POLL_ID, rosterId: me.rosterId || "", name: me.name || "", college: me.college || "", team: me.team || "", teamKey: me.team || "", role: me.role || "", choice: opt, reason: "", updatedAt: t };
+      if(!S.pollMine) pv.createdAt = t;
+      if(!me.rosterId) return;
+      return db.collection("poll_votes").doc(POLL_ID + "_" + me.rosterId).set(pv, { merge: true }).then(function(){ S.pollMine = opt; }).catch(function(){});
     }).then(function(){ return loadCount(); }).then(function(){
       S.busy = false; render(); msg(attend ? "참석 신청이 완료됐어요. 11/26(목)에 만나요!" : "응답이 저장됐어요.");
     }).catch(function(e){
