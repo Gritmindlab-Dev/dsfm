@@ -96,7 +96,7 @@
     "#page-hub .hb-rep .nm small{color:#8a737a;font-size:12.5px}",
     "#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-pv{flex-basis:100%;order:3;display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;cursor:pointer;position:relative;-webkit-overflow-scrolling:touch}#page-hub .hb-pv img{height:150px;width:auto;border-radius:8px;border:1px solid #e6dce0;background:#f4eef0;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}#page-hub .hb-pv .more{flex-shrink:0;height:150px;min-width:110px;border-radius:8px;border:1.5px dashed #c9b3bb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#7c1f3d;background:#fbf7f8;padding:0 12px;text-align:center;line-height:1.5}#page-hub .hb-pv .more small{font-weight:600;color:#8a737a;font-size:11.5px}",
     "@media(max-width:640px){#page-hub .hb-pv img,#page-hub .hb-pv .more{height:118px}}",
-    "@media(max-width:640px){#page-hub .hb-cm .snack{flex-wrap:wrap}#page-hub .hb-cm .snack .ph{width:100%}#page-hub .hb-cm .snack .ph img{flex:1;width:auto;min-width:0;height:100px}}",
+    "#page-hub .hb-cm .mrow{display:grid;grid-template-columns:1fr;align-items:center}@media(min-width:760px){#page-hub .hb-cm .mrow{grid-template-columns:3fr 2fr}#page-hub .hb-cm .mrow .snack2{margin:14px 14px 14px 0}}#page-hub .hb-cm .snack2{margin:8px 14px 14px;padding:12px 14px;background:#fff;border-radius:12px;text-align:center}#page-hub .hb-cm .snack2 .hd{font-size:18px;font-weight:800;color:#a3528f;margin-bottom:10px}#page-hub .hb-cm .snack2 .hd small{display:block;font-size:12.5px;font-weight:600;color:#7a6070;margin-top:2px}#page-hub .hb-cm .snack2 .gr{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;margin:0 auto}#page-hub .hb-cm .snack2 figure{margin:0}#page-hub .hb-cm .snack2 img{width:100%;aspect-ratio:130/84;object-fit:cover;border-radius:10px;display:block}#page-hub .hb-cm .snack2 figcaption{margin-top:6px;font-size:14.5px;font-weight:800;color:#a3528f}#page-hub .hb-cm .snack2 figcaption small{font-weight:600;color:#7a6070;font-size:13px}",
     "#page-hub .hb-btn{border:0;border-radius:10px;padding:9px 13px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:#2f7f8f;color:#fff;white-space:nowrap}",
     "#page-hub .hb-btn.gh{background:#fff;color:#4f1226;border:1.5px solid #d9c3ca}",
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
@@ -184,8 +184,10 @@
   function coffeeMenu(){
     var g = function(t, items){ return '<div><h4>' + t + '</h4><p>' + items.join("<br>") + '</p></div>'; };
     return '<div class="hb-cm"><div class="top"><span class="oval"><small>ME,STAR FOOD TRUCK</small><b>Choice Package</b></span></div>' +
-      '<div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
-      '<div class="snack"><span class="ph"><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><img src="assets/coffee_churros.webp" alt="츄러스" loading="lazy"></span><div><b>+ 간식 2종</b><span>소떡소떡 1개<br>미니츄러스 약 3개<br>받아서 가지고 입장해요</span></div></div>' +
+      '<div class="mrow"><div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
+      '<div class="snack2"><div class="hd">간식 (SNACK) <small>1인 2종 · 받아서 가지고 입장해요</small></div><div class="gr">' +
+        '<figure><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><figcaption>소떡소떡 <small>1개</small></figcaption></figure>' +
+        '<figure><img src="assets/coffee_churros.webp" alt="미니츄러스" loading="lazy"><figcaption>미니츄러스 <small>약 3개</small></figcaption></figure></div></div></div>' +
       '<div class="ty">✦ THANK YOU ✦</div></div>';
   }
   /* ---------- 화면 ---------- */
