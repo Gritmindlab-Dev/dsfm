@@ -3067,7 +3067,7 @@
 
   /* 11월 미션(11월 퀘스트) 오픈 공지 — 11/12 09:00부터 공지 맨 위에 고정 (미리보기 주소에서는 바로 보여요) */
   function questNoticeHtml(){
-    var t = Date.now(), open = new Date("2026-11-12T09:00:00+09:00").getTime(), end = new Date("2026-11-30T23:59:59+09:00").getTime();
+    var t = Date.now(), open = new Date("2026-11-12T09:00:00+09:00").getTime(), end = new Date("2026-11-24T00:00:00+09:00").getTime();   /* 11/24: 퀘스트 공지 내림 */
     if(!(/[?&]quest=preview\b/.test(location.search) || (t >= open && t <= end))) return "";
     var closed = t > new Date("2026-11-20T23:59:59+09:00").getTime();
     return '<div class="notice-item pinned">' +
