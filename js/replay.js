@@ -94,6 +94,8 @@
     "#page-hub .hb-rep .nm{flex:1;min-width:0}",
     "#page-hub .hb-rep .nm b{display:block;font-size:16px;color:#2a1e22}",
     "#page-hub .hb-rep .nm small{color:#8a737a;font-size:12.5px}",
+    "#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-pv{flex-basis:100%;order:3;display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;cursor:pointer;position:relative;-webkit-overflow-scrolling:touch}#page-hub .hb-pv img{height:150px;width:auto;border-radius:8px;border:1px solid #e6dce0;background:#f4eef0;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}#page-hub .hb-pv .more{flex-shrink:0;height:150px;min-width:110px;border-radius:8px;border:1.5px dashed #c9b3bb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#7c1f3d;background:#fbf7f8;padding:0 12px;text-align:center;line-height:1.5}#page-hub .hb-pv .more small{font-weight:600;color:#8a737a;font-size:11.5px}",
+    "@media(max-width:640px){#page-hub .hb-pv img,#page-hub .hb-pv .more{height:118px}}",
     "#page-hub .hb-btn{border:0;border-radius:10px;padding:9px 13px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:#2f7f8f;color:#fff;white-space:nowrap}",
     "#page-hub .hb-btn.gh{background:#fff;color:#4f1226;border:1.5px solid #d9c3ca}",
     "#page-hub .hb-btn[disabled]{opacity:.45;cursor:default}",
@@ -150,6 +152,20 @@
       var c = (s.exists && s.data().candidates) || [];
       S.reports = c.map(function(x){ return { id: x.id, d: { teamName: x.team || "", author: x.mentor || "", college: x.college || "", team: x.teamKey || "", fileName: x.fileName || "", fileChunks: x.fileChunks || 0, fileId: x.fileId || x.id, title: x.team || "" } }; });
     }).catch(function(){ S.reports = []; });
+  }
+  function loadThumbs(){
+    if(S.thumbs) return Promise.resolve();
+    return db.collection("attendance_votes").where("kind", "==", "report_thumb").get().then(function(s){
+      var m = {}; s.docs.forEach(function(x){ var d = x.data(); if(!d.parentId || !d.data) return; var t = m[d.parentId] || (m[d.parentId] = { pages: 0, imgs: [] }); t.pages = d.pages || t.pages; t.imgs.push({ i: d.idx || 0, src: d.data }); });
+      Object.keys(m).forEach(function(k){ m[k].imgs.sort(function(a, b){ return a.i - b.i; }); });
+      S.thumbs = m;
+    }).catch(function(){ S.thumbs = {}; });
+  }
+  function previewHtml(x){
+    var t = S.thumbs && S.thumbs[x.d.fileId || x.id]; if(!t || !t.imgs.length) return "";
+    var mb = x.d.fileChunks ? Math.max(1, Math.round(x.d.fileChunks * 0.52)) : 0;
+    return '<div class="hb-pv" data-view="' + esc(x.id) + '" title="눌러서 전체 보고서 보기">' + t.imgs.map(function(im){ return '<img src="' + im.src + '" alt="' + esc(teamTitle(x.d)) + ' ' + im.i + '쪽" loading="lazy">'; }).join("") +
+      '<span class="more">전체 보기 →<small>총 ' + (t.pages || "") + '쪽' + (mb ? " · 약 " + mb + "MB" : "") + '</small></span></div>';
   }
   function loadMyVote(){
     return voteRef().get().then(function(s){ S.myVote = s.exists ? s.data() : null; }).catch(function(){ S.myVote = null; });
@@ -238,7 +254,7 @@
         (list === null ? '<div class="hb-d" style="margin-top:12px">불러오는 중이에요…</div>' : !list.length ? '<div class="hb-d" style="margin-top:12px">후보 결과보고서를 준비하고 있어요. 11. 24.(화)까지 올라와요.</div>' :
           list.map(function(x){
             var d = x.d, isMine = d.team && d.team === S.me.team, voted = myVoteId === x.id;
-            return '<div class="hb-rep' + (isMine ? " mine" : "") + (voted ? " voted" : "") + '"><div class="nm"><b>' + esc(teamTitle(d)) + (isMine ? '<span class="hb-tag">우리 팀</span>' : '') + (voted ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([d.college, d.team, "멘토 " + (d.author || "")].filter(Boolean).join(" · ")) + '</small></div>' +
+            return '<div class="hb-rep' + (isMine ? " mine" : "") + (voted ? " voted" : "") + '"><div class="nm"><b>' + esc(teamTitle(d)) + (isMine ? '<span class="hb-tag">우리 팀</span>' : '') + (voted ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([d.college, d.team, "멘토 " + (d.author || "")].filter(Boolean).join(" · ")) + '</small></div>' + previewHtml(x) +
               '<button type="button" class="hb-btn gh" data-view="' + esc(x.id) + '">📄 보고서 보기</button>' +
               '<button type="button" class="hb-btn" data-vote="' + esc(x.id) + '"' + (isMine || vs2 !== "open" || voted || S.busy ? " disabled" : "") + '>' + (voted ? "투표함" : "이 팀에 투표") + '</button></div>';
           }).join("")) + '</div>';
@@ -381,7 +397,7 @@
   function go(v){
     S.view = v; render(); window.scrollTo(0, 0);
     if(v === "home" || v === "rsvp") loadCount().then(render);
-    if(v === "vote"){ Promise.all([loadReports(), loadMyVote()]).then(render); }
+    if(v === "vote"){ Promise.all([loadReports(), loadMyVote()]).then(render).then(function(){ return loadThumbs(); }).then(render); }
     if(v === "live" && db) liveRef().get().then(function(s){ S.liveMine = s.exists ? s.data() : null; render(); }).catch(function(){});
     if(v === "apply" && db) applyRef().get().then(function(s){ S.applied = s.exists ? s.data() : null; render(); }).catch(function(){});
   }
@@ -400,7 +416,7 @@
         S.noAsk = false; saveRsvp(o); return;
       }
       if((t = e.target.closest("[data-vote]")) && !t.disabled){ castVote(t.getAttribute("data-vote")); return; }
-      if((t = e.target.closest("[data-view]")) && !t.disabled){ viewReport(t.getAttribute("data-view"), t); return; }
+      if((t = e.target.closest("[data-view]")) && !t.disabled){ var vb = t.classList.contains("hb-pv") ? (t.parentNode.querySelector("button[data-view]") || t) : t; if(!vb.disabled) viewReport(t.getAttribute("data-view"), vb); return; }
       if((t = e.target.closest("[data-live]")) && !t.disabled){ castLive(t.getAttribute("data-live")); return; }
       if((t = e.target.closest("[data-apply]")) && !t.disabled){ submitApply(); return; }
     });
