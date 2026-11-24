@@ -21,7 +21,7 @@
   var PLACE = "차미리사관 136호";
   var VOTE_START = new Date("2026-11-24T00:00:00+09:00").getTime();
   var VOTE_END   = new Date("2026-11-25T23:59:59+09:00").getTime();
-  var RSVP_END   = new Date("2026-11-25T23:59:59+09:00").getTime();   /* 참석 신청: 행사 전날까지 */
+  var RSVP_END   = new Date("2026-11-26T23:59:59+09:00").getTime();   /* 참석 신청: 행사 당일까지 */
   function rsvpClosed(){ return now() > RSVP_END; }
   var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권 + 꽃다발" }, { name: "🥈 최우수상", gift: "올리브영 5만원권 + 꽃다발" }, { name: "🥉 우수상", gift: "올리브영 3만원권 + 꽃다발" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
   var PRIZES = [ { name: "스타벅스 텀블러 세트", qty: "1명" }, { name: "스타벅스 머그컵 세트", qty: "1명" }, { name: "스타벅스 상품권 1만원권", qty: "2명" }, { name: "아로닉스 비건 핸드크림 세트", qty: "2명" },
@@ -187,7 +187,7 @@
         (cf.liveOpen ? '<button type="button" class="hb-banner" data-hb="live">🗳️<span>지금 현장투표 중이에요!<small>발표를 들은 멘토 5명 중 1명에게 투표해 주세요</small></span><span class="go">투표하기 →</span></button>' : '') +
         (cf.applyOpen ? '<button type="button" class="hb-banner apply" data-hb="apply">🙋<span>2027학년도 멘토 신청<small>내년 신입생의 선배 멘토가 되어 주세요</small></span><span class="go">신청하기 →</span></button>' : '') +
         '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
-        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (rsvpClosed() ? "신청 마감" : full ? "선착순 마감" : S.attend + " / " + CAP + "명 · ~11.25(수)") + '</span></button>' +
+        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (rsvpClosed() ? "신청 마감" : full ? "선착순 마감" : S.attend + " / " + CAP + "명 · ~11.26(목)") + '</span></button>' +
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
         '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 11종 40명</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
@@ -202,7 +202,7 @@
           '<tr><th>일시</th><td><b>2026. 11. 26.(목) 18:00 ~ 20:30</b><small>18:00 커피차·접수 → 18:30 본 행사 시작</small></td></tr>' +
           '<tr><th>장소</th><td><b>' + PLACE + '</b><small>입구에서 식순지(행운권 번호)를 받아 입장해요</small></td></tr>' +
           '<tr><th>대상</th><td>DS-FM 멘토·멘티 <b>누구나</b><small>자리 준비를 위해 선착순 ' + CAP + '명까지 받아요</small></td></tr>' +
-          '<tr><th>신청</th><td><b>11. 25.(수) 23:59까지</b> 이 화면에서 응답<small>11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요</small></td></tr>' +
+          '<tr><th>신청</th><td><b>11. 26.(목) 행사 당일까지</b> 이 화면에서 응답<small>11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요</small></td></tr>' +
         '</table>' +
         '<div class="hb-sec">참석하면 받아요</div><div class="hb-gets">' +
           '<div class="hb-get"><div class="ic">☕</div><b>커피차 웰컴 다과</b><span>18:00부터 1인 <b>음료 1잔 + 간식 2종</b><br>(소떡소떡 1개 · 미니츄러스 약 3개)<br>받아서 가지고 입장해요</span></div>' +
@@ -211,11 +211,11 @@
           '<div class="hb-get star"><div class="ic">🏆</div><b>최대 참여팀 · 스타벅스 10만원권</b><span>가장 많이 참석한 팀의 <b>멘토</b>에게 드려요.<br>팀원들과 함께 와 주세요!</span></div>' +
         '</div>' +
         '<button type="button" class="hb-more" style="margin-top:10px" data-hb="lucky">🎁 경품 11종 40명 라인업 보기</button>' +
-        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티 (대부분 여기예요!)<br>· 응답은 <b>11. 25.(수) 23:59까지</b> 언제든 바꿀 수 있어요.</div>' +
-        '<div class="hb-dl">' + (closed ? '참석 신청이 마감됐어요 (11. 25. 23:59)' : '📌 신청 마감 · 11. 25.(수) 23:59 · 선착순 ' + CAP + '명') + '</div>' +
+        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티 (대부분 여기예요!)<br>· 응답은 <b>11. 26.(목) 당일까지</b> 언제든 바꿀 수 있어요.</div>' +
+        '<div class="hb-dl">' + (closed ? '참석 신청이 마감됐어요' : '📌 신청 마감 · 11. 26.(목) 당일까지 · 선착순 ' + CAP + '명') + '</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
-        (S.noAsk && !closed ? '<div class="hb-wait"><h4>잠깐! 한 번만 더 생각해 주세요 🙏</h4>· 18:00 커피차에서 <b>음료 1잔 + 간식 2종</b>을 받아요.<br>· 경품 <b>11종 40명</b> 럭키드로우 — 참석자만 추첨해요.<br>· 우리 팀이 많이 오면 <b>멘토님이 스타벅스 10만원권</b>을 받아요.<br>· 응답은 11. 25.(수)까지 언제든 바꿀 수 있어요.' +
+        (S.noAsk && !closed ? '<div class="hb-wait"><h4>잠깐! 한 번만 더 생각해 주세요 🙏</h4>· 18:00 커피차에서 <b>음료 1잔 + 간식 2종</b>을 받아요.<br>· 경품 <b>11종 40명</b> 럭키드로우 — 참석자만 추첨해요.<br>· 우리 팀이 많이 오면 <b>멘토님이 스타벅스 10만원권</b>을 받아요.<br>· 응답은 11. 26.(목) 당일까지 언제든 바꿀 수 있어요.' +
           '<div class="bt"><button type="button" class="y" data-opt="' + esc(OPT_WATCH) + '">참관으로 참여할게요</button><button type="button" class="n" data-noyes="1">그래도 참석이 어려워요</button></div></div>' : '') +
         (full2 ? '<div class="hb-msg">선착순 ' + CAP + '명이 모두 차서 참석 신청이 마감됐어요.</div>' : '') +
         (mine ? '<div class="hb-mine">내 응답: ' + esc(mine) + (att ? ' · 신청 완료' : '') + '</div>' + (closed ? '' : '<div class="hb-d" style="margin-top:4px">다른 항목을 누르면 응답이 바뀌어요.</div>') : '<div class="hb-d" style="margin-top:12px">' + (closed ? '응답 기간이 끝났어요.' : '아직 응답하지 않았어요.') + '</div>') +
@@ -297,7 +297,7 @@
   /* ---------- 동작 ---------- */
   function saveRsvp(opt){
     if(!db || S.busy) return;
-    if(rsvpClosed()){ msg("참석 신청은 11. 25.(수) 23:59에 마감됐어요."); return; }
+    if(rsvpClosed()){ msg("참석 신청이 마감됐어요."); return; }
     var attend = isAttend(opt);
     S.busy = true; render(); msg("저장하는 중이에요…");
     loadCount().then(function(){
