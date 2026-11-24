@@ -20,7 +20,7 @@
   var EVENT_TEXT = "2026. 11. 26.(목) 18:00";
   var PLACE = "차미리사관 136호";
   var VOTE_START = new Date("2026-11-24T00:00:00+09:00").getTime();
-  var VOTE_END   = new Date("2026-11-25T23:59:59+09:00").getTime();
+  var VOTE_END   = new Date("2026-12-31T23:59:59+09:00").getTime();   /* 11/24: 안내는 11/25 마감, 실제로는 운영진이 닫으라고 할 때까지 열어 둠 */
   var RSVP_END   = new Date("2026-11-26T23:59:59+09:00").getTime();   /* 참석 신청: 행사 당일까지 */
   function rsvpClosed(){ return now() > RSVP_END; }
   var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권 + 꽃다발" }, { name: "🥈 최우수상", gift: "올리브영 5만원권 + 꽃다발" }, { name: "🥉 우수상", gift: "올리브영 3만원권 + 꽃다발" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
