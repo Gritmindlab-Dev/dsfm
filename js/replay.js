@@ -27,7 +27,7 @@
   var PRIZES = [ { name: "스타벅스 텀블러 세트", qty: "1명" }, { name: "스타벅스 머그컵 세트", qty: "1명" }, { name: "스타벅스 상품권 1만원권", qty: "2명" }, { name: "아로닉스 비건 핸드크림 세트", qty: "2명" },
                  { name: "송월타올 고리수건 핸드타월 세트", qty: "2명" }, { name: "모나미 DIY 펜키트 12종 세트", qty: "2명" }, { name: "엘쏘캐릭터 수면양말 세트", qty: "10명" }, { name: "컴포즈커피 아메리카노 쿠폰", qty: "10명" } ];
   var PROGRAM = [ ["18:00", "접수 · 웰컴 다과", "커피차에서 음료 1잔 + 간식 2종 → 출석 서명 · 식순지 받기"], ["18:30", "성과보고회 설명", "진행 순서 · 평가 방법 안내"], ["18:40", "2026년도 사업 정리", "공유공간 OPEN → PICNIC DAY → 11월 퀘스트"],
-                  ["18:50", "결과보고서 발표 (5인)", "사전투표로 뽑힌 멘토 5명 · 1인 5분"], ["19:20", "현장투표", "식순지 QR로 누구나 1표"], ["19:40", "시상", "대상 · 최우수상 · 우수상 · 최대참여팀"],
+                  ["18:50", "결과보고서 발표 (5인)", "후보 멘토 5명 모두 발표 · 1인 5분"], ["19:20", "현장투표", "식순지 QR로 누구나 1표"], ["19:40", "시상", "대상 · 최우수상 · 우수상 · 최대참여팀"],
                   ["19:50", "럭키드로우", "행운권 추첨 · 경품 11종 40명"], ["20:10", "2027 사업 안내", "내년도 신입생 멘토링 안내 · 멘토 신청"] ];
   var OPT_PRESENT = "발표로 참여할게요 (멘토·팀)", OPT_WATCH = "참관으로 참여할게요", OPT_NO = "참석이 어려워요";
 
@@ -234,7 +234,7 @@
           '<div class="hb-get star"><div class="ic">🏆</div><b>최대 참여팀 · 스타벅스 10만원권</b><span>가장 많이 참석한 팀의 <b>멘토</b>에게 드려요.<br>팀원들과 함께 와 주세요!</span></div>' +
         '</div>' +
         '<button type="button" class="hb-more" style="margin-top:10px" data-hb="lucky">🎁 경품 11종 40명 라인업 보기</button>' +
-        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티 (대부분 여기예요!)<br>· 응답은 <b>11. 26.(목) 당일까지</b> 언제든 바꿀 수 있어요.</div>' +
+        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표 후보 멘토(5명)와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티 (대부분 여기예요!)<br>· 응답은 <b>11. 26.(목) 당일까지</b> 언제든 바꿀 수 있어요.</div>' +
         '<div class="hb-dl">' + (closed ? '참석 신청이 마감됐어요' : '📌 신청 마감 · 11. 26.(목) 당일까지 · 선착순 ' + CAP + '명') + '</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
@@ -247,15 +247,16 @@
         '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
         '</div>';
     } else if(v === "vote"){
+      var nC = (S.reports && S.reports.length) || 5;
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
         '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>20%</b></div><div>전문가평가<b>30%</b></div></div>' +
         '<div class="hb-ask">📣 사전투표 점수 비중이 가장 커요! 여러분의 한 표가 우수멘토를 결정하니 많이 참여해 주세요.</div>' +
-        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>8명</b>의 결과보고서를 보고 투표해, 발표할 <b>5명</b>을 뽑아요.</li><li><b>현장 발표 (11. 26. 18:50)</b> — 선발된 <b>5명</b>이 1인 5분씩 발표하고, 평가위원이 현장에서 채점해요 (전문가평가).</li><li><b>현장투표 (19:20)</b> — 참석자 누구나 식순지 QR로 <b>1표</b>를 투표해요.</li><li><b>시상 (19:40)</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가평가 점수를 더해 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
+        '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>' + nC + '명</b>의 결과보고서를 보고 가장 좋았던 팀에 투표해요. 사전투표 점수는 <b>최종 점수의 50%</b>예요.</li><li><b>현장 발표 (11. 26. 18:50)</b> — 후보 멘토 <b>' + nC + '명 모두</b> 1인 5분씩 발표하고, 평가위원이 현장에서 채점해요 (전문가평가).</li><li><b>현장투표 (19:20)</b> — 참석자 누구나 식순지 QR로 <b>1표</b>를 투표해요.</li><li><b>시상 (19:40)</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가평가 점수를 더해 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
         (vs2 === "before" ? '<b style="color:#7c1f3d">투표는 11. 24.(화) 0시부터 할 수 있어요.</b> 지금은 제출된 보고서를 미리 볼 수 있어요.' : vs2 === "after" ? '<b style="color:#7c1f3d">사전투표가 마감됐어요.</b>' : '<b style="color:#2f7f8f">지금 투표할 수 있어요!</b>') +
-        '<br><span style="font-size:12.5px">※ 아래에 <b>후보 멘토 8명</b>의 결과보고서가 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
+        '<br><span style="font-size:12.5px">※ 아래에 <b>후보 멘토 ' + nC + '명</b>의 결과보고서가 보여요. 보고서는 투표를 위해 공유공간 참여자에게 공개돼요.</span></div>' +
         (myVoteId ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.myVote.reportTeam || "") + '</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
         (list === null ? '<div class="hb-d" style="margin-top:12px">불러오는 중이에요…</div>' : !list.length ? '<div class="hb-d" style="margin-top:12px">후보 결과보고서를 준비하고 있어요. 11. 24.(화)까지 올라와요.</div>' :
@@ -284,7 +285,7 @@
         (cfl.liveOpen ? '<div class="hb-ask" style="background:#e9f5f7;border-color:#459cad;color:#1f4f5a">지금 투표할 수 있어요!</div>' : '<div class="hb-ask">현장투표는 성과보고회 당일 <b>19:20</b>에 열려요. 진행자 안내에 맞춰 다시 들어와 주세요.</div>') +
         (lm ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.liveMine.team || "") + ' (멘토 ' + esc(S.liveMine.mentor || "") + ')</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
-        (!pres.length ? '<div class="hb-d" style="margin-top:12px">발표자 5명은 사전투표가 끝난 뒤 안내돼요.</div>' :
+        (!pres.length ? '<div class="hb-d" style="margin-top:12px">발표자 명단은 곧 안내돼요.</div>' :
           pres.map(function(x, i){
             var mineT = x.teamKey && x.teamKey === S.me.team, on = lm === x.id;
             return '<div class="hb-rep' + (mineT ? " mine" : "") + (on ? " voted" : "") + '"><div class="nm"><b>' + (i + 1) + '. ' + esc(x.team || "") + (mineT ? '<span class="hb-tag">우리 팀</span>' : '') + (on ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([x.college, "멘토 " + (x.mentor || "")].filter(Boolean).join(" · ")) + '</small></div>' +
