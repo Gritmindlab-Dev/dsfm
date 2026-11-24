@@ -493,12 +493,17 @@
   function sendComment(){
     var ta = $("qx-ctext"); if(!ta || !db || !isOpen()) return;
     var text = ta.value.trim(); if(!text){ ta.focus(); return; }
+    /* 같은 댓글이 두 번 올라가지 않게: 저장 중에는 다시 누르지 못하고, 10분 안에 같은 시간표에 같은 내용이 있으면 올리지 않아요 */
+    if(S.sending) return;
+    var meKey = S.me.rosterId || S.me.name || "";
+    if((S.cmts || []).some(function(c){ return (c.c.rosterId || c.c.author) === meKey && c.c.postId === S.openId && String(c.c.text || "").trim() === text && Date.now() - (c.c.ts || 0) < 600000; })){ ta.value = ""; return; }
+    S.sending = true;
     var btn = document.querySelector("[data-qx-send]"); if(btn) btn.disabled = true;
     var d = { kind: "quest", postId: S.openId, replyTo: S.replyTo || "", author: S.me.name || "참여자", rosterId: S.me.rosterId || "",
       role: S.me.role || "멘티", college: S.me.college || "", team: S.me.team || "", teamName: S.me.teamName || "", text: text, ts: Date.now() };
     db.collection("photo_comments").add(d).then(function(){
       ta.value = ""; S.replyTo = null;
-    }).catch(function(){ alert("댓글을 저장하지 못했어요. 새로고침 후 다시 시도해 주세요."); }).then(function(){ if(btn) btn.disabled = false; });
+    }).catch(function(){ alert("댓글을 저장하지 못했어요. 새로고침 후 다시 시도해 주세요."); }).then(function(){ S.sending = false; var b2 = document.querySelector("[data-qx-send]"); if(b2) b2.disabled = false; });
   }
 
   /* ---------- 등록 ---------- */
