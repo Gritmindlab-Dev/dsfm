@@ -493,10 +493,8 @@
   function sendComment(){
     var ta = $("qx-ctext"); if(!ta || !db || !isOpen()) return;
     var text = ta.value.trim(); if(!text){ ta.focus(); return; }
-    /* 같은 댓글이 두 번 올라가지 않게: 저장 중에는 다시 누르지 못하고, 10분 안에 같은 시간표에 같은 내용이 있으면 올리지 않아요 */
+    /* 등록 버튼을 빠르게 두 번 눌러도 한 번만 저장돼요 (저장 중에는 다시 눌러도 무시) */
     if(S.sending) return;
-    var meKey = S.me.rosterId || S.me.name || "";
-    if((S.cmts || []).some(function(c){ return (c.c.rosterId || c.c.author) === meKey && c.c.postId === S.openId && String(c.c.text || "").trim() === text && Date.now() - (c.c.ts || 0) < 600000; })){ ta.value = ""; return; }
     S.sending = true;
     var btn = document.querySelector("[data-qx-send]"); if(btn) btn.disabled = true;
     var d = { kind: "quest", postId: S.openId, replyTo: S.replyTo || "", author: S.me.name || "참여자", rosterId: S.me.rosterId || "",
