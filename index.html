@@ -1845,6 +1845,13 @@
     /* 날짜별 투표는 통째로 덮어써요 (예전 사유가 남지 않게) — 처음 투표 시각은 그대로 옮겨요 */
     if(extra && prev){ data.createdAt = prev.createdAt || Date.now(); if(prev.firstAt) data.firstAt = prev.firstAt; }
     db.collection("poll_votes").doc(pid + "_" + state.rosterId).set(data, extra ? {} : { merge: true })
+      .then(function(){
+        /* 성과보고회 참석 신청 투표는 '성과보고회 홈' 참석 투표에도 같은 응답으로 기록 (두 집계를 맞추기) */
+        if(pid !== "Vypn1dWt0tPgNl5a6N0J") return;
+        var att = opt === "발표로 참여할게요 (멘토·팀)" || opt === "참관으로 참여할게요", t = Date.now();
+        return db.collection("attendance_votes").doc("replay1126_" + state.rosterId).set({ choice: att ? "attend" : "absent", kind: "replay_rsvp", option: opt, pollId: pid,
+          name: state.name || "", rosterId: state.rosterId, role: state.role || "", college: state.college || "", team: state.team || "", teamName: state.teamName || "", updatedAt: t }, { merge: true }).catch(function(){});
+      })
       .then(function(){ delete reasonDraft[pid]; delete reasonText[pid]; delete gridDraft[pid]; renderPolls(); })
       .catch(function(){ alert("투표하지 못했어요. 마감됐는지 확인하고 새로고침해 주세요."); })
       .then(function(){ if(btn) btn.disabled = false; });
@@ -3192,7 +3199,7 @@
 <script src="js/picnic.js?v=20261119a"></script>
 <script src="js/quest.js?v=20261119c"></script>
 <script src="js/report.js?v=20261123b"></script>
-<script src="js/replay.js?v=20261124c"></script>
+<script src="js/replay.js?v=20261125a"></script>
 <script>
 /* 사진 크게 보기 (여러 장이면 넘겨보기) */
 (function(){
