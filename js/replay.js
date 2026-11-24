@@ -94,6 +94,7 @@
     "#page-hub .hb-rep .nm{flex:1;min-width:0}",
     "#page-hub .hb-rep .nm b{display:block;font-size:16px;color:#2a1e22}",
     "#page-hub .hb-rep .nm small{color:#8a737a;font-size:12.5px}",
+    "#page-hub .hb-cf{flex-basis:100%;order:4;background:#eef7f9;border:1.5px solid #9fd0da;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:800;color:#1f5f6b}#page-hub .hb-cf small{display:block;font-weight:600;color:#5b7f86;font-size:12.5px;margin:2px 0 8px}#page-hub .hb-cf span{display:flex;gap:8px;margin-top:6px}",
     "#page-hub .hb-rep{flex-wrap:wrap}#page-hub .hb-pv{flex-basis:100%;order:3;display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;cursor:pointer;position:relative;-webkit-overflow-scrolling:touch}#page-hub .hb-pv img{height:150px;width:auto;border-radius:8px;border:1px solid #e6dce0;background:#f4eef0;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}#page-hub .hb-pv .more{flex-shrink:0;height:150px;min-width:110px;border-radius:8px;border:1.5px dashed #c9b3bb;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#7c1f3d;background:#fbf7f8;padding:0 12px;text-align:center;line-height:1.5}#page-hub .hb-pv .more small{font-weight:600;color:#8a737a;font-size:11.5px}",
     "@media(max-width:640px){#page-hub .hb-pv img,#page-hub .hb-pv .more{height:118px}}",
     "#page-hub .hb-cm .mrow{display:grid;grid-template-columns:1fr;align-items:center}@media(min-width:760px){#page-hub .hb-cm .mrow{grid-template-columns:3fr 2fr}#page-hub .hb-cm .mrow .snack2{margin:14px 14px 14px 0}}#page-hub .hb-cm .snack2{margin:8px 14px 14px;padding:12px 14px;background:#fff;border-radius:12px;text-align:center}#page-hub .hb-cm .snack2 .hd{font-size:18px;font-weight:800;color:#a3528f;margin-bottom:10px}#page-hub .hb-cm .snack2 .hd small{display:block;font-size:12.5px;font-weight:600;color:#7a6070;margin-top:2px}#page-hub .hb-cm .snack2 .gr{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;margin:0 auto}#page-hub .hb-cm .snack2 figure{margin:0}#page-hub .hb-cm .snack2 img{width:100%;aspect-ratio:130/84;object-fit:cover;border-radius:10px;display:block}#page-hub .hb-cm .snack2 figcaption{margin-top:6px;font-size:14.5px;font-weight:800;color:#a3528f}#page-hub .hb-cm .snack2 figcaption small{font-weight:600;color:#7a6070;font-size:13px}",
@@ -264,7 +265,7 @@
             var d = x.d, isMine = d.team && d.team === S.me.team, voted = myVoteId === x.id;
             return '<div class="hb-rep' + (isMine ? " mine" : "") + (voted ? " voted" : "") + '"><div class="nm"><b>' + esc(teamTitle(d)) + (isMine ? '<span class="hb-tag">우리 팀</span>' : '') + (voted ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([d.college, d.team, "멘토 " + (d.author || "")].filter(Boolean).join(" · ")) + '</small></div>' + previewHtml(x) +
               '<button type="button" class="hb-btn gh" data-view="' + esc(x.id) + '">📄 보고서 보기</button>' +
-              '<button type="button" class="hb-btn" data-vote="' + esc(x.id) + '"' + (isMine || vs2 !== "open" || voted || S.busy ? " disabled" : "") + '>' + (voted ? "투표함" : "이 팀에 투표") + '</button></div>';
+              '<button type="button" class="hb-btn" data-vote="' + esc(x.id) + '"' + (isMine || vs2 !== "open" || voted || S.busy ? " disabled" : "") + '>' + (voted ? "투표함" : "이 팀에 투표") + '</button>' + (S.askVote === x.id ? '<div class="hb-cf">\'' + esc(teamTitle(d)) + '\' 팀에 투표할까요? <small>마감 전까지 다른 팀으로 바꿀 수 있어요</small><span><button type="button" class="hb-btn" data-vote-ok="' + esc(x.id) + '">네, 투표할게요</button><button type="button" class="hb-btn gh" data-vote-no="1">취소</button></span></div>' : '') + '</div>';
           }).join("")) + '</div>';
     } else if(v === "lucky"){
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
@@ -289,7 +290,7 @@
           pres.map(function(x, i){
             var mineT = x.teamKey && x.teamKey === S.me.team, on = lm === x.id;
             return '<div class="hb-rep' + (mineT ? " mine" : "") + (on ? " voted" : "") + '"><div class="nm"><b>' + (i + 1) + '. ' + esc(x.team || "") + (mineT ? '<span class="hb-tag">우리 팀</span>' : '') + (on ? '<span class="hb-tag" style="background:#e3f1e8;color:#2f7a4b">내 투표</span>' : '') + '</b><small>' + esc([x.college, "멘토 " + (x.mentor || "")].filter(Boolean).join(" · ")) + '</small></div>' +
-              '<button type="button" class="hb-btn" data-live="' + esc(x.id) + '"' + (mineT || !cfl.liveOpen || on || S.busy ? " disabled" : "") + '>' + (on ? "투표함" : "이 멘토에게 투표") + '</button></div>';
+              '<button type="button" class="hb-btn" data-live="' + esc(x.id) + '"' + (mineT || !cfl.liveOpen || on || S.busy ? " disabled" : "") + '>' + (on ? "투표함" : "이 멘토에게 투표") + '</button>' + (S.askLive === x.id ? '<div class="hb-cf">\'' + esc(x.team || "") + '\' (멘토 ' + esc(x.mentor || "") + ')에게 투표할까요?<span><button type="button" class="hb-btn" data-live-ok="' + esc(x.id) + '">네, 투표할게요</button><button type="button" class="hb-btn gh" data-vote-no="1">취소</button></span></div>' : '') + '</div>';
           }).join("")) +
         '<div class="hb-d" style="margin-top:12px;font-size:12.5px">※ 우리 팀에는 투표할 수 없어요.</div></div>';
     } else if(v === "apply"){
@@ -348,7 +349,8 @@
     var r = (S.reports || []).filter(function(x){ return x.id === id; })[0]; if(!r) return;
     if(r.d.team && r.d.team === S.me.team){ msg("우리 팀에는 투표할 수 없어요."); return; }
     var title = teamTitle(r.d);
-    if(!confirm("'" + title + "' 팀에 투표할까요?\n(마감 전까지 다른 팀으로 바꿀 수 있어요)")) return;
+    if(S.askVote !== id){ S.askVote = id; render(); return; }   /* 카카오톡 등 앱 안 브라우저는 confirm 창이 막혀 있어서 화면 안에서 한 번 더 확인 */
+    S.askVote = null;
     S.busy = true; render();
     var me = S.me;
     voteRef().set({ choice: "attend", kind: "prevote", reportId: id, reportTeam: title, reportTeamKey: r.d.team || "", reportAuthor: r.d.author || "",
@@ -362,7 +364,8 @@
     var cf = S.cfg || {}; if(!db || S.busy || !cf.liveOpen) return;
     var x = (cf.presenters || []).filter(function(p){ return p.id === id; })[0]; if(!x) return;
     if(x.teamKey && x.teamKey === S.me.team){ msg("우리 팀에는 투표할 수 없어요."); return; }
-    if(!confirm("'" + (x.team || "") + "' (멘토 " + (x.mentor || "") + ")에게 투표할까요?")) return;
+    if(S.askLive !== id){ S.askLive = id; render(); return; }
+    S.askLive = null;
     S.busy = true; render(); var me = S.me;
     liveRef().set({ choice: "attend", kind: "livevote", presenterId: x.id, team: x.team || "", mentor: x.mentor || "", presenterTeamKey: x.teamKey || "",
       name: me.name || "", rosterId: me.rosterId || "", role: me.role || "", college: me.college || "", voterTeam: me.team || "", updatedAt: now() })
@@ -429,9 +432,12 @@
         if(o === OPT_NO && myOption() !== OPT_NO){ S.noAsk = true; render(); var wb = el.querySelector(".hb-wait"); if(wb && wb.scrollIntoView) wb.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
         S.noAsk = false; saveRsvp(o); return;
       }
-      if((t = e.target.closest("[data-vote]")) && !t.disabled){ castVote(t.getAttribute("data-vote")); return; }
+      if((t = e.target.closest("[data-vote-no]"))){ S.askVote = null; S.askLive = null; render(); return; }
+      if((t = e.target.closest("[data-vote-ok]")) && !t.disabled){ castVote(t.getAttribute("data-vote-ok")); return; }
+      if((t = e.target.closest("[data-live-ok]")) && !t.disabled){ castLive(t.getAttribute("data-live-ok")); return; }
+      if((t = e.target.closest("[data-vote]")) && !t.disabled){ S.askVote = null; castVote(t.getAttribute("data-vote")); return; }
       if((t = e.target.closest("[data-view]")) && !t.disabled){ var vb = t.classList.contains("hb-pv") ? (t.parentNode.querySelector("button[data-view]") || t) : t; if(!vb.disabled) viewReport(t.getAttribute("data-view"), vb); return; }
-      if((t = e.target.closest("[data-live]")) && !t.disabled){ castLive(t.getAttribute("data-live")); return; }
+      if((t = e.target.closest("[data-live]")) && !t.disabled){ S.askLive = null; castLive(t.getAttribute("data-live")); return; }
       if((t = e.target.closest("[data-apply]")) && !t.disabled){ submitApply(); return; }
     });
   }
