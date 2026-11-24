@@ -21,6 +21,8 @@
   var PLACE = "차미리사관 136호";
   var VOTE_START = new Date("2026-11-24T00:00:00+09:00").getTime();
   var VOTE_END   = new Date("2026-11-25T23:59:59+09:00").getTime();
+  var RSVP_END   = new Date("2026-11-25T23:59:59+09:00").getTime();   /* 참석 신청: 행사 전날까지 */
+  function rsvpClosed(){ return now() > RSVP_END; }
   var AWARDS = [ { name: "🥇 대상", gift: "올리브영 10만원권 + 꽃다발" }, { name: "🥈 최우수상", gift: "올리브영 5만원권 + 꽃다발" }, { name: "🥉 우수상", gift: "올리브영 3만원권 + 꽃다발" }, { name: "🙌 최대 참여팀", gift: "스타벅스 10만원권" } ];
   var PRIZES = [ { name: "스타벅스 텀블러 세트", qty: "1명" }, { name: "스타벅스 머그컵 세트", qty: "1명" }, { name: "스타벅스 상품권 1만원권", qty: "2명" }, { name: "아로닉스 비건 핸드크림 세트", qty: "2명" },
                  { name: "송월타올 고리수건 핸드타월 세트", qty: "2명" }, { name: "모나미 DIY 펜키트 12종 세트", qty: "2명" }, { name: "엘쏘캐릭터 수면양말 세트", qty: "10명" }, { name: "컴포즈커피 아메리카노 쿠폰", qty: "10명" } ];
@@ -79,6 +81,13 @@
     "#page-hub .hb-opt[disabled]{opacity:.45;cursor:default}",
     "#page-hub .hb-mine{margin-top:12px;font-size:14px;font-weight:800;color:#2f7a4b}",
     "#page-hub .hb-msg{margin-top:8px;font-size:13px;color:#7c1f3d;min-height:16px}",
+    "#page-hub .hb-lead{font-size:15px;color:#4a3a40;line-height:1.7;margin-top:6px}#page-hub .hb-lead b{color:#7c1f3d}",
+    "#page-hub .hb-info{width:100%;border-collapse:separate;border-spacing:0 6px;margin:12px 0 4px;font-size:14px}#page-hub .hb-info th{width:76px;background:#205696;color:#fff;font-weight:800;border-radius:10px 0 0 10px;padding:10px 8px;text-align:center;vertical-align:middle}#page-hub .hb-info td{background:#f4f7fb;border-radius:0 10px 10px 0;padding:9px 14px;color:#2a1e22;line-height:1.55}#page-hub .hb-info td b{color:#1f4f85}#page-hub .hb-info td small{display:block;color:#8a737a;font-size:12.5px}",
+    "#page-hub .hb-gets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 4px}#page-hub .hb-get{border:2px solid #efe2e6;border-radius:14px;padding:12px 14px;background:#fff}#page-hub .hb-get .ic{font-size:22px}#page-hub .hb-get>b{display:block;font-size:14.5px;color:#4f1226;margin:4px 0 2px}#page-hub .hb-get span{font-size:13px;color:#6b5a60;line-height:1.55}#page-hub .hb-get.star{background:#eef7f1;border-color:#bfe0cb}#page-hub .hb-get span b{color:#4f1226}#page-hub .hb-get.star>b,#page-hub .hb-get.star span b{color:#1e6b4a}",
+    "#page-hub .hb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}#page-hub .hb-chips span{background:#fdf3f5;border:1px solid #f1d9df;color:#7c1f3d;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}",
+    "#page-hub .hb-dl{margin-top:14px;background:#fff7e0;border:2px solid #f3c96b;border-radius:14px;padding:11px 14px;font-size:14px;font-weight:800;color:#4f1226;text-align:center}",
+    "#page-hub .hb-wait{margin-top:12px;background:#fdf3f5;border:2px solid #e8b9c5;border-radius:14px;padding:14px 16px;font-size:14px;color:#4a3a40;line-height:1.65}#page-hub .hb-wait h4{margin:0 0 6px;font-size:15.5px;color:#7c1f3d}#page-hub .hb-wait .bt{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}#page-hub .hb-wait button{flex:1;min-width:140px;border:0;border-radius:12px;padding:12px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}#page-hub .hb-wait .y{background:#205696;color:#fff}#page-hub .hb-wait .n{background:#fff;color:#8a737a;border:1.5px solid #e2d3d8}",
+    "@media(max-width:640px){#page-hub .hb-gets{grid-template-columns:1fr}#page-hub .hb-info th{width:62px;font-size:13px}}",
     "#page-hub .hb-rep{display:flex;align-items:center;gap:12px;border:1px solid #ecdde1;border-radius:14px;padding:14px 16px;margin-top:10px;background:#fff}",
     "#page-hub .hb-rep.mine{background:#fbf7f8}",
     "#page-hub .hb-rep.voted{border:2px solid #2f7f8f;background:#f1f8f3}",
@@ -178,25 +187,42 @@
         (cf.liveOpen ? '<button type="button" class="hb-banner" data-hb="live">🗳️<span>지금 현장투표 중이에요!<small>발표를 들은 멘토 5명 중 1명에게 투표해 주세요</small></span><span class="go">투표하기 →</span></button>' : '') +
         (cf.applyOpen ? '<button type="button" class="hb-banner apply" data-hb="apply">🙋<span>2027학년도 멘토 신청<small>내년 신입생의 선배 멘토가 되어 주세요</small></span><span class="go">신청하기 →</span></button>' : '') +
         '<div class="hb-intro">11. 26.(목) <b>성과보고회</b>에 오실 분은 <b>참석 투표</b>,<br class="mb"> 11. 24.~25.에는 <b>우수멘토 사전투표</b>에 참여해 주세요.<br>기존 메뉴는 <b>공유공간 들어가기</b>에 있어요.</div>' + '<div class="hb-grid">' +
-        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (full ? "선착순 마감" : S.attend + " / " + CAP + "명 신청") + '</span></button>' +
+        '<button type="button" class="hb-tile t1" data-hb="rsvp">' + IC.vote + '<b>성과보고회<br>참석 투표</b><span class="sub">멘토·멘티 누구나<span class="dt"> · </span><br class="mb">선착순 ' + CAP + '명</span><span class="pill">' + (rsvpClosed() ? "신청 마감" : full ? "선착순 마감" : S.attend + " / " + CAP + "명 · ~11.25(수)") + '</span></button>' +
         '<button type="button" class="hb-tile t2" data-hb="vote">' + IC.ballot + '<b>우수멘토<br>사전투표</b><span class="sub">최종 점수의 50%!<br class="mb"> 많이 참여해 주세요</span><span class="pill">' + (vs === "open" ? "투표 중 · ~11.25(수)" : vs === "before" ? "11.24(화)~25(수)" : "사전투표 마감") + '</span></button>' +
         '<button type="button" class="hb-tile t3" data-hb="lucky">' + IC.gift + '<b>성과보고회<br>럭키드로우 상품보기</b><span class="sub">식순지 행운권<span class="dt"> → </span><br class="mb">시상 후 추첨</span><span class="pill">경품 11종 40명</span></button>' +
         '<button type="button" class="hb-tile t4" data-hb="space">' + IC.door + '<b>공유공간<br>들어가기</b><span class="sub">공지·게시판·<br class="mb">결과보고서·미션</span><span class="pill">기존 기능</span></button>' +
         '</div><button type="button" class="hb-more" data-hb="menu">☕ 18:00 커피차 메뉴 보기</button>';
     } else if(v === "rsvp"){
-      var mine = myOption(), att = isAttend(mine), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
-      var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
+      var mine = myOption(), att = isAttend(mine), closed = rsvpClosed(), full2 = S.attend >= CAP && !att, pct = Math.min(100, Math.round(S.attend / CAP * 100));
+      var opt = function(o, attendOpt){ return '<button type="button" class="hb-opt' + (mine === o ? " on" : "") + '" data-opt="' + esc(o) + '"' + ((attendOpt && full2) || closed || S.busy ? " disabled" : "") + '>' + (mine === o ? "✓ " : "") + esc(o) + '</button>'; };
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>성과보고회 참석 투표</h3><div class="hb-d">📅 <b>11. 26.(목) 18:00</b> 커피차 다과 · <b>18:30</b> 본 행사 · 📍 <b>' + PLACE + '</b><br>멘토·멘티 <b>누구나</b> 참여할 수 있어요. 자리 준비를 위해 <b>선착순 ' + CAP + '명</b>까지 받고, 100명이 차면 자동으로 마감돼요. 11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요.</div>' +
-        '<div class="hb-sec">참석하면 이런 걸 할 수 있어요</div><ul class="hb-steps"><li><b>현장투표 1표</b> — 발표를 듣고 우수멘토에게 직접 투표해요.</li><li><b>커피차 웰컴 다과</b> — 18:00부터 음료 1잔 + 간식 2종을 받아요.</li><li><b>럭키드로우</b> — 식순지 행운권으로 경품 11종 40명 추첨에 참여해요.</li></ul>' +
-        '<div class="hb-sec">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div>' + coffeeMenu() +
-        '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
-        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티<br>· 응답은 행사 전까지 언제든 바꿀 수 있어요.</div>' +
+        '<div class="hb-card"><h3>성과보고회 참석 투표</h3>' +
+        '<div class="hb-lead">한 학기 동안 함께한 멘토링, <b>마지막 날을 같이 마무리해요!</b><br>커피차 음료·간식, 경품 11종 40명 럭키드로우, 우수멘토 시상까지 준비했어요.</div>' +
+        '<table class="hb-info">' +
+          '<tr><th>일시</th><td><b>2026. 11. 26.(목) 18:00 ~ 20:30</b><small>18:00 커피차·접수 → 18:30 본 행사 시작</small></td></tr>' +
+          '<tr><th>장소</th><td><b>' + PLACE + '</b><small>입구에서 식순지(행운권 번호)를 받아 입장해요</small></td></tr>' +
+          '<tr><th>대상</th><td>DS-FM 멘토·멘티 <b>누구나</b><small>자리 준비를 위해 선착순 ' + CAP + '명까지 받아요</small></td></tr>' +
+          '<tr><th>신청</th><td><b>11. 25.(수) 23:59까지</b> 이 화면에서 응답<small>11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요</small></td></tr>' +
+        '</table>' +
+        '<div class="hb-sec">참석하면 받아요</div><div class="hb-gets">' +
+          '<div class="hb-get"><div class="ic">☕</div><b>커피차 웰컴 다과</b><span>18:00부터 1인 <b>음료 1잔 + 간식 2종</b><br>(소떡소떡 1개 · 미니츄러스 약 3개)<br>받아서 가지고 입장해요</span></div>' +
+          '<div class="hb-get"><div class="ic">🎁</div><b>럭키드로우 11종 · 40명</b><span>식순지 행운권으로 추첨해요.<br>시상이 끝난 뒤 <b>현장에 있어야</b> 받을 수 있어요</span></div>' +
+          '<div class="hb-get"><div class="ic">🗳️</div><b>현장투표 1표</b><span>우수멘토 5명의 발표를 듣고<br>대상·최우수상·우수상을 직접 뽑아요</span></div>' +
+          '<div class="hb-get star"><div class="ic">🏆</div><b>최대 참여팀 · 스타벅스 10만원권</b><span>가장 많이 참석한 팀의 <b>멘토</b>에게 드려요.<br>팀원들과 함께 와 주세요!</span></div>' +
+        '</div>' +
+        '<button type="button" class="hb-more" style="margin-top:10px" data-hb="lucky">🎁 경품 11종 40명 라인업 보기</button>' +
+        '<div class="hb-sec">응답 방법</div><div class="hb-d">· <b>발표로 참여</b>: 사전투표로 선발된 멘토와 그 팀원<br>· <b>참관으로 참여</b>: 발표하지 않고 참석하는 멘토·멘티 (대부분 여기예요!)<br>· 응답은 <b>11. 25.(수) 23:59까지</b> 언제든 바꿀 수 있어요.</div>' +
+        '<div class="hb-dl">' + (closed ? '참석 신청이 마감됐어요 (11. 25. 23:59)' : '📌 신청 마감 · 11. 25.(수) 23:59 · 선착순 ' + CAP + '명') + '</div>' +
         '<div class="hb-bar"><i style="width:' + pct + '%"></i></div><div class="hb-d"><b style="color:#205696">' + S.attend + '명</b> / ' + CAP + '명 신청' + (S.attend >= CAP ? ' · 선착순 마감' : '') + '</div>' +
         '<div class="hb-opts">' + opt(OPT_PRESENT, true) + opt(OPT_WATCH, true) + opt(OPT_NO, false) + '</div>' +
+        (S.noAsk && !closed ? '<div class="hb-wait"><h4>잠깐! 한 번만 더 생각해 주세요 🙏</h4>· 18:00 커피차에서 <b>음료 1잔 + 간식 2종</b>을 받아요.<br>· 경품 <b>11종 40명</b> 럭키드로우 — 참석자만 추첨해요.<br>· 우리 팀이 많이 오면 <b>멘토님이 스타벅스 10만원권</b>을 받아요.<br>· 응답은 11. 25.(수)까지 언제든 바꿀 수 있어요.' +
+          '<div class="bt"><button type="button" class="y" data-opt="' + esc(OPT_WATCH) + '">참관으로 참여할게요</button><button type="button" class="n" data-noyes="1">그래도 참석이 어려워요</button></div></div>' : '') +
         (full2 ? '<div class="hb-msg">선착순 ' + CAP + '명이 모두 차서 참석 신청이 마감됐어요.</div>' : '') +
-        (mine ? '<div class="hb-mine">내 응답: ' + esc(mine) + (att ? ' · 신청 완료' : '') + '</div><div class="hb-d" style="margin-top:4px">다른 항목을 누르면 응답이 바뀌어요.</div>' : '<div class="hb-d" style="margin-top:12px">아직 응답하지 않았어요.</div>') +
-        '<div class="hb-msg" id="hb-msg"></div></div>';
+        (mine ? '<div class="hb-mine">내 응답: ' + esc(mine) + (att ? ' · 신청 완료' : '') + '</div>' + (closed ? '' : '<div class="hb-d" style="margin-top:4px">다른 항목을 누르면 응답이 바뀌어요.</div>') : '<div class="hb-d" style="margin-top:12px">' + (closed ? '응답 기간이 끝났어요.' : '아직 응답하지 않았어요.') + '</div>') +
+        '<div class="hb-msg" id="hb-msg"></div>' +
+        '<div class="hb-sec" style="margin-top:22px">☕ 커피차 메뉴 (1인 음료 1잔 + 간식 2종)</div>' + coffeeMenu() +
+        '<div class="hb-sec">📋 당일 진행 순서</div><ul class="hb-tl">' + PROGRAM.map(function(r){ return '<li><span class="tm">' + r[0] + '</span><span><b>' + esc(r[1]) + '</b><small>' + esc(r[2]) + '</small></span></li>'; }).join("") + '</ul>' +
+        '</div>';
     } else if(v === "vote"){
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
@@ -271,6 +297,7 @@
   /* ---------- 동작 ---------- */
   function saveRsvp(opt){
     if(!db || S.busy) return;
+    if(rsvpClosed()){ msg("참석 신청은 11. 25.(수) 23:59에 마감됐어요."); return; }
     var attend = isAttend(opt);
     S.busy = true; render(); msg("저장하는 중이에요…");
     loadCount().then(function(){
@@ -366,7 +393,12 @@
         if(a === "space"){ if(window.DSFM && window.DSFM.goToPage) window.DSFM.goToPage("announce"); return; }
         go(a); return;
       }
-      if((t = e.target.closest("[data-opt]")) && !t.disabled){ saveRsvp(t.getAttribute("data-opt")); return; }
+      if((t = e.target.closest("[data-noyes]"))){ S.noAsk = false; saveRsvp(OPT_NO); return; }
+      if((t = e.target.closest("[data-opt]")) && !t.disabled){
+        var o = t.getAttribute("data-opt");
+        if(o === OPT_NO && myOption() !== OPT_NO){ S.noAsk = true; render(); var wb = el.querySelector(".hb-wait"); if(wb && wb.scrollIntoView) wb.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+        S.noAsk = false; saveRsvp(o); return;
+      }
       if((t = e.target.closest("[data-vote]")) && !t.disabled){ castVote(t.getAttribute("data-vote")); return; }
       if((t = e.target.closest("[data-view]")) && !t.disabled){ viewReport(t.getAttribute("data-view"), t); return; }
       if((t = e.target.closest("[data-live]")) && !t.disabled){ castLive(t.getAttribute("data-live")); return; }
