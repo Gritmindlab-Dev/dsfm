@@ -252,7 +252,7 @@
       var vs2 = voteState(), list = S.reports, myVoteId = S.myVote && S.myVote.reportId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>우수멘토 사전투표</h3><div class="hb-d">기간 <b>11. 24.(화) 0시 ~ 11. 25.(수) 23:59</b> · 멘토들이 제출한 <b>2026년 결과보고서</b>를 읽어 보고, 가장 인상 깊었던 팀에 투표해 주세요.</div>' +
-        '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>20%</b></div><div>전문가평가<b>30%</b></div></div>' +
+        '<div class="hb-sec">최종 점수는 이렇게 매겨요</div><div class="hb-score"><div class="main">사전투표<b>50%</b></div><div>현장투표<b>30%</b></div><div>전문가평가<b>20%</b></div></div>' +
         '<div class="hb-ask">📣 사전투표 점수 비중이 가장 커요! 여러분의 한 표가 우수멘토를 결정하니 많이 참여해 주세요.</div>' +
         '<div class="hb-sec">우수멘토는 이렇게 뽑아요</div><ul class="hb-steps"><li><b>사전투표 (11. 24.~25.)</b> — 후보 멘토 <b>' + nC + '명</b>의 결과보고서를 보고 가장 좋았던 팀에 투표해요. 사전투표 점수는 <b>최종 점수의 50%</b>예요.</li><li><b>현장 발표 (11. 26. 18:50)</b> — 후보 멘토 <b>' + nC + '명 모두</b> 1인 5분씩 발표하고, 평가위원이 현장에서 채점해요 (전문가평가).</li><li><b>현장투표 (19:20)</b> — 참석자 누구나 식순지 QR로 <b>1표</b>를 투표해요.</li><li><b>시상 (19:40)</b> — 앞서 받은 <b>사전투표 점수</b>에 현장투표·전문가평가 점수를 더해 <b>대상 · 최우수상 · 우수상</b>을 드려요.</li></ul>' +
         '<div class="hb-sec">투표 방법</div><div class="hb-d">① 아래 목록에서 <b>📄 보고서 보기</b>로 결과보고서를 읽어요.<br>② 가장 좋았던 팀의 <b>이 팀에 투표</b>를 눌러요. (1인 1표)<br>③ <b>우리 팀</b>에는 투표할 수 없고, 마감 전까지 다른 팀으로 바꿀 수 있어요.<br>' +
@@ -282,7 +282,7 @@
     } else if(v === "live"){
       var cfl = S.cfg || {}, pres = cfl.presenters || [], lm = S.liveMine && S.liveMine.presenterId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
-        '<div class="hb-card"><h3>🗳️ 현장투표</h3><div class="hb-d">발표를 들은 <b>멘토 5명</b> 중 가장 좋았던 1명에게 투표해 주세요. 참석자 <b>누구나 1표</b>이고, 투표가 열려 있는 동안 바꿀 수 있어요. 현장투표는 최종 점수의 <b>20%</b>예요.</div>' +
+        '<div class="hb-card"><h3>🗳️ 현장투표</h3><div class="hb-d">발표를 들은 <b>멘토 5명</b> 중 가장 좋았던 1명에게 투표해 주세요. 참석자 <b>누구나 1표</b>이고, 투표가 열려 있는 동안 바꿀 수 있어요. 현장투표는 최종 점수의 <b>30%</b>예요.</div>' +
         (cfl.liveOpen ? '<div class="hb-ask" style="background:#e9f5f7;border-color:#459cad;color:#1f4f5a">지금 투표할 수 있어요!</div>' : '<div class="hb-ask">현장투표는 성과보고회 당일 <b>19:20</b>에 열려요. 진행자 안내에 맞춰 다시 들어와 주세요.</div>') +
         (lm ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.liveMine.team || "") + ' (멘토 ' + esc(S.liveMine.mentor || "") + ')</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
