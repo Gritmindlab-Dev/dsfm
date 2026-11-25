@@ -568,12 +568,34 @@
           (dup.length ? '<div style="font-size:12px;color:#b91c1c;margin-top:4px">⚠ 멘토·멘티와 이름이 같은 일반 표 ' + dup.length + '건: ' + dup.map(esc).join(", ") + ' — 중복 투표인지 확인해 주세요.</div>' : '')
         : '<div class="adm-empty">발표자를 먼저 정해 주세요.</div>');
     }
+    function finalScoreHtml(liveVotes){
+      var cfg = candDoc() || {}, rows = (cfg.presenters && cfg.presenters.length ? cfg.presenters : candList()).map(function(p){ return { id: p.id, team: p.team || "", mentor: p.mentor || "" }; });
+      var pre = S._pre || [], ex = cfg.expert || {}, pn = {}, ln = {}, ids = {}, lt = 0;
+      rows.forEach(function(r){ ids[r.id] = 1; });
+      pre.forEach(function(v){ pn[v.reportId] = (pn[v.reportId] || 0) + 1; });
+      (liveVotes || []).forEach(function(v){ if(ids[v.presenterId]){ ln[v.presenterId] = (ln[v.presenterId] || 0) + 1; lt++; } });
+      var pt = pre.length, r1 = function(x){ return Math.round(x * 10) / 10; };
+      rows.forEach(function(r){ r.pc = pn[r.id] || 0; r.lc = ln[r.id] || 0; r.ps = pt ? r1(r.pc / pt * 50) : 0; r.ls = lt ? r1(r.lc / lt * 30) : 0;
+        r.es = ex[r.id] === undefined || ex[r.id] === "" ? null : Number(ex[r.id]); r.sum = r1(r.ps + r.ls + (r.es || 0)); });
+      var rank = rows.slice().sort(function(a, b){ return b.sum - a.sum || b.ps - a.ps; }), awards = ["대상", "최우수상", "우수상"];
+      var th = 'style="padding:6px 8px;text-align:center;background:#1f3864;color:#fff;font-size:12.5px;white-space:nowrap"', td = 'style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee;font-size:13px;white-space:nowrap"';
+      return '<div style="font-size:13px;color:#8a737a;margin-bottom:6px">사전투표 ' + pt + '표 · 현장투표 ' + lt + '표 기준 · 점수 = 득표율 × 배점 (사전 50 · 현장 30 · 전문가 20)</div>' +
+        (rows.length ? '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><tr><th ' + th + '>순위</th><th ' + th + '>팀 · 멘토</th><th ' + th + '>사전 (50)</th><th ' + th + '>현장 (30)</th><th ' + th + '>전문가 (20)</th><th ' + th + '>합계 (100)</th></tr>' +
+          rank.map(function(r, i){ return '<tr' + (i < 3 ? ' style="background:#fff8e6"' : '') + '><td ' + td + '><b>' + (i + 1) + '</b>' + (i < 3 ? '<br><small style="color:#b45309">' + awards[i] + '</small>' : '') + '</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:13px"><b>' + esc(r.team) + '</b><br><small style="color:#8a737a">멘토 ' + esc(r.mentor) + '</small></td>' +
+            '<td ' + td + '><b>' + r.ps + '</b><br><small style="color:#8a737a">' + r.pc + '표</small></td><td ' + td + '><b>' + r.ls + '</b><br><small style="color:#8a737a">' + r.lc + '표</small></td>' +
+            '<td ' + td + '>' + (isMaster ? '<input class="adm-input" data-ex="' + esc(r.id) + '" type="number" min="0" max="20" step="0.1" value="' + (r.es === null ? "" : r.es) + '" style="width:72px;text-align:center;padding:6px">' : (r.es === null ? '-' : r.es)) + '</td>' +
+            '<td ' + td + '><b style="font-size:15px;color:#7c1f3d">' + r.sum + '</b></td></tr>'; }).join("") + '</table></div>' +
+          (isMaster ? '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="adm-btn small" type="button" data-adm="ex-save">전문가 점수 저장</button><span style="font-size:12px;color:#8a737a">전문가 점수(20점 만점)를 넣고 저장하면 합계에 더해져요. 동점이면 사전투표 점수가 높은 팀이 위예요.</span></div>' : '') +
+          (rows.some(function(r){ return r.es === null; }) ? '<div style="font-size:12px;color:#b45309;margin-top:4px">※ 전문가 점수가 아직 비어 있는 팀이 있어요. 비어 있으면 0점으로 계산해요.</div>' : '')
+        : '<div class="adm-empty">후보·발표자가 없어요.</div>');
+    }
     function liveCard(liveVotes, applies){
       var cfg = candDoc() || {}, pres = cfg.presenters || [], cands = candList();
       var mentors = S.team_roster.filter(function(r){ return r.d.role === "멘토"; }).sort(function(a, b){ return String(a.d.college + a.d.team + a.d.name).localeCompare(String(b.d.college + b.d.team + b.d.name), "ko"); });
       var h = '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">🗳️ 당일 현장투표 (19:20) · ' + (cfg.liveOpen ? '<span class="adm-tag green">열림</span>' : '<span class="adm-tag gray">닫힘</span>') + '</div>' +
         '<p class="adm-desc" style="margin:4px 0 10px">식순지 QR 주소: <b>https://gritmindlab-dev.github.io/dsfm/live.html</b> — 멘토·멘티는 공유공간 로그인으로, 일반 참석자는 이름·학번으로 투표해요. 발표자 5명을 정하고 <b>투표 열기</b>를 누르면 학생 첫 화면에 투표 배너가 떠요.</p>' +
-        '<div id="live-tally" style="padding:10px 12px;background:#fafcfd;border:1px solid #e3eef1;border-radius:12px">' + liveTallyHtml(liveVotes) + '</div>';
+        '<div id="live-tally" style="padding:10px 12px;background:#fafcfd;border:1px solid #e3eef1;border-radius:12px">' + liveTallyHtml(liveVotes) + '</div>' +
+        '<div style="margin-top:12px;font-size:14px;font-weight:800;color:#1f3864">🏆 최종 점수 (사전투표 + 현장투표 + 전문가)</div><div id="final-score" style="margin-top:6px;padding:10px 12px;background:#fffdf8;border:1px solid #f1e3c4;border-radius:12px">' + finalScoreHtml(liveVotes) + '</div>';
       if(isMaster){
         h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
           (cfg.liveOpen ? '<button class="adm-btn small" type="button" data-adm="live-close">투표 닫기</button>' : '<button class="adm-btn small" type="button" data-adm="live-open"' + (pres.length ? '' : ' disabled') + '>투표 열기</button>') +
@@ -606,7 +628,7 @@
     var liveTimer = setInterval(function(){
       var box = document.getElementById("live-tally"); if(!box || tab !== "replay") return;
       if(!(candDoc() || {}).liveOpen) return;
-      col("attendance_votes").where("kind", "==", "livevote").get().then(function(s){ var b2 = document.getElementById("live-tally"); if(b2) b2.innerHTML = liveTallyHtml(s.docs.map(function(x){ return x.data(); })); }).catch(function(){});
+      col("attendance_votes").where("kind", "==", "livevote").get().then(function(s){ var lv = s.docs.map(function(x){ return x.data(); }), b2 = document.getElementById("live-tally"); if(b2) b2.innerHTML = liveTallyHtml(lv); var b3 = document.getElementById("final-score"); if(b3 && !(document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute("data-ex"))) b3.innerHTML = finalScoreHtml(lv); }).catch(function(){});
     }, 5000);
     function candSave(list){ return col("polls").doc(CAND_ID).set({ kind: "replay_candidates", title: "(성과보고회 사전투표 후보)", visible: false, open: false, candidates: list, updatedAt: Date.now() }, { merge: true }); }
     function candFileData(cid, chunks){
@@ -638,7 +660,7 @@
         var att = list.filter(function(p){ return p.option === "발표로 참여할게요 (멘토·팀)" || p.option === "참관으로 참여할게요"; })
           .sort(function(a, b){ return String(a.college + a.team + a.name).localeCompare(String(b.college + b.team + b.name), "ko"); });
         var allAtt = Object.keys(people).filter(function(k){ var o = people[k].option; return o === "발표로 참여할게요 (멘토·팀)" || o === "참관으로 참여할게요"; }).length;
-        var votes = r[1].docs.map(function(x){ return x.data(); });
+        var votes = r[1].docs.map(function(x){ return x.data(); }); S._pre = votes;
         var tally = {};
         votes.forEach(function(v){ var k = v.reportId; if(!tally[k]) tally[k] = { team: v.reportTeam, author: v.reportAuthor, teamKey: v.reportTeamKey, n: 0 }; tally[k].n++; });
         var rows = Object.keys(tally).map(function(k){ return tally[k]; }).sort(function(a, b){ return b.n - a.n; });
@@ -1304,6 +1326,8 @@
         pl2.push({ id: "p_" + pr.id, team: ptn, mentor: rd2.name || "", college: rd2.college || "", teamKey: rd2.teamKey || ((rd2.college ? rd2.college + " " : "") + (rd2.team || "")) });
         act(cfgSave({ presenters: pl2 }).then(function(){ viewReplay(); })); return;
       }
+      if(a === "ex-save" && isMaster){ var exm = {}, bad = false; Array.prototype.forEach.call(document.querySelectorAll("[data-ex]"), function(el){ var v = String(el.value).trim(); if(v === "") return; var nv = Number(v); if(!(nv >= 0 && nv <= 20)) bad = true; exm[el.getAttribute("data-ex")] = nv; });
+        if(bad){ alert("전문가 점수는 0~20 사이로 넣어 주세요."); return; } act(cfgSave({ expert: exm }).then(function(){ viewReplay(); })); return; }
       if(a === "pres-del" && isMaster){ var pid = b.getAttribute("data-pid"); act(cfgSave({ presenters: ((candDoc() || {}).presenters || []).filter(function(x){ return x.id !== pid; }) }).then(function(){ viewReplay(); })); return; }
       if(a === "pres-up" && isMaster){ var pid2 = b.getAttribute("data-pid"), pl3 = ((candDoc() || {}).presenters || []).slice(), pi = pl3.map(function(x){ return x.id; }).indexOf(pid2); if(pi > 0){ var tmp = pl3[pi - 1]; pl3[pi - 1] = pl3[pi]; pl3[pi] = tmp; } act(cfgSave({ presenters: pl3 }).then(function(){ viewReplay(); })); return; }
       if(a === "live-csv"){
