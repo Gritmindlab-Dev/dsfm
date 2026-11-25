@@ -2003,7 +2003,7 @@
   /* ================= 로그인 팝업 공지 (운영진 페이지 '공지 관리'에서 '팝업으로 띄우기' 체크) ================= */
   var popupShown = {};
   var POP_PAGES = ["announce", "mission", "verify"];
-  function popImgOk(u){ return typeof u === "string" && /^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u); }
+  function popImgOk(u){ return typeof u === "string" && (/^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u) || /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)); }
   function todayKey(){ var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
   function maybePopup(docs){
     return; /* 로그인 팝업 공지는 띄우지 않아요 (공지 목록에는 그대로 보여요) */
@@ -3116,7 +3116,7 @@
   }
 
   /* 공지 이미지: 사이트 안의 img/ 파일만 보여줘요. 누르면 크게 보기 */
-  function noticeImg(u){ return typeof u === "string" && /^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u); }
+  function noticeImg(u){ return typeof u === "string" && (/^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u) || /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)); }
   function zoomImg(src, alt){
     var w = document.createElement("div");
     w.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(20,12,16,.82);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out";
