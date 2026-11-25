@@ -29,6 +29,7 @@ body{margin:0;word-break:keep-all;background:#f6f1f3;color:#2a1e22;font-family:'
 .pick a{display:flex;flex-direction:column;justify-content:center;text-align:center;text-decoration:none;border-radius:14px;padding:14px 10px;font-weight:800;font-size:15.5px;line-height:1.35;color:#fff}
 .pick a small{display:block;font-size:12.5px;font-weight:600;opacity:.92;margin-top:4px}
 .pick .m{background:#205696}.pick .g{background:#7c1f3d}
+.back{width:auto;margin:0 0 10px;border:0;background:none;color:#8a737a;font:inherit;font-size:13.5px;font-weight:700;padding:0;cursor:pointer}
 @media(max-width:360px){.pick{grid-template-columns:1fr}}
 label.f{display:block;margin:14px 0 6px;font-size:14px;font-weight:700;color:#4f1226}
 label.f em{font-style:normal;color:#c0392b;margin-left:2px}
@@ -67,13 +68,13 @@ button:disabled{background:#b9c6d6;cursor:default}
 
   <div id="closed" class="closed" style="display:none">멘토 신청이 아직 열리지 않았어요. 신청이 열리면 이 화면에서 바로 신청할 수 있어요.</div>
 
-  <div class="card" id="memberCard">
+  <div class="card" id="pickCard">
     <h2>어떻게 신청할까요?</h2>
-    <div class="d">아래 두 가지 중 나에게 맞는 버튼을 눌러 주세요.</div>
-    <div class="pick"><a class="m" href="./?go=apply">DS-FM/GLM<br>멘토·멘티<small>공유공간 로그인 →</small></a><a class="g" href="#formCard">처음 온 학생<small>아래에서 바로 신청 ↓</small></a></div>
+    <div class="pick"><a class="m" href="./?go=apply">DS-FM/GLM<br>멘토·멘티<small>공유공간 로그인 →</small></a><a class="g" href="#formCard" data-guest="1">처음 온 학생<small>신청서 작성하기 →</small></a></div>
   </div>
 
-  <div class="card" id="formCard">
+  <div class="card" id="formCard" style="display:none">
+    <button type="button" class="back" data-back="1">← 처음으로</button>
     <h2>처음 신청하는 학생 (일반 학생) 신청서</h2>
     <div class="d">아래 내용을 적고 개인정보 수집·이용에 동의하면 신청이 끝나요. 선발 결과와 안내는 적어 주신 연락처로 드려요.</div>
 
@@ -147,11 +148,20 @@ button:disabled{background:#b9c6d6;cursor:default}
     busy = true; $("go").disabled = true; $("go").textContent = "신청하는 중이에요…"; msg("");
     var body = { type: "apply2027_general", name: name, studentId: sid, major: major, grade: grade, phone: phone, why: why, consent: "동의", consentAt: new Date().toISOString(), hp: g("hp") };
     fetch(sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })
-      .then(function(){ $("formCard").style.display = "none"; $("memberCard").style.display = "none"; $("doneCard").style.display = "block"; window.scrollTo(0, 0); })
+      .then(function(){ $("formCard").style.display = "none"; $("doneCard").style.display = "block"; window.scrollTo(0, 0); })
       .catch(function(){ msg("신청하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."); })
       .then(function(){ busy = false; setOpen(open); });
   });
-  $("again").addEventListener("click", function(){ $("doneCard").style.display = "none"; $("formCard").style.display = "block"; $("memberCard").style.display = "block"; });
+  $("again").addEventListener("click", function(){ $("doneCard").style.display = "none"; $("formCard").style.display = "block"; });
+})();
+</script>
+<script>
+(function(){
+  var pick = document.getElementById("pickCard"), form = document.getElementById("formCard");
+  document.addEventListener("click", function(e){
+    if(e.target.closest("[data-guest]")){ e.preventDefault(); pick.style.display = "none"; form.style.display = "block"; window.scrollTo(0, 0); return; }
+    if(e.target.closest("[data-back]")){ form.style.display = "none"; pick.style.display = "block"; window.scrollTo(0, 0); }
+  });
 })();
 </script>
 </body>

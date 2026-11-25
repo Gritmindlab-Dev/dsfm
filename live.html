@@ -25,6 +25,7 @@ body{margin:0;word-break:keep-all;background:#f6f1f3;color:#2a1e22;font-family:'
 .pick a{display:flex;flex-direction:column;justify-content:center;text-align:center;text-decoration:none;border-radius:14px;padding:14px 10px;font-weight:800;font-size:15.5px;line-height:1.35;color:#fff}
 .pick a small{display:block;font-size:12.5px;font-weight:600;opacity:.92;margin-top:4px}
 .pick .m{background:#205696}.pick .g{background:#7c1f3d}
+.back{width:auto;margin:0 0 10px;border:0;background:none;color:#8a737a;font:inherit;font-size:13.5px;font-weight:700;padding:0;cursor:pointer}
 @media(max-width:360px){.pick{grid-template-columns:1fr}}
 .state{border-radius:14px;padding:12px 14px;font-size:14.5px;font-weight:700;text-align:center;margin-top:14px}
 .state.wait{background:#fff7e0;border:2px solid #f3c96b;color:#4f1226}
@@ -58,13 +59,13 @@ input:focus{outline:none;border-color:#7c1f3d}
     <p>발표를 들은 멘토 5명 중 가장 좋았던 1명에게 투표해 주세요. 참석자 누구나 1표, 최종 점수의 30%예요.</p>
   </div>
 
-  <div class="card">
+  <div class="card" id="pickCard">
     <h2>어떻게 투표할까요?</h2>
-    <div class="d">아래 두 가지 중 나에게 맞는 버튼을 눌러 주세요.</div>
-    <div class="pick"><a class="m" href="./?go=live">DS-FM/GLM<br>멘토·멘티<small>공유공간 로그인 →</small></a><a class="g" href="#guest">처음 온 학생<small>아래에서 바로 투표 ↓</small></a></div>
+    <div class="pick"><a class="m" href="./?go=live">DS-FM/GLM<br>멘토·멘티<small>공유공간 로그인 →</small></a><a class="g" href="#guest" data-guest="1">처음 온 학생<small>이름·학번으로 투표 →</small></a></div>
   </div>
 
-  <div class="card" id="guest">
+  <div class="card" id="guest" style="display:none">
+    <button type="button" class="back" data-back="1">← 처음으로</button>
     <h2>처음 온 학생 (일반 참석자) 투표</h2>
     <div class="d">이름과 학번을 적고 바로 투표할 수 있어요. 1명당 1표이고, 투표가 열려 있는 동안 바꿀 수 있어요.</div>
     <div id="state" class="state wait">투표 상태를 확인하고 있어요…</div>
@@ -145,6 +146,15 @@ input:focus{outline:none;border-color:#7c1f3d}
   });
   $("sid").addEventListener("change", loadMine); $("sid").addEventListener("blur", loadMine);
   loadCfg(); setInterval(loadCfg, 15000);
+})();
+</script>
+<script>
+(function(){
+  var pick = document.getElementById("pickCard"), form = document.getElementById("guest");
+  document.addEventListener("click", function(e){
+    if(e.target.closest("[data-guest]")){ e.preventDefault(); pick.style.display = "none"; form.style.display = "block"; window.scrollTo(0, 0); return; }
+    if(e.target.closest("[data-back]")){ form.style.display = "none"; pick.style.display = "block"; window.scrollTo(0, 0); }
+  });
 })();
 </script>
 </body>
