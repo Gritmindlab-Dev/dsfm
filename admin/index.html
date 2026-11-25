@@ -548,19 +548,31 @@
     }
     function cfgSave(patch){ patch.kind = "replay_candidates"; patch.title = "(성과보고회 사전투표 후보)"; patch.visible = false; patch.open = false; patch.updatedAt = Date.now(); return col("polls").doc(CAND_ID).set(patch, { merge: true }); }
     function liveTallyHtml(votes){
-      var cfg = candDoc() || {}, pres = cfg.presenters || [], n = {}, total = 0;
-      votes.forEach(function(v){ n[v.presenterId] = (n[v.presenterId] || 0) + 1; total++; });
+      var cfg = candDoc() || {}, pres = cfg.presenters || [], n = {}, g = {}, total = 0, guests = 0, memNames = {}, dup = [], other = 0;
+      var ids = {}; pres.forEach(function(p){ ids[p.id] = 1; });
+      votes.forEach(function(v){ if(!v.guest) memNames[String(v.name || "").trim()] = 1; });
+      votes.forEach(function(v){
+        if(!ids[v.presenterId]){ other++; return; }
+        n[v.presenterId] = (n[v.presenterId] || 0) + 1; total++;
+        if(v.guest){ g[v.presenterId] = (g[v.presenterId] || 0) + 1; guests++; if(memNames[String(v.name || "").trim()]) dup.push(v.name); }
+      });
       var max = Math.max.apply(null, [1].concat(pres.map(function(p){ return n[p.id] || 0; })));
-      return '<div style="font-size:13px;color:#8a737a;margin-bottom:6px">총 <b style="color:#7c1f3d;font-size:16px">' + total + '</b>표 · ' + new Date().toLocaleTimeString("ko-KR") + ' 기준' + (cfg.liveOpen ? ' · 5초마다 자동 새로고침' : '') + '</div>' +
-        (pres.length ? pres.map(function(p, i){ var c = n[p.id] || 0;
-          return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800"><span>' + (i + 1) + '. ' + esc(p.team || "") + ' <span style="font-weight:500;color:#8a737a">멘토 ' + esc(p.mentor || "") + '</span></span><span>' + c + '표' + (total ? ' (' + Math.round(c / total * 100) + '%)' : '') + '</span></div>' +
-            '<div style="height:12px;background:#f1e8eb;border-radius:8px;overflow:hidden;margin-top:4px"><i style="display:block;height:100%;width:' + Math.round(c / max * 100) + '%;background:#459cad"></i></div></div>'; }).join("") : '<div class="adm-empty">발표자를 먼저 정해 주세요.</div>');
+      var rank = pres.slice().sort(function(a, b){ return (n[b.id] || 0) - (n[a.id] || 0); });
+      return '<div style="font-size:13px;color:#8a737a;margin-bottom:6px">총 <b style="color:#7c1f3d;font-size:16px">' + total + '</b>표 (멘토·멘티 ' + (total - guests) + ' · 일반 참석자 ' + guests + ') · ' + new Date().toLocaleTimeString("ko-KR") + ' 기준' + (cfg.liveOpen ? ' · 5초마다 자동 새로고침' : '') + '</div>' +
+        (pres.length ? rank.map(function(p, i){ var c = n[p.id] || 0, gc = g[p.id] || 0;
+          return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:800"><span>' + (i + 1) + '위 · ' + esc(p.team || "") + ' <span style="font-weight:500;color:#8a737a">멘토 ' + esc(p.mentor || "") + '</span></span><span style="white-space:nowrap">' + c + '표' + (total ? ' (' + Math.round(c / total * 1000) / 10 + '%)' : '') + '</span></div>' +
+            '<div style="height:12px;background:#f1e8eb;border-radius:8px;overflow:hidden;margin-top:4px;display:flex"><i style="display:block;height:100%;width:' + Math.round((c - gc) / max * 100) + '%;background:#459cad"></i><i style="display:block;height:100%;width:' + Math.round(gc / max * 100) + '%;background:#e8b04b"></i></div>' +
+            '<div style="font-size:12px;color:#8a737a;margin-top:2px">멘토·멘티 ' + (c - gc) + ' · 일반 ' + gc + '</div></div>'; }).join("") +
+          '<div style="font-size:12px;color:#8a737a;margin-top:6px"><span style="color:#459cad">■</span> 멘토·멘티(공유공간) <span style="color:#e8b04b">■</span> 일반 참석자(live.html) · 비율은 현장투표 점수(30%) 계산에 쓰세요.</div>' +
+          (other ? '<div style="font-size:12px;color:#b45309;margin-top:4px">※ 지금 발표자 명단에 없는 표 ' + other + '표는 집계에서 뺐어요.</div>' : '') +
+          (dup.length ? '<div style="font-size:12px;color:#b91c1c;margin-top:4px">⚠ 멘토·멘티와 이름이 같은 일반 표 ' + dup.length + '건: ' + dup.map(esc).join(", ") + ' — 중복 투표인지 확인해 주세요.</div>' : '')
+        : '<div class="adm-empty">발표자를 먼저 정해 주세요.</div>');
     }
     function liveCard(liveVotes, applies){
       var cfg = candDoc() || {}, pres = cfg.presenters || [], cands = candList();
       var mentors = S.team_roster.filter(function(r){ return r.d.role === "멘토"; }).sort(function(a, b){ return String(a.d.college + a.d.team + a.d.name).localeCompare(String(b.d.college + b.d.team + b.d.name), "ko"); });
       var h = '<div class="adm-card" style="margin-top:16px"><div class="adm-card-title">🗳️ 당일 현장투표 (19:20) · ' + (cfg.liveOpen ? '<span class="adm-tag green">열림</span>' : '<span class="adm-tag gray">닫힘</span>') + '</div>' +
-        '<p class="adm-desc" style="margin:4px 0 10px">식순지 QR 주소: <b>https://gritmindlab-dev.github.io/dsfm/?go=live</b> — 찍으면 로그인 후 바로 현장투표 화면이 열려요. 발표자 5명을 정하고 <b>투표 열기</b>를 누르면 학생 첫 화면에 투표 배너가 떠요.</p>' +
+        '<p class="adm-desc" style="margin:4px 0 10px">식순지 QR 주소: <b>https://gritmindlab-dev.github.io/dsfm/live.html</b> — 멘토·멘티는 공유공간 로그인으로, 일반 참석자는 이름·학번으로 투표해요. 발표자 5명을 정하고 <b>투표 열기</b>를 누르면 학생 첫 화면에 투표 배너가 떠요.</p>' +
         '<div id="live-tally" style="padding:10px 12px;background:#fafcfd;border:1px solid #e3eef1;border-radius:12px">' + liveTallyHtml(liveVotes) + '</div>';
       if(isMaster){
         h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
