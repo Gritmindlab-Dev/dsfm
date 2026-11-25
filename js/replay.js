@@ -283,7 +283,7 @@
       var cfl = S.cfg || {}, pres = cfl.presenters || [], lm = S.liveMine && S.liveMine.presenterId;
       h = '<button type="button" class="hb-back" data-hb="home">← 처음 화면으로</button>' + head() +
         '<div class="hb-card"><h3>🗳️ 현장투표</h3><div class="hb-d">발표를 들은 <b>멘토 5명</b> 중 가장 좋았던 1명에게 투표해 주세요. 참석자 <b>누구나 1표</b>이고, 투표가 열려 있는 동안 바꿀 수 있어요. 현장투표는 최종 점수의 <b>30%</b>예요.</div>' +
-        (cfl.liveOpen ? '<div class="hb-ask" style="background:#e9f5f7;border-color:#459cad;color:#1f4f5a">지금 투표할 수 있어요!</div>' : '<div class="hb-ask">현장투표는 성과보고회 당일 <b>19:20</b>에 열려요. 진행자 안내에 맞춰 다시 들어와 주세요.</div>') +
+        (cfl.liveOpen ? '<div class="hb-ask" style="background:#e9f5f7;border-color:#459cad;color:#1f4f5a">지금 투표할 수 있어요!</div>' : '<div class="hb-ask">아직 투표 전이에요. 진행자가 투표를 열면 이 화면에 바로 떠요.</div>') +
         (lm ? '<div class="hb-mine">✓ 내 투표: ' + esc(S.liveMine.team || "") + ' (멘토 ' + esc(S.liveMine.mentor || "") + ')</div>' : '') +
         '<div class="hb-msg" id="hb-msg"></div>' +
         (!pres.length ? '<div class="hb-d" style="margin-top:12px">발표자 명단은 곧 안내돼요.</div>' :
