@@ -188,7 +188,7 @@
       '<div class="mrow"><div class="cols">' + g("커피 (COFFEE)", ["아메리카노", "헤이즐넛 아메리카노", "바닐라 아메리카노"]) + g("에이드 (ADE)", ["자몽 에이드", "망고 에이드", "청포도 에이드"]) + g("음료 &amp; 차 (TEA)", ["복숭아 아이스티", "아.샷.추", "유자차"]) + '</div>' +
       '<div class="snack2"><div class="hd">간식 (SNACK) <small>1인 2종 · 받아서 가지고 입장해요</small></div><div class="gr">' +
         '<figure><img src="assets/coffee_snack.webp" alt="소떡소떡" loading="lazy"><figcaption>소떡소떡 <small>1개</small></figcaption></figure>' +
-        '<figure><img src="assets/coffee_churros.webp" alt="미니츄러스" loading="lazy"><figcaption>미니츄러스 <small>약 3개</small></figcaption></figure></div></div></div>' +
+        '<figure><img src="assets/coffee_churros.webp" alt="미니츄러스" loading="lazy"><figcaption>미니츄러스 <small>2개</small></figcaption></figure></div></div></div>' +
       '<div class="ty">✦ THANK YOU ✦</div></div>';
   }
   /* ---------- 화면 ---------- */
@@ -229,7 +229,7 @@
           '<tr><th>신청</th><td><b>11. 26.(목) 행사 당일까지</b> 이 화면에서 응답<small>11/20까지 참여 신청 투표에 응답한 분은 이미 포함돼 있어요</small></td></tr>' +
         '</table>' +
         '<div class="hb-sec">참석하면 받아요</div><div class="hb-gets">' +
-          '<div class="hb-get"><div class="ic">☕</div><b>커피차 웰컴 다과</b><span>18:00부터 1인 <b>음료 1잔 + 간식 2종</b><br>(소떡소떡 1개 · 미니츄러스 약 3개)<br>받아서 가지고 입장해요</span></div>' +
+          '<div class="hb-get"><div class="ic">☕</div><b>커피차 웰컴 다과</b><span>18:00부터 1인 <b>음료 1잔 + 간식 2종</b><br>(소떡소떡 1개 · 미니츄러스 2개)<br>받아서 가지고 입장해요</span></div>' +
           '<div class="hb-get"><div class="ic">🎁</div><b>럭키드로우 11종 · 40명</b><span>식순지 행운권으로 추첨해요.<br>시상이 끝난 뒤 <b>현장에 있어야</b> 받을 수 있어요</span></div>' +
           '<div class="hb-get"><div class="ic">🗳️</div><b>현장투표 1표</b><span>우수멘토 5명의 발표를 듣고<br>대상·최우수상·우수상을 직접 뽑아요</span></div>' +
           '<div class="hb-get star"><div class="ic">🏆</div><b>최대 참여팀 · 스타벅스 10만원권</b><span>가장 많이 참석한 팀의 <b>멘토</b>에게 드려요.<br>팀원들과 함께 와 주세요!</span></div>' +
