@@ -24,6 +24,7 @@ body{margin:0;word-break:keep-all;background:#f6f1f3;color:#2a1e22;font-family:'
 .d{font-size:14px;color:#5a4a50}
 .note{margin-top:10px;background:#fdf3f5;border:1.5px solid #f1d9df;border-radius:12px;padding:10px 12px;font-size:13.5px;color:#7c1f3d}
 .note a{color:#205696;font-weight:700}
+.member{display:block;text-align:center;text-decoration:none;margin-top:12px;border-radius:14px;padding:14px;font-weight:800;font-size:15.5px;background:#205696;color:#fff}
 label.f{display:block;margin:14px 0 6px;font-size:14px;font-weight:700;color:#4f1226}
 label.f em{font-style:normal;color:#c0392b;margin-left:2px}
 label.f span{font-weight:500;color:#8a737a;font-size:12.5px;margin-left:4px}
@@ -61,10 +62,15 @@ button:disabled{background:#b9c6d6;cursor:default}
 
   <div id="closed" class="closed" style="display:none">멘토 신청이 아직 열리지 않았어요. 신청이 열리면 이 화면에서 바로 신청할 수 있어요.</div>
 
+  <div class="card" id="memberCard">
+    <h2>DS-FM/GLM 멘토·멘티라면</h2>
+    <div class="d">공유공간에 로그인해서 신청해 주세요. (기존 멘토 재신청 가능)</div>
+    <a class="member" href="./?go=apply">공유공간 로그인하고 신청하기 →</a>
+  </div>
+
   <div class="card" id="formCard">
-    <h2>신청서 작성</h2>
+    <h2>처음 신청하는 학생이라면 (일반 학생)</h2>
     <div class="d">아래 내용을 적고 개인정보 수집·이용에 동의하면 신청이 끝나요. 선발 결과와 안내는 적어 주신 연락처로 드려요.</div>
-    <div class="note">올해 멘티·멘토도, 처음인 학생도 <b>누구나 이 화면에서 신청</b>할 수 있어요. (기존 멘토 재신청 가능)</div>
 
     <label class="f" for="name">이름<em>*</em></label>
     <input type="text" id="name" maxlength="30" autocomplete="name" placeholder="홍길동">
@@ -136,11 +142,11 @@ button:disabled{background:#b9c6d6;cursor:default}
     busy = true; $("go").disabled = true; $("go").textContent = "신청하는 중이에요…"; msg("");
     var body = { type: "apply2027_general", name: name, studentId: sid, major: major, grade: grade, phone: phone, why: why, consent: "동의", consentAt: new Date().toISOString(), hp: g("hp") };
     fetch(sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })
-      .then(function(){ $("formCard").style.display = "none"; $("doneCard").style.display = "block"; window.scrollTo(0, 0); })
+      .then(function(){ $("formCard").style.display = "none"; $("memberCard").style.display = "none"; $("doneCard").style.display = "block"; window.scrollTo(0, 0); })
       .catch(function(){ msg("신청하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."); })
       .then(function(){ busy = false; setOpen(open); });
   });
-  $("again").addEventListener("click", function(){ $("doneCard").style.display = "none"; $("formCard").style.display = "block"; });
+  $("again").addEventListener("click", function(){ $("doneCard").style.display = "none"; $("formCard").style.display = "block"; $("memberCard").style.display = "block"; });
 })();
 </script>
 </body>
