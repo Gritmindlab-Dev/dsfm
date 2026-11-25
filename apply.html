@@ -128,7 +128,7 @@ button:disabled{background:#b9c6d6;cursor:default}
     open = o; $("closed").style.display = o ? "none" : "block";
     $("go").disabled = !o; $("go").textContent = o ? "신청하기" : "신청이 열리면 신청할 수 있어요";
   }
-  setOpen(false);
+  setOpen(false); $("closed").style.display = "none";
   fetch(CFG, { cache: "no-store" }).then(function(r){ return r.json(); }).then(function(j){
     var f = (j && j.fields) || {};
     sheetUrl = (f.sheetUrl && f.sheetUrl.stringValue) || "";
