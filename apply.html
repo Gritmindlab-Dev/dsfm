@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2027학년도 신입생 멘토 신청 · 덕성여대 DS-FM/GLM</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;word-break:keep-all;background:#f6f1f3;color:#2a1e22;font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.6}
+.top{background:#4f1226;color:#fbeff2;text-align:center;padding:12px 16px;font-size:13px;font-weight:700;letter-spacing:.5px}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+.hero{background:linear-gradient(135deg,#205696,#459cad);color:#fff;border-radius:20px;padding:26px 22px}
+.hero small{display:block;font-size:13px;font-weight:700;opacity:.9}
+.hero h1{margin:6px 0 10px;font-size:25px;line-height:1.35;font-weight:900}
+.hero p{margin:0;font-size:14.5px;opacity:.95}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chips span{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
+.card{background:#fff;border-radius:18px;padding:22px 20px;margin-top:14px;box-shadow:0 2px 10px rgba(79,18,38,.06)}
+.card h2{margin:0 0 10px;font-size:17px;color:#4f1226}
+.d{font-size:14px;color:#5a4a50}
+.note{margin-top:10px;background:#fdf3f5;border:1.5px solid #f1d9df;border-radius:12px;padding:10px 12px;font-size:13.5px;color:#7c1f3d}
+.note a{color:#205696;font-weight:700}
+label.f{display:block;margin:14px 0 6px;font-size:14px;font-weight:700;color:#4f1226}
+label.f em{font-style:normal;color:#c0392b;margin-left:2px}
+label.f span{font-weight:500;color:#8a737a;font-size:12.5px;margin-left:4px}
+input[type=text],input[type=tel],select,textarea{width:100%;border:1.5px solid #e2d3d8;border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;background:#fff;color:#2a1e22}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#205696}
+textarea{min-height:110px;resize:vertical}
+.agree{margin-top:20px;border:1.5px solid #e8d9de;border-radius:12px;padding:14px;background:#fcfafb;font-size:13px;color:#4a3a40}
+.agree b{display:block;font-size:14.5px;color:#4f1226;margin-bottom:8px}
+.agree table{width:100%;border-collapse:collapse}
+.agree th,.agree td{border:1px solid #eadde1;padding:7px 9px;text-align:left;vertical-align:top;line-height:1.5}
+.agree th{width:108px;background:#f5eef0;font-weight:800;color:#4f1226}
+.agree p{margin:8px 0 4px;color:#8a737a;font-size:12.5px}
+.ck{display:flex;gap:9px;align-items:flex-start;margin-top:10px;font-size:14px;font-weight:700;color:#4f1226;cursor:pointer}
+.ck input{width:19px;height:19px;flex:none;margin:2px 0 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+button{width:100%;margin-top:18px;border:0;border-radius:14px;padding:15px;font:inherit;font-size:16px;font-weight:800;background:#205696;color:#fff;cursor:pointer}
+button:disabled{background:#b9c6d6;cursor:default}
+.msg{margin-top:10px;font-size:14px;font-weight:700;color:#c0392b;min-height:20px;text-align:center}
+.done{text-align:center;padding:30px 20px}
+.done .ic{font-size:44px}
+.done h2{font-size:20px;margin:8px 0}
+.closed{background:#fff7e0;border:2px solid #f3c96b;border-radius:14px;padding:14px;font-size:14.5px;font-weight:700;color:#4f1226;text-align:center;margin-top:14px}
+.foot{text-align:center;font-size:12.5px;color:#8a737a;margin-top:22px}
+</style>
+</head>
+<body>
+<div class="top">덕성여자대학교 신입생 멘토링 DS-FM · GLM</div>
+<div class="wrap">
+  <div class="hero">
+    <small>2027학년도 신입생 멘토 모집</small>
+    <h1>27학번의 첫 번째 선배가<br>되어 주세요!</h1>
+    <p>신입생의 학교생활 적응을 돕고 싶은 학생이라면 누구나 신청할 수 있어요.</p>
+    <div class="chips"><span>멘토 장학금 30만 원</span><span>신입생 팀 멘토링</span><span>재학생 누구나</span></div>
+  </div>
+
+  <div id="closed" class="closed" style="display:none">멘토 신청이 아직 열리지 않았어요. 신청이 열리면 이 화면에서 바로 신청할 수 있어요.</div>
+
+  <div class="card" id="formCard">
+    <h2>신청서 작성</h2>
+    <div class="d">아래 내용을 적고 개인정보 수집·이용에 동의하면 신청이 끝나요. 선발 결과와 안내는 적어 주신 연락처로 드려요.</div>
+    <div class="note">올해 DS-FM/GLM에 참여한 멘토·멘티는 <a href="./?go=apply">공유공간에 로그인해서 신청</a>해 주세요. (기존 멘토 재신청 가능)</div>
+
+    <label class="f" for="name">이름<em>*</em></label>
+    <input type="text" id="name" maxlength="30" autocomplete="name" placeholder="홍길동">
+    <label class="f" for="sid">학번<em>*</em></label>
+    <input type="text" id="sid" inputmode="numeric" maxlength="10" placeholder="예: 20250000">
+    <label class="f" for="major">학과(전공)<em>*</em></label>
+    <input type="text" id="major" maxlength="60" placeholder="예: 시각디자인전공">
+    <label class="f" for="grade">학년<em>*</em> <span>2026년 2학기 기준</span></label>
+    <select id="grade"><option value="">선택해 주세요</option><option>1학년</option><option>2학년</option><option>3학년</option><option>4학년</option><option>기타(휴학 등)</option></select>
+    <label class="f" for="phone">연락처<em>*</em></label>
+    <input type="tel" id="phone" maxlength="14" autocomplete="tel" placeholder="010-0000-0000">
+    <label class="f" for="why">지원 동기 <span>(선택)</span></label>
+    <textarea id="why" maxlength="1000" placeholder="멘토가 되고 싶은 이유를 자유롭게 적어 주세요"></textarea>
+    <div class="hp" aria-hidden="true"><label>비워 두세요<input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
+
+    <div class="agree">
+      <b>개인정보 수집·이용 동의 (필수)</b>
+      <table>
+        <tr><th>수집 항목</th><td>이름, 학번, 학과(전공), 학년, 연락처, 지원 동기</td></tr>
+        <tr><th>수집·이용 목적</th><td>2027학년도 신입생 멘토링(DS-FM/GLM) 멘토 선발·연락 및 운영 안내</td></tr>
+        <tr><th>보유·이용 기간</th><td>2027학년도 멘토링 사업 종료 시까지 보관 후 파기</td></tr>
+        <tr><th>수집·운영</th><td>덕성여자대학교 · 그릿마인드랩(운영 위탁)</td></tr>
+      </table>
+      <p>개인정보 수집·이용에 동의하지 않을 수 있으며, 동의하지 않으면 멘토 신청을 할 수 없어요.</p>
+      <label class="ck"><input type="checkbox" id="agree"> 위 내용을 확인했고, 개인정보 수집·이용에 동의합니다.</label>
+    </div>
+
+    <button type="button" id="go">신청하기</button>
+    <div class="msg" id="msg"></div>
+    <div class="d" style="font-size:12.5px;text-align:center">※ 적어 주신 내용은 운영진만 볼 수 있는 신청 명단으로만 전달돼요.</div>
+  </div>
+
+  <div class="card done" id="doneCard" style="display:none">
+    <div class="ic">🎉</div>
+    <h2>신청이 접수됐어요!</h2>
+    <div class="d">신청해 주셔서 고마워요. 선발 결과와 안내는 적어 주신 연락처로 드릴게요.<br>내용을 고치려면 같은 학번으로 다시 신청하면 마지막 내용으로 바뀌어요.</div>
+    <button type="button" id="again" style="background:#fff;color:#205696;border:1.5px solid #205696">다시 작성하기</button>
+  </div>
+
+  <div class="foot">문의: 덕성여자대학교 학생지원과</div>
+</div>
+<script>
+(function(){
+  var CFG = "https://firestore.googleapis.com/v1/projects/dsfm-455c1/databases/(default)/documents/polls/replay_prevote?key=AIzaSyDiPlp8TEQhaFJISh6DgRY4UlOx-_cDFBw&mask.fieldPaths=applyOpen&mask.fieldPaths=sheetUrl";
+  var $ = function(id){ return document.getElementById(id); };
+  var sheetUrl = "", open = false, busy = false;
+  function msg(t){ $("msg").textContent = t || ""; }
+  function setOpen(o){
+    open = o; $("closed").style.display = o ? "none" : "block";
+    $("go").disabled = !o; $("go").textContent = o ? "신청하기" : "신청이 열리면 신청할 수 있어요";
+  }
+  setOpen(false);
+  fetch(CFG, { cache: "no-store" }).then(function(r){ return r.json(); }).then(function(j){
+    var f = (j && j.fields) || {};
+    sheetUrl = (f.sheetUrl && f.sheetUrl.stringValue) || "";
+    setOpen(!!(f.applyOpen && f.applyOpen.booleanValue) && /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(sheetUrl));
+  }).catch(function(){ msg("연결이 원활하지 않아요. 잠시 후 새로고침해 주세요."); });
+
+  $("go").addEventListener("click", function(){
+    if(busy || !open) return;
+    var g = function(id){ return String($(id).value || "").trim(); };
+    var name = g("name"), sid = g("sid").replace(/\s/g, ""), major = g("major"), grade = g("grade"), phone = g("phone"), why = g("why");
+    if(!name){ msg("이름을 적어 주세요."); return; }
+    if(!/^\d{6,10}$/.test(sid)){ msg("학번을 숫자로 적어 주세요."); return; }
+    if(!major){ msg("학과(전공)를 적어 주세요."); return; }
+    if(!grade){ msg("학년을 선택해 주세요."); return; }
+    if(!/^[0-9\-\s]{9,14}$/.test(phone)){ msg("연락처를 확인해 주세요. (예: 010-0000-0000)"); return; }
+    if(!$("agree").checked){ msg("개인정보 수집·이용에 동의해야 신청할 수 있어요."); return; }
+    busy = true; $("go").disabled = true; $("go").textContent = "신청하는 중이에요…"; msg("");
+    var body = { type: "apply2027_general", name: name, studentId: sid, major: major, grade: grade, phone: phone, why: why, consent: "동의", consentAt: new Date().toISOString(), hp: g("hp") };
+    fetch(sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })
+      .then(function(){ $("formCard").style.display = "none"; $("doneCard").style.display = "block"; window.scrollTo(0, 0); })
+      .catch(function(){ msg("신청하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."); })
+      .then(function(){ busy = false; setOpen(open); });
+  });
+  $("again").addEventListener("click", function(){ $("doneCard").style.display = "none"; $("formCard").style.display = "block"; });
+})();
+</script>
+</body>
+</html>
