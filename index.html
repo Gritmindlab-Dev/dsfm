@@ -2006,10 +2006,9 @@
   function popImgOk(u){ return typeof u === "string" && (/^img\/[A-Za-z0-9_.-]+\.(png|jpe?g|webp)$/.test(u) || /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)); }
   function todayKey(){ var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
   function maybePopup(docs){
-    return; /* 로그인 팝업 공지는 띄우지 않아요 (공지 목록에는 그대로 보여요) */
     if(!state.name || document.getElementById("announce-popup")) return;
     var list = (docs || []).map(function(d){ var o = d.data() || {}; o.id = d.id; return o; })
-      .filter(function(n){ return n.popup && collegeVisible(n); })
+      .filter(function(n){ return n.popup && collegeVisible(n) && (Date.now() - (n.createdAt || 0)) < 864e5; })
       .sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
     var n = list.filter(function(x){
       if(popupShown[x.id]) return false;
